@@ -21,9 +21,16 @@ async function ensureWardenContext() {
     if (!wardenLoggedIn) return;
     const username = sessionStorage.getItem('wardenUsername') || '';
     if (!username) return;
-    await supabase.rpc('set_user_context', { user_name: username });
+    
+    // Force set the context every time with error handling
+    const { error } = await supabase.rpc('set_user_context', { user_name: username });
+    if (error) {
+      console.error('Failed to set warden context:', error);
+      return;
+    }
+    console.log('Warden context set successfully for:', username);
   } catch (e) {
-    // ignore
+    console.error('Error in ensureWardenContext:', e);
   }
 }
 
