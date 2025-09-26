@@ -18,7 +18,7 @@ const WardenLogin = () => {
       if (warden) {
         // Set session info in sessionStorage
         sessionStorage.setItem('wardenLoggedIn', 'true');
-        sessionStorage.setItem('wardenUsername', warden.id);
+        sessionStorage.setItem('wardenUsername', warden.username);
         sessionStorage.setItem('wardenHostels', JSON.stringify(warden.hostels || []));
         sessionStorage.setItem('wardenEmail', warden.email || '');
         sessionStorage.setItem('wardenRole', warden.role || 'warden');
