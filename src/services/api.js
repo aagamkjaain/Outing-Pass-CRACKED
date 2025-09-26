@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { getStatusUpdateEmail, getStillOutAlertEmail, getNowOutEmail, getReturnedEmail } from './mailTemplates';
+import { getStatusUpdateEmail, getNowOutEmail, getReturnedEmail } from './mailTemplates';
 import * as XLSX from 'xlsx';
 
 // No longer need API_BASE_URL as we're using Supabase directly
@@ -12,6 +12,20 @@ import * as XLSX from 'xlsx';
 const handleError = (error) => {
   return new Error(error.message || 'An error occurred with the Supabase request');
 };
+
+// Best-effort: set per-request warden context so RLS works without JWT
+async function ensureWardenContext() {
+  try {
+    if (typeof window === 'undefined') return;
+    const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
+    if (!wardenLoggedIn) return;
+    const username = sessionStorage.getItem('wardenUsername') || '';
+    if (!username) return;
+    await supabase.rpc('set_user_context', { user_name: username });
+  } catch (e) {
+    // ignore
+  }
+}
 
 /**
  * Book a lab slot
@@ -107,18 +121,28 @@ export const deleteBookedSlot = async (slotId) => {
 };
 
 /**
- * Fetch all bookings (admin only)
- * @param {string} adminEmail - The admin's email
- * @returns {Promise<Array>} - Array of all bookings
+ * Fetch all bookings (admin/warden)
+ * Optionally restrict by allowed hostels (for wardens)
+ * @param {string} adminEmail - The admin's email (for audit/compat)
+ * @param {string[]} allowedHostels - Optional list of hostel names the user is allowed to see; if ['all'] or empty/undefined => no restriction
+ * @returns {Promise<Array>} - Array of bookings
  */
-export const fetchPendingBookings = async (adminEmail) => {
+export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
-    // Fetch all outing requests for admin
-    const { data, error } = await supabase
+    await ensureWardenContext();
+    const query = supabase
       .from('outing_requests')
       .select('*')
       .order('out_date', { ascending: false })
       .order('created_at', { ascending: false });
+
+    // Apply server-side hostel restriction when provided and not 'all'
+    if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+      // Supabase supports in() for filtering
+      query.in('hostel_name', allowedHostels);
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
@@ -149,45 +173,19 @@ function generateOTP() {
  */
 export const handleBookingAction = async (bookingId, action, adminEmail, rejectionReason) => {
   try {
+    await ensureWardenContext();
+    // Validate handled_by (adminEmail used here as handler name) must be non-empty
+    if (!adminEmail || !String(adminEmail).trim()) {
+      throw new Error('Approver name is required');
+    }
     // action is now the new status: 'still_out', 'confirmed', 'rejected'
     let newStatus = action;
     if (action === 'reject') newStatus = 'rejected';
-    let otp = null;
-    let resetOtpUsed = false;
-    if (newStatus === 'still_out' || newStatus === 'confirmed') {
-      // Generate a new OTP if moving to still_out or confirmed and OTP is missing or used
-      const { data: existing, error: fetchErr } = await supabase
-        .from('outing_requests')
-        .select('otp, otp_used')
-        .eq('id', bookingId)
-        .single();
-      if (fetchErr) throw fetchErr;
-      if (!existing.otp || existing.otp_used) {
-        let unique = false;
-        while (!unique) {
-          otp = generateOTP();
-          const { data: otpExists } = await supabase
-            .from('outing_requests')
-            .select('id')
-            .eq('otp', otp);
-          if (!otpExists || otpExists.length === 0) unique = true;
-        }
-        resetOtpUsed = true;
-      } else {
-        otp = existing.otp;
-      }
-    }
     const updateObj = {
       status: newStatus,
       handled_by: adminEmail,
       handled_at: new Date().toISOString(),
     };
-    if (otp) updateObj.otp = otp;
-    if (resetOtpUsed) updateObj.otp_used = false;
-    if (newStatus === 'confirmed') {
-      // If moving from still_out to confirmed, mark OTP as used
-      updateObj.otp_used = true;
-    }
     if (newStatus === 'rejected') {
       updateObj.rejection_reason = rejectionReason || null;
     }
@@ -249,6 +247,54 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
 };
 
 /**
+ * Generate OTP for a booking only on the out date and only once
+ * @param {number} bookingId - The booking ID
+ * @returns {Promise<{otp: string}>}
+ */
+export const generateOtpForBooking = async (bookingId) => {
+  try {
+    await ensureWardenContext();
+    const today = new Date().toISOString().split('T')[0];
+    const { data: booking, error: fetchErr } = await supabase
+      .from('outing_requests')
+      .select('id, out_date, status, otp, otp_used')
+      .eq('id', bookingId)
+      .single();
+    if (fetchErr) throw fetchErr;
+    if (!booking) throw new Error('Booking not found');
+    if (booking.out_date !== today) throw new Error('OTP will be available on your out date only');
+    // Ensure the student has been let out (approved)
+    if ((booking.status || '').toLowerCase() !== 'still_out') {
+      throw new Error('OTP can be generated after you are marked as Out by the warden');
+    }
+    // If an unused OTP already exists, reuse it
+    if (booking.otp && booking.otp_used === false) {
+      return { otp: booking.otp };
+    }
+    // Generate a unique OTP
+    let otp = null;
+    let unique = false;
+    while (!unique) {
+      otp = generateOTP();
+      const { data: exists } = await supabase
+        .from('outing_requests')
+        .select('id')
+        .eq('otp', otp);
+      if (!exists || exists.length === 0) unique = true;
+    }
+    const { data: updated, error: updErr } = await supabase
+      .from('outing_requests')
+      .update({ otp, otp_used: false })
+      .eq('id', bookingId)
+      .select();
+    if (updErr) throw updErr;
+    return { otp: updated?.[0]?.otp || otp };
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
  * Update only the in_time field for a booking (admin only)
  * @param {number} bookingId - The booking ID to update
  * @param {string} newInTime - The new in_time value
@@ -256,6 +302,7 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
  */
 export const updateBookingInTime = async (bookingId, newInTime) => {
   try {
+    await ensureWardenContext();
     const { data, error } = await supabase
       .from('outing_requests')
       .update({ in_time: newInTime })
@@ -295,10 +342,59 @@ export async function addOrUpdateStudentInfo(info) {
  */
 export const fetchAllStudentInfo = async () => {
   try {
+    await ensureWardenContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
       .order('student_email', { ascending: true });
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
+ * Fetch limited student info for initial load (performance optimization)
+ * @param {number} limit - Number of records to fetch (default: 20)
+ * @returns {Promise<Array>} - Array of limited student info
+ */
+export const fetchLimitedStudentInfo = async (limit = 20) => {
+  try {
+    await ensureWardenContext();
+    const { data, error } = await supabase
+      .from('student_info')
+      .select('*')
+      .order('student_email', { ascending: true })
+      .limit(limit);
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
+ * Search student info by email or name
+ * @param {string} searchQuery - Search term
+ * @param {number} limit - Maximum results to return (default: 50)
+ * @returns {Promise<Array>} - Array of matching student info
+ */
+export const searchStudentInfo = async (searchQuery, limit = 50) => {
+  try {
+    await ensureWardenContext();
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      return [];
+    }
+    
+    const query = searchQuery.trim().toLowerCase();
+    const { data, error } = await supabase
+      .from('student_info')
+      .select('*')
+      .or(`student_email.ilike.%${query}%,hostel_name.ilike.%${query}%`)
+      .order('student_email', { ascending: true })
+      .limit(limit);
+    
     if (error) throw error;
     return data;
   } catch (error) {
@@ -383,6 +479,7 @@ export const downloadStudentInfoTemplate = async () => {
  */
 export const fetchStudentInfoByEmail = async (email) => {
   try {
+    await ensureWardenContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -445,7 +542,7 @@ export const authenticateWarden = async (username, password) => {
       .from('admins')
       .select('*')
       .eq('username', username)
-      // .eq('role', 'warden') // Temporarily removed for debugging
+      .eq('role', 'warden') // Re-enabled role validation for security
       .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
@@ -464,6 +561,9 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
+    // Set user context for RLS policies
+    await supabase.rpc('set_user_context', { user_name: username });
+    
     const { data, error } = await supabase
       .from('system_users')
       .select('*')
@@ -471,10 +571,34 @@ export const authenticateSystemUser = async (username, password) => {
       .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
-    if (data.password_hash !== password) return null;
+    
+    // Direct password comparison
+    if (data.password !== password) return null;
+    
     return data;
   } catch (error) {
     return null;
+  }
+};
+
+/**
+ * Helper function to maintain user context for warden operations
+ * @param {string} username - The warden's username
+ * @returns {Promise<void>}
+ */
+export const maintainWardenContext = async (username) => {
+  try {
+    console.log('Setting user context for warden:', username);
+    const { data, error } = await supabase.rpc('set_user_context', { user_name: username });
+    if (error) {
+      console.error('Error setting user context:', error);
+      throw error; // Re-throw to stop execution
+    } else {
+      console.log('User context set successfully:', data);
+    }
+  } catch (error) {
+    console.error('Failed to set user context:', error);
+    throw error; // Re-throw to stop execution
   }
 };
 
@@ -500,11 +624,14 @@ export const checkApiHealth = async () => {
 
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
+    const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('outing_requests')
       .select('*')
       .eq('otp', otp)
       .eq('otp_used', false)
+      .eq('status', 'still_out')
+      .gte('in_date', today)
       .single();
     if (error) throw error;
     return data;
@@ -538,6 +665,26 @@ export const banStudent = async (banData) => {
     // Validate required fields
     if (!banData.student_email || !banData.from_date || !banData.till_date || !banData.banned_by) {
       throw new Error('Missing required fields: student_email, from_date, till_date, and banned_by are required.');
+    }
+
+    // Application-level security: Check if user is authorized to ban
+    const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+    const adminEmail = sessionStorage.getItem('adminEmail') || '';
+    
+    // Get admin info if admin is logged in
+    let adminRole = '';
+    if (adminEmail) {
+      try {
+        const adminInfo = await fetchAdminInfoByEmail(adminEmail);
+        adminRole = adminInfo?.role || '';
+      } catch (err) {
+        // Continue if admin info fetch fails
+      }
+    }
+
+    // Only allow superadmin or warden to ban
+    if (!isWardenLoggedIn && adminRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only super admins and wardens can ban students.');
     }
 
     // Check if student is already banned for overlapping dates
@@ -587,6 +734,7 @@ export const banStudent = async (banData) => {
  */
 export const fetchAllBans = async () => {
   try {
+    await ensureWardenContext();
     const { data, error } = await supabase
       .from('ban_students')
       .select('*')
@@ -605,6 +753,7 @@ export const fetchAllBans = async () => {
  */
 export const fetchStudentBans = async (studentEmail) => {
   try {
+    await ensureWardenContext();
     const { data, error } = await supabase
       .from('ban_students')
       .select('*')
