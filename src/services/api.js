@@ -276,30 +276,34 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
         rejection_reason_param: rejectionReason || null
       });
       
-      const { data: rpcData, error } = await supabase
-        .rpc('warden_update_outing_request', {
-          request_id: bookingId,
-          new_status: newStatus,
-          handler_username: wardenUsername,
-          rejection_reason_param: rejectionReason || null
-        });
+      // Use direct update for wardens (simplified approach)
+      console.log('Using direct update for warden:', { bookingId, newStatus, wardenUsername });
       
-      if (error) {
-        console.error('RPC update error:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        throw new Error(`Failed to update request: ${error.message}`);
+      const updateObj = {
+        status: newStatus,
+        handled_by: wardenUsername,
+        handled_at: new Date().toISOString(),
+      };
+      if (newStatus === 'rejected') {
+        updateObj.rejection_reason = rejectionReason || null;
       }
       
-      console.log('RPC update successful:', rpcData);
+      console.log('Update object:', updateObj);
       
-      // RPC returns array, get first element
-      const updatedBooking = rpcData && rpcData.length > 0 ? rpcData[0] : null;
-      if (!updatedBooking) {
-        throw new Error('No data returned from update');
+      const { data: updateResult, error: updateError } = await supabase
+        .from('outing_requests')
+        .update(updateObj)
+        .eq('id', bookingId)
+        .select();
+      
+      if (updateError) {
+        console.error('Direct update failed:', updateError);
+        console.error('Error details:', JSON.stringify(updateError, null, 2));
+        throw new Error(`Failed to update request: ${updateError.message}`);
       }
       
-      // Set data for email processing
-      data = [updatedBooking];
+      console.log('Direct update successful:', updateResult);
+      data = updateResult;
     } else {
       // For super admins, use normal update
       const updateObj = {
