@@ -172,19 +172,24 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
     const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
     
     if (wardenLoggedIn) {
-      console.log('Warden logged in, using application-level filtering');
-      // For wardens, fetch all data and filter at application level
+      console.log('Warden logged in, using RPC function for data fetching');
+      const username = sessionStorage.getItem('wardenUsername');
+      
+      if (!username) {
+        throw new Error('Warden username not found in session');
+      }
+      
+      console.log('Fetching data for warden:', username);
       const { data: allData, error: allError } = await supabase
-        .from('outing_requests')
-        .select('*')
-        .order('out_date', { ascending: false })
-        .order('created_at', { ascending: false });
+        .rpc('get_warden_outing_requests', { warden_username: username });
       
       if (allError) {
+        console.error('Error fetching warden outing requests:', allError);
         throw new Error(`Failed to fetch outing requests: ${allError.message}`);
       }
       
-      console.log('Fetched all data for warden filtering:', allData?.length || 0, 'records');
+      console.log('Fetched warden data:', allData?.length || 0, 'records');
+      console.log('Sample data:', allData?.slice(0, 2));
       
       // Apply application-level filtering based on allowed hostels
       if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
@@ -447,18 +452,24 @@ export const fetchAllStudentInfo = async () => {
     const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
     
     if (wardenLoggedIn) {
-      console.log('Warden logged in, using application-level filtering for student info');
-      // For wardens, fetch all data and filter at application level
+      console.log('Warden logged in, using RPC function for student info');
+      const username = sessionStorage.getItem('wardenUsername');
+      
+      if (!username) {
+        throw new Error('Warden username not found in session');
+      }
+      
+      console.log('Fetching student info for warden:', username);
       const { data: allData, error: allError } = await supabase
-        .from('student_info')
-        .select('*')
-        .order('student_email', { ascending: true });
+        .rpc('get_warden_student_info', { warden_username: username });
       
       if (allError) {
+        console.error('Error fetching warden student info:', allError);
         throw new Error(`Failed to fetch student info: ${allError.message}`);
       }
       
-      console.log('Fetched all student data for warden filtering:', allData?.length || 0, 'records');
+      console.log('Fetched warden student data:', allData?.length || 0, 'records');
+      console.log('Sample student data:', allData?.slice(0, 2));
       
       // Apply application-level filtering based on allowed hostels
       const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
