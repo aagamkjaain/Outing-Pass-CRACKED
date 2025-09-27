@@ -601,13 +601,14 @@ export const banStudent = async (banData) => {
 
     // Application-level security: Check if user is authorized to ban
     const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    const adminEmail = sessionStorage.getItem('adminEmail') || '';
     
-    // Get admin info if admin is logged in
+    // Get current user from Supabase auth
+    const { data: { user } } = await supabase.auth.getUser();
     let adminRole = '';
-    if (adminEmail) {
+    
+    if (user && user.email) {
       try {
-        const adminInfo = await fetchAdminInfoByEmail(adminEmail);
+        const adminInfo = await fetchAdminInfoByEmail(user.email);
         adminRole = adminInfo?.role || '';
       } catch (err) {
         // Continue if admin info fetch fails
