@@ -6,7 +6,7 @@ import './PendingBookings.css';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 
-const PendingBookings = ({ adminRole, adminHostels }) => {
+const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: propWardenHostels }) => {
   console.log('PendingBookings component rendering', { adminRole, adminHostels });
   const [allBookings, setAllBookings] = useState([]); // Store all bookings (unfiltered)
   const [selectedStatus, setSelectedStatus] = useState('waiting');
@@ -32,7 +32,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
 
   // Warden session support
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-  const wardenHostels = wardenLoggedIn ? JSON.parse(sessionStorage.getItem('wardenHostels') || '[]') : [];
+  const wardenHostels = propWardenHostels || [];
   const wardenEmail = wardenLoggedIn ? sessionStorage.getItem('wardenEmail') : null;
 
   const fetchBans = useCallback(async () => {
@@ -61,7 +61,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       
       // For wardens, filter by their assigned hostels
       let filteredBookings = bookingsData;
-      if (wardenLoggedIn && wardenHostels && wardenHostels.length > 0) {
+      if ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) {
         filteredBookings = bookingsData.filter(booking => 
           wardenHostels.includes(booking.hostel_name)
         );
@@ -84,7 +84,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchBans, wardenLoggedIn, wardenHostels]);
+  }, [fetchBans, wardenLoggedIn, isWarden, wardenHostels]);
 
   const searchBookings = useCallback(async (roomNumber) => {
     if (!roomNumber || roomNumber.trim().length < 3) {

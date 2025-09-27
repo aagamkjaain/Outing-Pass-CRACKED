@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import srmLogo from '../assets/Srmseal.png';
 import Toast from './Toast';
 
-const Navbar = ({ user, isAdmin, adminLoading }) => {
+const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'info' });
@@ -99,6 +99,12 @@ const Navbar = ({ user, isAdmin, adminLoading }) => {
           <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
         )}
         {wardenLoggedIn && (
+          <>
+            <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>
+            <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
+          </>
+        )}
+        {!isArchGate && !wardenLoggedIn && !isAdmin && isWarden && user && (
           <>
             <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>
             <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>

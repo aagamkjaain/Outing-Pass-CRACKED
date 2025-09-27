@@ -53,12 +53,14 @@ function reducer(state, action) {
   }
 }
 
-const AdminStudentInfo = () => {
+const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
     studentInfo, editing, form, loading, error, success, search, searchQuery, searchActive, adminEmail,
     adminRole, uploadMessage, uploadError, banModal, banStatuses, unbanLoading
   } = state;
+  
+  const wardenHostels = propWardenHostels || [];
 
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
@@ -99,9 +101,8 @@ const AdminStudentInfo = () => {
       // For wardens, filter by their assigned hostels first
       let filteredData = data;
       const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-      const wardenHostels = wardenLoggedIn ? JSON.parse(sessionStorage.getItem('wardenHostels') || '[]') : [];
       
-      if (wardenLoggedIn && wardenHostels && wardenHostels.length > 0) {
+      if ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) {
         filteredData = data.filter(info => 
           wardenHostels.includes(info.hostel_name)
         );
@@ -119,7 +120,7 @@ const AdminStudentInfo = () => {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [fetchBans]);
+  }, [fetchBans, isWarden, wardenHostels]);
 
   useEffect(() => {
     // Only initialize admin info, don't load student data

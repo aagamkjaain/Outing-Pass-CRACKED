@@ -10,13 +10,14 @@ import { fetchAdminInfoByEmail } from './services/api';
 import ArchGateLogin from './pages/ArchGateLogin';
 import ArchGateOTP from './pages/ArchGateOTP';
 import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
-import WardenLogin from './pages/WardenLogin';
 import './App.css';
 import Toast from './components/Toast';
 
 function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isWarden, setIsWarden] = useState(false);
+  const [wardenHostels, setWardenHostels] = useState([]);
   const [adminRole, setAdminRole] = useState(null);
   const [adminHostels, setAdminHostels] = useState([]);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -93,6 +94,7 @@ function App() {
 
   const checkAdminStatus = async (email) => {
     try {
+      // Check admin status
       const adminInfo = await fetchAdminInfoByEmail(email);
       if (adminInfo) {
         setIsAdmin(true);
@@ -103,10 +105,23 @@ function App() {
         setAdminRole(null);
         setAdminHostels([]);
       }
+      
+      // Check warden status
+      const { fetchWardenInfoByEmail } = await import('./services/api');
+      const wardenInfo = await fetchWardenInfoByEmail(email);
+      if (wardenInfo) {
+        setIsWarden(true);
+        setWardenHostels(wardenInfo.hostels || []);
+      } else {
+        setIsWarden(false);
+        setWardenHostels([]);
+      }
     } catch (err) {
       setIsAdmin(false);
       setAdminRole(null);
       setAdminHostels([]);
+      setIsWarden(false);
+      setWardenHostels([]);
     }
   };
 
@@ -120,7 +135,7 @@ function App() {
     <Router>  
       <div className="app">
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
-        <Navbar user={user} isAdmin={isAdmin} adminLoading={adminLoading} />
+        <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
         <main className="main-content">
           <Routes>
             <Route 
@@ -129,7 +144,7 @@ function App() {
                 wardenLoggedIn
                   ? <PendingBookings />
                   : user
-                    ? (adminLoading ? <div>Checking admin status...</div> : (isAdmin ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} /> : <Login />))
+                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />
               }
             />
@@ -144,11 +159,10 @@ function App() {
                 wardenLoggedIn
                   ? <AdminStudentInfo />
                   : user
-                    ? (adminLoading ? <div>Checking admin status...</div> : (isAdmin ? <AdminStudentInfo /> : <Login />))
+                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />
               }
             />
-            <Route path="/warden-login" element={<WardenLogin />} />
             <Route path="/" element={user ? <SlotBooking /> : <Login />} />
             <Route path="/arch-gate-login" element={<ArchGateLogin />} />
             <Route path="/arch-otp" element={<ArchGateOTP />} />
