@@ -568,6 +568,10 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
+    console.log('=== WARDEN AUTHENTICATION DEBUG ===');
+    console.log('Username:', username);
+    console.log('Password length:', password.length);
+    
     // First, try to authenticate without RLS (for login purposes)
     const { data, error } = await supabase
       .from('system_users')
@@ -575,17 +579,41 @@ export const authenticateSystemUser = async (username, password) => {
       .eq('username', username)
       .maybeSingle();
     
-    if (error && error.code !== 'PGRST116') throw error;
-    if (!data) return null;
+    console.log('Query result:', { data, error });
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('Database error:', error);
+      throw error;
+    }
+    if (!data) {
+      console.log('No data found for username:', username);
+      return null;
+    }
+    
+    console.log('Found user data:', { username: data.username, role: data.role });
+    console.log('Stored password length:', data.password.length);
+    console.log('Entered password length:', password.length);
+    console.log('Password match:', data.password === password);
     
     // Direct password comparison
-    if (data.password !== password) return null;
+    if (data.password !== password) {
+      console.log('Password mismatch');
+      return null;
+    }
+    
+    console.log('Authentication successful, setting context...');
     
     // If authentication successful, set user context for future RLS operations
-    await supabase.rpc('set_user_context', { user_name: username });
+    const { error: contextError } = await supabase.rpc('set_user_context', { user_name: username });
+    if (contextError) {
+      console.error('Context error:', contextError);
+    } else {
+      console.log('Context set successfully');
+    }
     
     return data;
   } catch (error) {
+    console.error('Authentication error:', error);
     return null;
   }
 };
