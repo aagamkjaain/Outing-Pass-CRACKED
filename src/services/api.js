@@ -252,6 +252,8 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       throw new Error('Approver name is required');
     }
     
+    let data; // Declare data variable at the beginning
+    
     // Check if warden is logged in - if so, use RPC function
     const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
     
@@ -287,7 +289,7 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       }
       
       // Set data for email processing
-      const data = [updatedBooking];
+      data = [updatedBooking];
     } else {
       // For super admins, use normal update
       let newStatus = action;
@@ -300,7 +302,7 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       if (newStatus === 'rejected') {
         updateObj.rejection_reason = rejectionReason || null;
       }
-      const { data, error } = await supabase
+      const { data: updateResult, error } = await supabase
         .from('outing_requests')
         .update(updateObj)
         .eq('id', bookingId)
@@ -308,6 +310,7 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       if (error) {
         throw new Error(`Supabase error: ${error.message || error}`);
       }
+      data = updateResult;
     }
 
     let emailResult = { sent: false, error: null };
