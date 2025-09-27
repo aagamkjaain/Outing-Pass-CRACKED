@@ -125,21 +125,21 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   }, [navigate, adminRole, isWarden, fetchAllBookings]);
 
   useEffect(() => {
-    // Initialize user authentication
+    // Initialize user authentication only once
     if (wardenLoggedIn) {
-      // For wardens, load data based on status
+      // For wardens, only load data on initial mount
       if (selectedStatus === 'waiting') {
         loadWaitingData();
       } else if (selectedStatus === 'still_out') {
         fetchAllBookings(wardenEmail);
       }
     } else {
-      // For admins, load data for waiting and still_out tabs only
+      // For admins, only load data on initial mount
       if (selectedStatus === 'waiting' || selectedStatus === 'still_out') {
         checkAdminAndFetchBookings();
       }
     }
-  }, [wardenLoggedIn, selectedStatus]);
+  }, [wardenLoggedIn]); // Removed selectedStatus from dependencies to prevent auto-reloading
 
   const loadWaitingData = useCallback(async () => {
     try {
@@ -168,21 +168,10 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     setSearchQuery('');
     setSearchActive(false);
     
-    // Load appropriate data based on status
-    if (status === 'waiting') {
-      loadWaitingData();
-    } else if (status === 'confirmed' || status === 'rejected') {
-      // For confirmed and rejected, don't load data automatically - require search
-      setAllBookings([]);
-    } else {
-      // For other statuses (still_out), load all data
-      if (wardenLoggedIn) {
-        fetchAllBookings(wardenEmail);
-      } else {
-        fetchAllBookings(user?.email);
-      }
-    }
-  }, [loadWaitingData, fetchAllBookings, wardenLoggedIn, wardenEmail, user?.email]);
+    // Don't auto-load data when switching tabs - let user manually refresh if needed
+    // This prevents unnecessary API calls and improves performance
+    setAllBookings([]);
+  }, []);
 
   const handleWardenAction = useCallback((bookingId, action) => {
     if (wardenLoggedIn) {
@@ -718,7 +707,33 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           ))}
         </div>
       ) : (
-        <div className="no-bookings">No {selectedStatus} requests available</div>
+        <div className="no-bookings" style={{ textAlign: 'center', padding: '20px' }}>
+          <p>No {selectedStatus} requests available</p>
+          <button 
+            onClick={() => {
+              if (selectedStatus === 'waiting') {
+                loadWaitingData();
+              } else if (selectedStatus === 'still_out') {
+                if (wardenLoggedIn) {
+                  fetchAllBookings(wardenEmail);
+                } else {
+                  fetchAllBookings(user?.email);
+                }
+              }
+            }}
+            style={{
+              background: '#007bff',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginTop: '10px'
+            }}
+          >
+            Refresh {selectedStatus} Data
+          </button>
+        </div>
       )}
       {rejectionModal.open && (
         <Modal onClose={() => setRejectionModal({ open: false, bookingId: null })}>
