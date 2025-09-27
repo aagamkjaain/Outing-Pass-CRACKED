@@ -669,16 +669,26 @@ export const banStudent = async (banData) => {
 
     // Application-level security: Check if user is authorized to ban
     const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    const adminEmail = sessionStorage.getItem('adminEmail') || '';
     
-    // Get admin info if admin is logged in
+    // Get admin info - check both sessionStorage and Supabase auth
     let adminRole = '';
-    if (adminEmail) {
+    let adminEmail = '';
+    
+    if (isWardenLoggedIn) {
+      // Warden is logged in via sessionStorage
+      adminEmail = sessionStorage.getItem('wardenEmail') || '';
+      adminRole = sessionStorage.getItem('wardenRole') || 'warden';
+    } else {
+      // Check if user is authenticated via Supabase Auth (super admin)
       try {
-        const adminInfo = await fetchAdminInfoByEmail(adminEmail);
-        adminRole = adminInfo?.role || '';
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          adminEmail = user.email;
+          const adminInfo = await fetchAdminInfoByEmail(user.email);
+          adminRole = adminInfo?.role || '';
+        }
       } catch (err) {
-        // Continue if admin info fetch fails
+        // Continue if auth check fails
       }
     }
 
