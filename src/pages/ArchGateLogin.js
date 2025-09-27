@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authenticateWarden } from '../services/api';
+import { authenticateArchGate } from '../services/api';
 
 export default function ArchGateLogin() {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ export default function ArchGateLogin() {
     e.preventDefault();
       setError('');
     try {
-      const user = await authenticateWarden(email, password);
+      const user = await authenticateArchGate(email, password);
       if (user && user.role === 'arch_gate') {
       sessionStorage.setItem('archGateLoggedIn', 'true');
         sessionStorage.setItem('archGateId', user.email);

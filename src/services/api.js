@@ -492,6 +492,25 @@ export const fetchAdminInfoByEmail = async (email) => {
 };
 
 /**
+ * Fetch warden info by email
+ * @param {string} email
+ * @returns {Promise<Object|null>} - Warden info or null if not found
+ */
+export const fetchWardenInfoByEmail = async (email) => {
+  try {
+    const { data, error } = await supabase
+      .from('wardens')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
  * Delete student info by email (superadmin only)
  * @param {string} student_email - The student's email
  * @returns {Promise<Object>} - Deletion confirmation
@@ -510,23 +529,68 @@ export const deleteStudentInfo = async (student_email) => {
 };
 
 /**
- * Authenticate warden or arch_gate by email and password
+ * Authenticate warden by email (using Supabase Auth)
  * @param {string} email
  * @param {string} password
- * @returns {Promise<Object|null>} - User info or null if not found/invalid
+ * @returns {Promise<Object|null>} - Warden info or null if not found/invalid
  */
 export const authenticateWarden = async (email, password) => {
   try {
+    // First authenticate with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password: password
+    });
+    
+    if (authError || !authData.user) {
+      return null;
+    }
+    
+    // Check if user exists in wardens table
     const { data, error } = await supabase
-      .from('admins')
+      .from('wardens')
       .select('*')
       .eq('email', email.toLowerCase())
-      .in('role', ['warden', 'arch_gate']) // Allow both warden and arch_gate roles
       .maybeSingle();
+      
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
-    if (data.password !== password) return null;
-    return data;
+    
+    return { ...data, role: 'warden' }; // Add role for compatibility
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
+ * Authenticate arch_gate by email (using Supabase Auth)
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<Object|null>} - Arch gate info or null if not found/invalid
+ */
+export const authenticateArchGate = async (email, password) => {
+  try {
+    // First authenticate with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password: password
+    });
+    
+    if (authError || !authData.user) {
+      return null;
+    }
+    
+    // Check if user exists in arch_gate table
+    const { data, error } = await supabase
+      .from('arch_gate')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+      
+    if (error && error.code !== 'PGRST116') throw error;
+    if (!data) return null;
+    
+    return { ...data, role: 'arch_gate' }; // Add role for compatibility
   } catch (error) {
     return null;
   }
@@ -605,6 +669,7 @@ export const banStudent = async (banData) => {
     // Get current user from Supabase auth
     const { data: { user } } = await supabase.auth.getUser();
     let adminRole = '';
+    let isWarden = false;
     
     if (user && user.email) {
       try {
@@ -614,9 +679,21 @@ export const banStudent = async (banData) => {
         // Continue if admin info fetch fails
       }
     }
+    
+    // Check if user is a warden
+    if (isWardenLoggedIn) {
+      isWarden = true;
+    } else if (user && user.email) {
+      try {
+        const wardenInfo = await fetchWardenInfoByEmail(user.email);
+        isWarden = !!wardenInfo;
+      } catch (err) {
+        // Continue if warden info fetch fails
+      }
+    }
 
     // Only allow superadmin or warden to ban
-    if (!isWardenLoggedIn && adminRole !== 'superadmin') {
+    if (!isWarden && adminRole !== 'superadmin') {
       throw new Error('Unauthorized: Only super admins and wardens can ban students.');
     }
 

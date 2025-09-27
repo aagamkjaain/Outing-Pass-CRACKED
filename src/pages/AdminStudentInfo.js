@@ -95,10 +95,23 @@ const AdminStudentInfo = () => {
     dispatch({ type: 'SET_FIELD', field: 'error', value: '' });
     try {
       const data = await fetchAllStudentInfo();
-      // Filter by search query on client side
-      const filteredData = data.filter(info => 
+      
+      // For wardens, filter by their assigned hostels first
+      let filteredData = data;
+      const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+      const wardenHostels = wardenLoggedIn ? JSON.parse(sessionStorage.getItem('wardenHostels') || '[]') : [];
+      
+      if (wardenLoggedIn && wardenHostels && wardenHostels.length > 0) {
+        filteredData = data.filter(info => 
+          wardenHostels.includes(info.hostel_name)
+        );
+      }
+      
+      // Then filter by search query
+      filteredData = filteredData.filter(info => 
         info.student_email && info.student_email.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      
       dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: filteredData || [] });
       await fetchBans();
     } catch (err) {

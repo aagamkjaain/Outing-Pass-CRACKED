@@ -19,6 +19,7 @@ const initialState = {
     name: '',
     email: '',
     roomNumber: '',
+    hostelName: '',
     outDate: '',
     outTime: '',
     inDate: '',
@@ -121,7 +122,7 @@ const SlotBooking = () => {
             type: 'SET_USER_INFO', 
             payload: { 
               user, 
-              formDetails: { email, name, parentEmail, parentPhone } 
+              formDetails: { email, name, roomNumber, hostelName, parentEmail, parentPhone } 
             }
           });
           const ban = await checkAndAutoUnban(email);
@@ -176,7 +177,7 @@ const SlotBooking = () => {
       return;
     }
     try {
-      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
+      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.hostelName || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
         throw new Error('Please fill all required fields.');
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -186,7 +187,7 @@ const SlotBooking = () => {
       const bookingData = {
         name: bookingForm.name,
         email: bookingForm.email,
-        hostelName: 'Hostel A', // Default hostel name
+        hostelName: bookingForm.hostelName,
         roomNumber: bookingForm.roomNumber,
         outDate: bookingForm.outDate,
         outTime: bookingForm.outTime,
@@ -333,6 +334,18 @@ const SlotBooking = () => {
             disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
           />
 
+        <label htmlFor="hostelName">Hostel Name:</label>
+          <input
+            type="text"
+            id="hostelName"
+            name="hostelName"
+            value={bookingForm.hostelName}
+            onChange={handleBookingChange}
+            required
+            placeholder="Enter your hostel name"
+            disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
+          />
+
         <div className="form-group">
           <label htmlFor="outDate">Out Date:</label>
           <input
@@ -428,6 +441,7 @@ const SlotBooking = () => {
               !bookingForm.name ||
               !bookingForm.email ||
               !bookingForm.roomNumber ||
+              !bookingForm.hostelName ||
               !bookingForm.outDate ||
               !bookingForm.outTime ||
               !bookingForm.inDate ||

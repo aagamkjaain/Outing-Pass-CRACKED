@@ -59,14 +59,22 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
         return;
       }
       
-      // Store all bookings
-      setAllBookings(bookingsData);
+      // For wardens, filter by their assigned hostels
+      let filteredBookings = bookingsData;
+      if (wardenLoggedIn && wardenHostels && wardenHostels.length > 0) {
+        filteredBookings = bookingsData.filter(booking => 
+          wardenHostels.includes(booking.hostel_name)
+        );
+      }
       
-      // Calculate counts from all data
-      const waiting = bookingsData.filter(booking => booking.status === 'waiting').length;
-      const still_out = bookingsData.filter(booking => booking.status === 'still_out').length;
-      const confirmed = bookingsData.filter(booking => booking.status === 'confirmed').length;
-      const rejected = bookingsData.filter(booking => booking.status === 'rejected').length;
+      // Store filtered bookings
+      setAllBookings(filteredBookings);
+      
+      // Calculate counts from filtered data
+      const waiting = filteredBookings.filter(booking => booking.status === 'waiting').length;
+      const still_out = filteredBookings.filter(booking => booking.status === 'still_out').length;
+      const confirmed = filteredBookings.filter(booking => booking.status === 'confirmed').length;
+      const rejected = filteredBookings.filter(booking => booking.status === 'rejected').length;
       setCounts({ waiting, still_out, confirmed, rejected });
       
       setError(null);
@@ -76,7 +84,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchBans]);
+  }, [fetchBans, wardenLoggedIn, wardenHostels]);
 
   const searchBookings = useCallback(async (roomNumber) => {
     if (!roomNumber || roomNumber.trim().length < 3) {
