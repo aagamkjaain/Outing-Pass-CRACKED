@@ -109,8 +109,12 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   const processBookingAction = useCallback(async (bookingId, action, reason) => {
     try {
       setLoading(true);
-      let emailToUse = wardenLoggedIn ? wardenEmail : null;
-      if (!wardenLoggedIn) {
+      let emailToUse = null;
+      if (wardenLoggedIn) {
+        // For wardens, use the warden username as the handler
+        emailToUse = sessionStorage.getItem('wardenUsername');
+      } else {
+        // For super admins, use their email
         const { data: { user } } = await supabase.auth.getUser();
         emailToUse = user?.email;
       }
