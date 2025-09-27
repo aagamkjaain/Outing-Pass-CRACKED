@@ -23,6 +23,8 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   const [banStatuses, setBanStatuses] = useState({}); // { student_email: banObject or null }
   const [rejectionModal, setRejectionModal] = useState({ open: false, bookingId: null });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [wardenNameModal, setWardenNameModal] = useState({ open: false, bookingId: null, action: null });
+  const [wardenName, setWardenName] = useState('');
   // Search functionality
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
@@ -106,13 +108,34 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     // No API call needed - just change the status filter
   }, []);
 
-  const processBookingAction = useCallback(async (bookingId, action, reason) => {
+  const handleWardenAction = useCallback((bookingId, action) => {
+    if (wardenLoggedIn) {
+      // For wardens, show name input popup
+      setWardenNameModal({ open: true, bookingId, action });
+    } else {
+      // For super admins, proceed directly
+      processBookingAction(bookingId, action, null);
+    }
+  }, [wardenLoggedIn]);
+
+  const handleWardenNameSubmit = useCallback(async () => {
+    if (!wardenName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    
+    setWardenNameModal({ open: false, bookingId: null, action: null });
+    await processBookingAction(wardenNameModal.bookingId, wardenNameModal.action, null, wardenName);
+    setWardenName('');
+  }, [wardenName, wardenNameModal]);
+
+  const processBookingAction = useCallback(async (bookingId, action, reason, wardenName = null) => {
     try {
       setLoading(true);
       let emailToUse = null;
       if (wardenLoggedIn) {
-        // For wardens, use the warden username as the handler
-        emailToUse = sessionStorage.getItem('wardenUsername');
+        // For wardens, use the provided warden name
+        emailToUse = wardenName || sessionStorage.getItem('wardenUsername');
       } else {
         // For super admins, use their email
         const { data: { user } } = await supabase.auth.getUser();
@@ -129,6 +152,12 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       const result = await handleBookingAction(bookingId, newStatus, emailToUse, reason);
       // Refresh all data after any action
       await fetchAllBookings(emailToUse);
+      
+      // Force refresh the page data
+      setAllBookings([]);
+      setTimeout(() => {
+        fetchAllBookings(emailToUse);
+      }, 100);
       // Only switch tab if confirming, not for rejection
       if (newStatus === 'still_out' || newStatus === 'confirmed') {
         setSelectedStatus(newStatus);
@@ -363,10 +392,14 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
 
 
   // Add handler factories at the top of the component
-  const handleProcessBookingConfirm = useCallback((id) => () => processBookingAction(id, 'confirm'), [processBookingAction]);
+  const handleProcessBookingConfirm = useCallback((id) => () => handleWardenAction(id, 'confirm'), [handleWardenAction]);
   const handleProcessBookingReject = useCallback((id) => () => {
-    setRejectionModal({ open: true, bookingId: id });
-  }, []);
+    if (wardenLoggedIn) {
+      handleWardenAction(id, 'reject');
+    } else {
+      setRejectionModal({ open: true, bookingId: id });
+    }
+  }, [wardenLoggedIn, handleWardenAction]);
   const handleRejectionSubmit = async () => {
     await processBookingAction(rejectionModal.bookingId, 'reject', rejectionReason);
     setRejectionModal({ open: false, bookingId: null });
@@ -580,6 +613,30 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
           />
           <button onClick={handleRejectionSubmit} style={{ background: '#dc3545', color: 'white', marginRight: 8 }}>Reject</button>
           <button onClick={() => setRejectionModal({ open: false, bookingId: null })}>Cancel</button>
+        </Modal>
+      )}
+      {wardenNameModal.open && (
+        <Modal onClose={() => setWardenNameModal({ open: false, bookingId: null, action: null })}>
+          <h3>Enter Your Name</h3>
+          <p>Please enter your name for the booking action:</p>
+          <input
+            type="text"
+            value={wardenName}
+            onChange={e => setWardenName(e.target.value)}
+            placeholder="Enter your name..."
+            style={{ width: '100%', padding: 8, marginBottom: 16, border: '1px solid #ccc', borderRadius: 4 }}
+          />
+          <button 
+            onClick={handleWardenNameSubmit} 
+            style={{ 
+              background: wardenNameModal.action === 'confirm' ? '#28a745' : '#dc3545', 
+              color: 'white', 
+              marginRight: 8 
+            }}
+          >
+            {wardenNameModal.action === 'confirm' ? 'Confirm' : 'Reject'}
+          </button>
+          <button onClick={() => setWardenNameModal({ open: false, bookingId: null, action: null })}>Cancel</button>
         </Modal>
       )}
     </div>
