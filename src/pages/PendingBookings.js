@@ -46,14 +46,9 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   const fetchAllBookings = useCallback(async (adminEmail) => {
     try {
       setLoading(true);
-      console.log('fetchAllBookings called with adminEmail:', adminEmail); // Debug log
-      console.log('Warden hostels:', wardenHostels); // Debug log
-      
       // Pass warden hostels for filtering
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
       const bookingsData = await fetchPendingBookings(adminEmail, allowedHostels) || [];
-      
-      console.log('Bookings data received:', bookingsData.length, 'records'); // Debug log
       
       if (!Array.isArray(bookingsData)) {
         setError('Supabase returned non-array data: ' + JSON.stringify(bookingsData));
@@ -74,12 +69,11 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       setError(null);
       await fetchBans();
     } catch (error) {
-      console.error('Error in fetchAllBookings:', error); // Debug log
       setError('Failed to fetch bookings: ' + (error.message || JSON.stringify(error)));
     } finally {
       setLoading(false);
     }
-  }, [fetchBans, wardenLoggedIn, wardenHostels]);
+  }, [fetchBans]);
 
   const checkAdminAndFetchBookings = useCallback(async () => {
     try {

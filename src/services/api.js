@@ -15,59 +15,34 @@ const handleError = (error) => {
 
 // Best-effort: set per-request user context so RLS works without JWT
 async function ensureUserContext() {
-  console.log('ensureUserContext called'); // Debug log
-  
   try {
     if (typeof window === 'undefined') {
-      console.log('Window is undefined, skipping context setting');
       return;
     }
     
     // Check if warden is logged in
     const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
-    console.log('Warden logged in:', wardenLoggedIn); // Debug log
     
     if (wardenLoggedIn) {
-      const username = sessionStorage.getItem('wardenUsername') || '';
-      console.log('Warden username from session:', username); // Debug log
-      
-      if (username) {
-        console.log('Setting context for warden:', username); // Debug log
-        const { error } = await supabase.rpc('set_user_context', { user_name: username });
-        
-        if (error) {
-          console.error('Error setting context:', error);
-          // Continue anyway - context might not be critical
-        } else {
-          console.log('Context set successfully');
-        }
-        
-        // Skip context verification to prevent infinite loop
-        console.log('Skipping context verification to prevent loop');
-        return;
-      } else {
-        console.log('No username found in session storage');
-      }
+      // Skip context setting for now due to network issues
+      console.log('Warden logged in - skipping context setting due to network issues');
+      return;
     }
     
     // Check if super admin is logged in via Supabase Auth
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
-        console.log('Super admin logged in:', user.email);
         const adminInfo = await fetchAdminInfoByEmail(user.email);
         if (adminInfo?.role === 'superadmin') {
-          console.log('Super admin context - no context setting needed');
           return;
         }
       }
     } catch (err) {
-      console.log('Super admin check failed:', err);
+      // Continue if auth check fails
     }
-    
-    console.log('No user context to set');
   } catch (e) {
-    console.error('Error in ensureUserContext:', e); // Debug log
+    // ignore
   }
 }
 
@@ -173,10 +148,7 @@ export const deleteBookedSlot = async (slotId) => {
  */
 export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
-    console.log('fetchPendingBookings called with:', { adminEmail, allowedHostels });
-    
     await ensureUserContext();
-    console.log('ensureUserContext completed');
     
     const query = supabase
       .from('outing_requests')
@@ -186,20 +158,15 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
 
     // Apply server-side hostel restriction when provided and not 'all'
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
-      console.log('Applying hostel filter:', allowedHostels);
       // Supabase supports in() for filtering
       query.in('hostel_name', allowedHostels);
     }
 
-    console.log('Executing query...');
     const { data, error } = await query;
     
     if (error) {
-      console.error('Supabase query error:', error);
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
-    
-    console.log('Query successful, returned', data?.length || 0, 'records');
     
     if (!data) {
       throw new Error('No outing request data available');
@@ -207,7 +174,6 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
     
     return data;
   } catch (error) {
-    console.error('fetchPendingBookings error:', error);
     throw handleError(error);
   }
 };
@@ -659,9 +625,6 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
-    // Set user context for RLS policies
-    await supabase.rpc('set_user_context', { user_name: username });
-    
     const { data, error } = await supabase
       .from('system_users')
       .select('*')
@@ -675,6 +638,7 @@ export const authenticateSystemUser = async (username, password) => {
     
     return data;
   } catch (error) {
+    console.error('Warden authentication error:', error);
     return null;
   }
 };
