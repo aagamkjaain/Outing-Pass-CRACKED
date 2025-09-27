@@ -127,13 +127,21 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     if (wardenLoggedIn) {
       // For wardens, only load data when searching or when specific status is selected
       if (selectedStatus === 'waiting') {
-        // For waiting tab, show only today's requests and late students
+        // For waiting tab, show only today's requests
         loadWaitingData();
+      } else if (selectedStatus === 'still_out') {
+        // For still_out tab, load all data
+        fetchAllBookings(wardenEmail);
       }
+      // For confirmed and rejected, don't load data automatically
     } else {
-      checkAdminAndFetchBookings();
+      // For admins, only load data for waiting and still_out tabs
+      if (selectedStatus === 'waiting' || selectedStatus === 'still_out') {
+        checkAdminAndFetchBookings();
+      }
+      // For confirmed and rejected, don't load data automatically
     }
-  }, [wardenLoggedIn, wardenEmail, selectedStatus]);
+  }, [wardenLoggedIn, wardenEmail, selectedStatus, loadWaitingData, fetchAllBookings, checkAdminAndFetchBookings]);
 
   const loadWaitingData = useCallback(async () => {
     try {
@@ -165,11 +173,11 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     // Load appropriate data based on status
     if (status === 'waiting') {
       loadWaitingData();
-    } else if (status === 'confirmed') {
-      // For confirmed, don't load data automatically - require search
+    } else if (status === 'confirmed' || status === 'rejected') {
+      // For confirmed and rejected, don't load data automatically - require search
       setAllBookings([]);
     } else {
-      // For other statuses, load all data
+      // For other statuses (still_out), load all data
       if (wardenLoggedIn) {
         fetchAllBookings(wardenEmail);
       } else {
@@ -567,6 +575,12 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       {!searchActive && selectedStatus === 'confirmed' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#d1ecf1', borderRadius: 4, textAlign: 'center' }}>
           <p><strong>Confirmed Bookings:</strong> Enter a room number to search for confirmed bookings.</p>
+        </div>
+      )}
+      
+      {!searchActive && selectedStatus === 'rejected' && (
+        <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f8d7da', borderRadius: 4, textAlign: 'center' }}>
+          <p><strong>Rejected Bookings:</strong> Enter a room number to search for rejected bookings.</p>
         </div>
       )}
       
