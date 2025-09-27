@@ -271,8 +271,8 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
         .rpc('warden_update_outing_request', {
           request_id: bookingId,
           new_status: newStatus,
-          handled_by: wardenUsername,
-          rejection_reason: rejectionReason || null
+          handler_username: wardenUsername,
+          rejection_reason_param: rejectionReason || null
         });
       
       if (error) {
