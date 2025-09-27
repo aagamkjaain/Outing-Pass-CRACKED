@@ -279,30 +279,64 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       // Use RPC function for warden updates (same approach as login)
       console.log('Using RPC function for warden update:', { bookingId, newStatus, wardenUsername });
       
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('warden_update_outing_request', {
-          request_id: bookingId,
-          new_status: newStatus,
-          handler_username: wardenUsername,
-          rejection_reason_param: rejectionReason || null
-        });
-      
-      if (rpcError) {
-        console.error('RPC update error:', rpcError);
-        console.error('Error details:', JSON.stringify(rpcError, null, 2));
-        throw new Error(`Failed to update request: ${rpcError.message}`);
+      try {
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('warden_update_outing_request', {
+            request_id: bookingId,
+            new_status: newStatus,
+            handler_username: wardenUsername,
+            rejection_reason_param: rejectionReason || null
+          });
+        
+        console.log('RPC response:', { rpcData, rpcError });
+        
+        if (rpcError) {
+          console.error('RPC update error:', rpcError);
+          console.error('Error details:', JSON.stringify(rpcError, null, 2));
+          throw new Error(`Failed to update request: ${rpcError.message}`);
+        }
+        
+        console.log('RPC update successful:', rpcData);
+        
+        // RPC returns array, get first element
+        const updatedBooking = rpcData && rpcData.length > 0 ? rpcData[0] : null;
+        if (!updatedBooking) {
+          throw new Error('No data returned from update');
+        }
+        
+        // Set data for email processing
+        data = [updatedBooking];
+        
+      } catch (rpcError) {
+        console.error('RPC function call failed:', rpcError);
+        console.error('RPC error details:', JSON.stringify(rpcError, null, 2));
+        
+        // Fallback to direct update if RPC fails
+        console.log('Falling back to direct update...');
+        
+        const updateObj = {
+          status: newStatus,
+          handled_by: wardenUsername,
+          handled_at: new Date().toISOString(),
+        };
+        if (newStatus === 'rejected') {
+          updateObj.rejection_reason = rejectionReason || null;
+        }
+        
+        const { data: updateResult, error: updateError } = await supabase
+          .from('outing_requests')
+          .update(updateObj)
+          .eq('id', bookingId)
+          .select();
+        
+        if (updateError) {
+          console.error('Direct update also failed:', updateError);
+          throw new Error(`Failed to update request: ${updateError.message}`);
+        }
+        
+        console.log('Direct update successful:', updateResult);
+        data = updateResult;
       }
-      
-      console.log('RPC update successful:', rpcData);
-      
-      // RPC returns array, get first element
-      const updatedBooking = rpcData && rpcData.length > 0 ? rpcData[0] : null;
-      if (!updatedBooking) {
-        throw new Error('No data returned from update');
-      }
-      
-      // Set data for email processing
-      data = [updatedBooking];
     } else {
       // For super admins, use normal update
       const updateObj = {
