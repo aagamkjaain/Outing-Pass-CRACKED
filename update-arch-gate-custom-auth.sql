@@ -22,21 +22,7 @@ ALTER TABLE arch_gate ALTER COLUMN email DROP NOT NULL;
 INSERT INTO arch_gate (username, password) VALUES
 ('gatekeeper1', 'gate123');
 
--- 6. Update RLS policies to use username instead of email
--- Drop existing policies first
-DROP POLICY IF EXISTS "superadmins_read_all_arch_gate" ON arch_gate;
-DROP POLICY IF EXISTS "arch_gate_read_own_record" ON arch_gate;
-DROP POLICY IF EXISTS "superadmins_insert_arch_gate" ON arch_gate;
-DROP POLICY IF EXISTS "superadmins_update_arch_gate" ON arch_gate;
-DROP POLICY IF EXISTS "superadmins_delete_arch_gate" ON arch_gate;
-
-
--- Arch gate users can read their own record (by username)
-CREATE POLICY "arch_gate_read_own_record" ON arch_gate
-  FOR SELECT
-  TO authenticated
-  USING (username = get_user_username());
-
+-- 6. Create helper functions first (before creating policies)
 CREATE OR REPLACE FUNCTION get_user_username()
 RETURNS TEXT
 LANGUAGE SQL
@@ -59,18 +45,32 @@ AS $$
   );
 $$;
 
--- 9. Verify the updated table structure
+-- 7. Update RLS policies to use username instead of email
+-- Drop existing policies first
+DROP POLICY IF EXISTS "superadmins_read_all_arch_gate" ON arch_gate;
+DROP POLICY IF EXISTS "arch_gate_read_own_record" ON arch_gate;
+DROP POLICY IF EXISTS "superadmins_insert_arch_gate" ON arch_gate;
+DROP POLICY IF EXISTS "superadmins_update_arch_gate" ON arch_gate;
+DROP POLICY IF EXISTS "superadmins_delete_arch_gate" ON arch_gate;
+
+-- Arch gate users can read their own record (by username)
+CREATE POLICY "arch_gate_read_own_record" ON arch_gate
+  FOR SELECT
+  TO authenticated
+  USING (username = get_user_username());
+
+-- 8. Verify the updated table structure
 SELECT 'Updated arch_gate table structure:' as info;
 SELECT column_name, data_type, is_nullable 
 FROM information_schema.columns 
 WHERE table_name = 'arch_gate' 
 ORDER BY ordinal_position;
 
--- 10. Show current arch_gate users
+-- 9. Show current arch_gate users
 SELECT 'Current arch_gate users:' as info;
 SELECT id, username FROM arch_gate;
 
--- 11. Summary
+-- 10. Summary
 SELECT 
   'Arch Gate Custom Auth Update Complete!' as status,
   'Arch gate now uses username/password authentication' as description,
