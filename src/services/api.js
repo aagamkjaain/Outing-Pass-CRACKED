@@ -23,7 +23,12 @@ async function ensureUserContext() {
     if (wardenLoggedIn) {
       const username = sessionStorage.getItem('wardenUsername') || '';
       if (username) {
+        console.log('Setting context for warden:', username); // Debug log
         await supabase.rpc('set_user_context', { user_name: username });
+        
+        // Verify context was set
+        const { data: contextData } = await supabase.rpc('get_user_name');
+        console.log('Context verification:', contextData); // Debug log
         return;
       }
     }
@@ -42,7 +47,7 @@ async function ensureUserContext() {
       // Continue if auth check fails
     }
   } catch (e) {
-    // ignore
+    console.error('Error setting user context:', e); // Debug log
   }
 }
 
