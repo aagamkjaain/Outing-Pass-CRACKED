@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authenticateArchGate } from '../services/api';
 
 export default function ArchGateLogin() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -12,13 +12,13 @@ export default function ArchGateLogin() {
     e.preventDefault();
       setError('');
     try {
-      const user = await authenticateArchGate(email, password);
+      const user = await authenticateArchGate(username, password);
       if (user && user.role === 'arch_gate') {
       sessionStorage.setItem('archGateLoggedIn', 'true');
-        sessionStorage.setItem('archGateId', user.email);
+        sessionStorage.setItem('archGateId', user.username);
       navigate('/arch-otp');
     } else {
-      setError('Invalid email or password');
+      setError('Invalid username or password');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
@@ -30,8 +30,8 @@ export default function ArchGateLogin() {
       <form onSubmit={handleSubmit} style={{border:'1px solid #ccc',padding:32,borderRadius:8,minWidth:320,boxShadow:'0 2px 8px #0001'}}>
         <h2>Custom Login</h2>
         <div style={{marginBottom:16}}>
-          <label>Email<br/>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required style={{width:'100%',padding:8}} />
+          <label>Username<br/>
+            <input type="text" value={username} onChange={e=>setUsername(e.target.value)} required style={{width:'100%',padding:8}} />
           </label>
         </div>
         <div style={{marginBottom:16}}>

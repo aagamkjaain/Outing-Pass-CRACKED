@@ -598,28 +598,19 @@ export const authenticateWarden = async (email, password) => {
 };
 
 /**
- * Authenticate arch_gate by email (using Supabase Auth)
- * @param {string} email
+ * Authenticate arch_gate by username and password (custom authentication)
+ * @param {string} username
  * @param {string} password
  * @returns {Promise<Object|null>} - Arch gate info or null if not found/invalid
  */
-export const authenticateArchGate = async (email, password) => {
+export const authenticateArchGate = async (username, password) => {
   try {
-    // First authenticate with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase(),
-      password: password
-    });
-    
-    if (authError || !authData.user) {
-      return null;
-    }
-    
-    // Check if user exists in arch_gate table
+    // Check if user exists in arch_gate table with matching username and password
     const { data, error } = await supabase
       .from('arch_gate')
       .select('*')
-      .eq('email', email.toLowerCase())
+      .eq('username', username)
+      .eq('password', password)
       .maybeSingle();
       
     if (error && error.code !== 'PGRST116') throw error;

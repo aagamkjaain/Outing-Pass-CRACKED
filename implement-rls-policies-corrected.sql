@@ -28,6 +28,18 @@ AS $$
   )::TEXT;
 $$;
 
+-- Function to get current user's username (for arch_gate custom auth)
+CREATE OR REPLACE FUNCTION get_user_username()
+RETURNS TEXT
+LANGUAGE SQL
+SECURITY DEFINER
+AS $$
+  SELECT COALESCE(
+    auth.jwt() ->> 'username',
+    auth.jwt() ->> 'sub'
+  )::TEXT;
+$$;
+
 -- Function to check if user is superadmin
 CREATE OR REPLACE FUNCTION is_superadmin()
 RETURNS BOOLEAN
@@ -61,7 +73,7 @@ SECURITY DEFINER
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM arch_gate 
-    WHERE email = get_user_email()
+    WHERE username = get_user_username()
   );
 $$;
 
@@ -136,7 +148,7 @@ CREATE POLICY "superadmins_read_all_arch_gate" ON arch_gate
 CREATE POLICY "arch_gate_read_own_record" ON arch_gate
   FOR SELECT
   TO authenticated
-  USING (email = get_user_email());
+  USING (username = get_user_username());
 
 -- Superadmins can insert new arch_gate records
 CREATE POLICY "superadmins_insert_arch_gate" ON arch_gate
