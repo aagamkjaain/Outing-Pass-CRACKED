@@ -191,17 +191,8 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
       console.log('Fetched warden data:', allData?.length || 0, 'records');
       console.log('Sample data:', allData?.slice(0, 2));
       
-      // Apply application-level filtering based on allowed hostels
-      if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
-        const filteredData = allData.filter(booking => 
-          allowedHostels.some(hostel => 
-            booking.hostel_name && booking.hostel_name.toLowerCase().includes(hostel.toLowerCase())
-          )
-        );
-        console.log('Filtered data for warden:', filteredData.length, 'records');
-        return filteredData;
-      }
-      
+      // RPC function already handles filtering by warden's assigned hostels
+      // No additional application-level filtering needed
       return allData || [];
     }
     
@@ -471,18 +462,8 @@ export const fetchAllStudentInfo = async () => {
       console.log('Fetched warden student data:', allData?.length || 0, 'records');
       console.log('Sample student data:', allData?.slice(0, 2));
       
-      // Apply application-level filtering based on allowed hostels
-      const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
-      if (wardenHostels.length > 0) {
-        const filteredData = allData.filter(student => 
-          wardenHostels.some(hostel => 
-            student.hostel_name && student.hostel_name.toLowerCase().includes(hostel.toLowerCase())
-          )
-        );
-        console.log('Filtered student data for warden:', filteredData.length, 'records');
-        return filteredData;
-      }
-      
+      // RPC function already handles filtering by warden's assigned hostels
+      // No additional application-level filtering needed
       return allData || [];
     }
     
