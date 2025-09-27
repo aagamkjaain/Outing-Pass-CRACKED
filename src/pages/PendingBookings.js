@@ -77,6 +77,33 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     }
   }, [fetchBans]);
 
+  const searchBookings = useCallback(async (roomNumber) => {
+    if (!roomNumber || roomNumber.trim().length < 3) {
+      setAllBookings([]);
+      setSearchActive(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      const bookingsData = await fetchPendingBookings(wardenEmail || user?.email, allowedHostels) || [];
+      
+      // Filter by room number
+      const filteredBookings = bookingsData.filter(booking => 
+        booking.room_number && booking.room_number.toLowerCase().includes(roomNumber.toLowerCase())
+      );
+      
+      setAllBookings(filteredBookings);
+      setSearchActive(true);
+      setError(null);
+    } catch (error) {
+      setError('Failed to search bookings: ' + (error.message || JSON.stringify(error)));
+    } finally {
+      setLoading(false);
+    }
+  }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn]);
+
   const checkAdminAndFetchBookings = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -96,17 +123,60 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   }, [navigate, adminRole, fetchAllBookings]);
 
   useEffect(() => {
+    // Don't automatically load all data - only load when needed
     if (wardenLoggedIn) {
-      fetchAllBookings(wardenEmail);
+      // For wardens, only load data when searching or when specific status is selected
+      if (selectedStatus === 'waiting') {
+        // For waiting tab, show only today's requests and late students
+        loadWaitingData();
+      }
     } else {
       checkAdminAndFetchBookings();
     }
-  }, [wardenLoggedIn, wardenEmail, checkAdminAndFetchBookings, fetchAllBookings]);
+  }, [wardenLoggedIn, wardenEmail, selectedStatus]);
+
+  const loadWaitingData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      const bookingsData = await fetchPendingBookings(wardenEmail || user?.email, allowedHostels) || [];
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Filter for today's waiting requests only
+      const todayWaiting = bookingsData.filter(booking => 
+        booking.status === 'waiting' && booking.out_date === today
+      );
+      
+      setAllBookings(todayWaiting);
+      setError(null);
+    } catch (error) {
+      setError('Failed to load waiting data: ' + (error.message || JSON.stringify(error)));
+    } finally {
+      setLoading(false);
+    }
+  }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn]);
 
   const handleStatusChange = useCallback((status) => {
     setSelectedStatus(status);
-    // No API call needed - just change the status filter
-  }, []);
+    setSearchQuery('');
+    setSearchActive(false);
+    
+    // Load appropriate data based on status
+    if (status === 'waiting') {
+      loadWaitingData();
+    } else if (status === 'confirmed') {
+      // For confirmed, don't load data automatically - require search
+      setAllBookings([]);
+    } else {
+      // For other statuses, load all data
+      if (wardenLoggedIn) {
+        fetchAllBookings(wardenEmail);
+      } else {
+        fetchAllBookings(user?.email);
+      }
+    }
+  }, [loadWaitingData, fetchAllBookings, wardenLoggedIn, wardenEmail, user?.email]);
 
   const handleWardenAction = useCallback((bookingId, action) => {
     if (wardenLoggedIn) {
@@ -364,29 +434,29 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   const handleSearchChange = useCallback((e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    // Auto-activate search if 3+ characters
-    if (value.length >= 3) {
-      setSearchActive(true);
-    } else if (value.length === 0) {
+    // Clear results if less than 3 characters
+    if (value.length < 3) {
+      setAllBookings([]);
       setSearchActive(false);
     }
   }, []);
 
   const handleSearchKeyPress = useCallback((e) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      setSearchActive(true);
+    if (e.key === 'Enter' && searchQuery.trim().length >= 3) {
+      searchBookings(searchQuery.trim());
     }
-  }, [searchQuery]);
+  }, [searchQuery, searchBookings]);
 
   const handleSearchClick = useCallback(() => {
-    if (searchQuery.trim()) {
-      setSearchActive(true);
+    if (searchQuery.trim().length >= 3) {
+      searchBookings(searchQuery.trim());
     }
-  }, [searchQuery]);
+  }, [searchQuery, searchBookings]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
     setSearchActive(false);
+    setAllBookings([]);
   }, []);
 
 
@@ -459,7 +529,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
             <input 
               type="text" 
               className="search-input"
-              placeholder="Enter room number to search..." 
+              placeholder={`Enter room number to search ${selectedStatus} bookings...`}
               value={searchQuery} 
               onChange={handleSearchChange}
               onKeyPress={handleSearchKeyPress}
@@ -468,7 +538,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
           <button 
             className="search-button"
             onClick={handleSearchClick}
-            disabled={!searchQuery.trim()}
+            disabled={searchQuery.trim().length < 3}
           >
             Search
           </button>
@@ -485,6 +555,24 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       {searchActive && (
         <div className="search-active-indicator">
           🔍 Searching for room number: <strong>{searchQuery}</strong> ({filteredBookings.length} results found)
+        </div>
+      )}
+      
+      {!searchActive && selectedStatus === 'waiting' && (
+        <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#fff3cd', borderRadius: 4, textAlign: 'center' }}>
+          <p><strong>Waiting Area:</strong> Showing today's pending requests only. Use search to find older requests by room number.</p>
+        </div>
+      )}
+      
+      {!searchActive && selectedStatus === 'confirmed' && (
+        <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#d1ecf1', borderRadius: 4, textAlign: 'center' }}>
+          <p><strong>Confirmed Bookings:</strong> Enter a room number to search for confirmed bookings.</p>
+        </div>
+      )}
+      
+      {!searchActive && selectedStatus === 'still_out' && (
+        <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f8d7da', borderRadius: 4, textAlign: 'center' }}>
+          <p><strong>Still Out:</strong> Showing students who are currently out (including late students). Use search to find specific room numbers.</p>
         </div>
       )}
       

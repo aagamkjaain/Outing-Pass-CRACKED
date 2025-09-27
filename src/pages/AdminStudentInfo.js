@@ -85,8 +85,31 @@ const AdminStudentInfo = () => {
     }
   }, [fetchBans]);
 
+  const searchStudentInfo = useCallback(async (searchQuery) => {
+    if (searchQuery.length < 5) {
+      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
+      return;
+    }
+    
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_FIELD', field: 'error', value: '' });
+    try {
+      const data = await fetchAllStudentInfo();
+      // Filter by search query on client side
+      const filteredData = data.filter(info => 
+        info.student_email && info.student_email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: filteredData || [] });
+      await fetchBans();
+    } catch (err) {
+      dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to search student info' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [fetchBans]);
+
   useEffect(() => {
-    loadStudentInfo();
+    // Only initialize admin info, don't load student data
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       dispatch({ type: 'SET_FIELD', field: 'adminEmail', value: user?.email || '' });
       if (user?.email) {
@@ -94,7 +117,7 @@ const AdminStudentInfo = () => {
         dispatch({ type: 'SET_FIELD', field: 'adminRole', value: adminInfo?.role || '' });
       }
     });
-  }, [loadStudentInfo]);
+  }, []);
 
   const handleEdit = useCallback((info) => {
     dispatch({
@@ -251,29 +274,31 @@ const AdminStudentInfo = () => {
   const handleSearchChange = useCallback((e) => {
     const value = e.target.value;
     dispatch({ type: 'SET_FIELD', field: 'searchQuery', value });
-    // Auto-activate search if 4+ characters
-    if (value.length >= 4) {
-      dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
-    } else if (value.length === 0) {
+    // Clear results if less than 5 characters
+    if (value.length < 5) {
+      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: false });
     }
   }, []);
 
   const handleSearchKeyPress = useCallback((e) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
+    if (e.key === 'Enter' && searchQuery.trim().length >= 5) {
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
+      searchStudentInfo(searchQuery.trim());
     }
-  }, [searchQuery]);
+  }, [searchQuery, searchStudentInfo]);
 
   const handleSearchClick = useCallback(() => {
-    if (searchQuery.trim()) {
+    if (searchQuery.trim().length >= 5) {
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
+      searchStudentInfo(searchQuery.trim());
     }
-  }, [searchQuery]);
+  }, [searchQuery, searchStudentInfo]);
 
   const handleClearSearch = useCallback(() => {
     dispatch({ type: 'SET_FIELD', field: 'searchQuery', value: '' });
     dispatch({ type: 'SET_FIELD', field: 'searchActive', value: false });
+    dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
   }, []);
 
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
@@ -310,7 +335,7 @@ const AdminStudentInfo = () => {
       <div style={{ marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search by student email..."
+          placeholder="Search by student email (minimum 5 characters)..."
           value={searchQuery}
           onChange={handleSearchChange}
           onKeyPress={handleSearchKeyPress}
@@ -318,7 +343,7 @@ const AdminStudentInfo = () => {
         />
         <button 
           onClick={handleSearchClick}
-          disabled={!searchQuery.trim()}
+          disabled={searchQuery.trim().length < 5}
           style={{ marginRight: 8, padding: '8px 16px' }}
         >
           Search
@@ -336,6 +361,12 @@ const AdminStudentInfo = () => {
       {searchActive && (
         <div style={{ marginBottom: 16, padding: 8, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
           <span>Searching for email: "{searchQuery}" ({filteredInfo.length} results)</span>
+        </div>
+      )}
+      
+      {!searchActive && (
+        <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#e3f2fd', borderRadius: 4, textAlign: 'center' }}>
+          <p>Enter at least 5 characters in the search box to find student information.</p>
         </div>
       )}
       
