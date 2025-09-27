@@ -251,24 +251,63 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
     if (!adminEmail || !String(adminEmail).trim()) {
       throw new Error('Approver name is required');
     }
-    // action is now the new status: 'still_out', 'confirmed', 'rejected'
-    let newStatus = action;
-    if (action === 'reject') newStatus = 'rejected';
-    const updateObj = {
-      status: newStatus,
-      handled_by: adminEmail,
-      handled_at: new Date().toISOString(),
-    };
-    if (newStatus === 'rejected') {
-      updateObj.rejection_reason = rejectionReason || null;
-    }
-    const { data, error } = await supabase
-      .from('outing_requests')
-      .update(updateObj)
-      .eq('id', bookingId)
-      .select();
-    if (error) {
-      throw new Error(`Supabase error: ${error.message || error}`);
+    
+    // Check if warden is logged in - if so, use RPC function
+    const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+    
+    if (wardenLoggedIn) {
+      const wardenUsername = sessionStorage.getItem('wardenUsername');
+      if (!wardenUsername) {
+        throw new Error('Warden username not found in session');
+      }
+      
+      // action is now the new status: 'still_out', 'confirmed', 'rejected'
+      let newStatus = action;
+      if (action === 'reject') newStatus = 'rejected';
+      
+      console.log('Using RPC function for warden update:', { bookingId, newStatus, wardenUsername });
+      
+      const { data, error } = await supabase
+        .rpc('warden_update_outing_request', {
+          request_id: bookingId,
+          new_status: newStatus,
+          handled_by: wardenUsername,
+          rejection_reason: rejectionReason || null
+        });
+      
+      if (error) {
+        console.error('RPC update error:', error);
+        throw new Error(`Failed to update request: ${error.message}`);
+      }
+      
+      // RPC returns array, get first element
+      const updatedBooking = data && data.length > 0 ? data[0] : null;
+      if (!updatedBooking) {
+        throw new Error('No data returned from update');
+      }
+      
+      // Set data for email processing
+      const data = [updatedBooking];
+    } else {
+      // For super admins, use normal update
+      let newStatus = action;
+      if (action === 'reject') newStatus = 'rejected';
+      const updateObj = {
+        status: newStatus,
+        handled_by: adminEmail,
+        handled_at: new Date().toISOString(),
+      };
+      if (newStatus === 'rejected') {
+        updateObj.rejection_reason = rejectionReason || null;
+      }
+      const { data, error } = await supabase
+        .from('outing_requests')
+        .update(updateObj)
+        .eq('id', bookingId)
+        .select();
+      if (error) {
+        throw new Error(`Supabase error: ${error.message || error}`);
+      }
     }
 
     let emailResult = { sent: false, error: null };
