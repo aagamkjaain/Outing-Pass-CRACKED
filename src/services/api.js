@@ -13,15 +13,34 @@ const handleError = (error) => {
   return new Error(error.message || 'An error occurred with the Supabase request');
 };
 
-// Best-effort: set per-request warden context so RLS works without JWT
-async function ensureWardenContext() {
+// Best-effort: set per-request user context so RLS works without JWT
+async function ensureUserContext() {
   try {
     if (typeof window === 'undefined') return;
+    
+    // Check if warden is logged in
     const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
-    if (!wardenLoggedIn) return;
-    const username = sessionStorage.getItem('wardenUsername') || '';
-    if (!username) return;
-    await supabase.rpc('set_user_context', { user_name: username });
+    if (wardenLoggedIn) {
+      const username = sessionStorage.getItem('wardenUsername') || '';
+      if (username) {
+        await supabase.rpc('set_user_context', { user_name: username });
+        return;
+      }
+    }
+    
+    // Check if super admin is logged in via Supabase Auth
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        const adminInfo = await fetchAdminInfoByEmail(user.email);
+        if (adminInfo?.role === 'superadmin') {
+          // For super admin, we don't need to set context as RLS policies handle it
+          return;
+        }
+      }
+    } catch (err) {
+      // Continue if auth check fails
+    }
   } catch (e) {
     // ignore
   }
@@ -129,7 +148,7 @@ export const deleteBookedSlot = async (slotId) => {
  */
 export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const query = supabase
       .from('outing_requests')
       .select('*')
@@ -173,7 +192,7 @@ function generateOTP() {
  */
 export const handleBookingAction = async (bookingId, action, adminEmail, rejectionReason) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     // Validate handled_by (adminEmail used here as handler name) must be non-empty
     if (!adminEmail || !String(adminEmail).trim()) {
       throw new Error('Approver name is required');
@@ -253,7 +272,7 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
  */
 export const generateOtpForBooking = async (bookingId) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const today = new Date().toISOString().split('T')[0];
     const { data: booking, error: fetchErr } = await supabase
       .from('outing_requests')
@@ -302,7 +321,7 @@ export const generateOtpForBooking = async (bookingId) => {
  */
 export const updateBookingInTime = async (bookingId, newInTime) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const { data, error } = await supabase
       .from('outing_requests')
       .update({ in_time: newInTime })
@@ -324,7 +343,29 @@ export const updateBookingInTime = async (bookingId, newInTime) => {
  * @param {Object} info - student info object
  * @returns {Promise<Object>} - inserted/updated row
  */
-export async function addOrUpdateStudentInfo(info) {
+export async function addOrUpdateStudentInfo(info, adminEmail = null) {
+  // Application-level security: Check if user is authorized
+  const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+  let adminRole = '';
+  
+  // Check if user is super admin via Supabase Auth
+  if (!isWardenLoggedIn) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        const adminInfo = await fetchAdminInfoByEmail(user.email);
+        adminRole = adminInfo?.role || '';
+      }
+    } catch (err) {
+      // Continue if auth check fails
+    }
+  }
+
+  // Only allow superadmin or warden to add/update student info
+  if (!isWardenLoggedIn && adminRole !== 'superadmin') {
+    throw new Error('Unauthorized: Only super admins and wardens can manage student info.');
+  }
+
   // Convert all string fields to lowercase
   const lowerInfo = Object.fromEntries(
     Object.entries(info).map(([k, v]) => [k, typeof v === 'string' ? v.toLowerCase() : v])
@@ -342,7 +383,7 @@ export async function addOrUpdateStudentInfo(info) {
  */
 export const fetchAllStudentInfo = async () => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -361,7 +402,7 @@ export const fetchAllStudentInfo = async () => {
  */
 export const fetchLimitedStudentInfo = async (limit = 20) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -382,7 +423,7 @@ export const fetchLimitedStudentInfo = async (limit = 20) => {
  */
 export const searchStudentInfo = async (searchQuery, limit = 50) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     if (!searchQuery || searchQuery.trim().length < 2) {
       return [];
     }
@@ -479,7 +520,7 @@ export const downloadStudentInfoTemplate = async () => {
  */
 export const fetchStudentInfoByEmail = async (email) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -519,6 +560,28 @@ export const fetchAdminInfoByEmail = async (email) => {
  */
 export const deleteStudentInfo = async (student_email) => {
   try {
+    // Application-level security: Check if user is authorized
+    const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+    let adminRole = '';
+    
+    // Check if user is super admin via Supabase Auth
+    if (!isWardenLoggedIn) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const adminInfo = await fetchAdminInfoByEmail(user.email);
+          adminRole = adminInfo?.role || '';
+        }
+      } catch (err) {
+        // Continue if auth check fails
+      }
+    }
+
+    // Only allow superadmin or warden to delete student info
+    if (!isWardenLoggedIn && adminRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only super admins and wardens can delete student info.');
+    }
+
     const { error } = await supabase
       .from('student_info')
       .delete()
@@ -744,7 +807,7 @@ export const banStudent = async (banData) => {
  */
 export const fetchAllBans = async () => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const { data, error } = await supabase
       .from('ban_students')
       .select('*')
@@ -763,7 +826,7 @@ export const fetchAllBans = async () => {
  */
 export const fetchStudentBans = async (studentEmail) => {
   try {
-    await ensureWardenContext();
+    await ensureUserContext();
     const { data, error } = await supabase
       .from('ban_students')
       .select('*')
