@@ -568,19 +568,21 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
-    // Set user context for RLS policies
-    await supabase.rpc('set_user_context', { user_name: username });
-    
+    // First, try to authenticate without RLS (for login purposes)
     const { data, error } = await supabase
       .from('system_users')
-      .select('*')
+      .select('username, password, role, hostels, email')
       .eq('username', username)
       .maybeSingle();
+    
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
     
     // Direct password comparison
     if (data.password !== password) return null;
+    
+    // If authentication successful, set user context for future RLS operations
+    await supabase.rpc('set_user_context', { user_name: username });
     
     return data;
   } catch (error) {
