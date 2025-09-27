@@ -49,13 +49,17 @@ function reducer(state, action) {
     case 'RESET_BOOKING_FORM':
       return { ...state, bookingForm: { ...initialState.bookingForm, email: state.bookingForm.email } };
     case 'SET_USER_INFO':
+      // Debug: Log the student info and hostel name
+      console.log('SET_USER_INFO - studentInfo:', action.payload.studentInfo);
+      console.log('SET_USER_INFO - hostel_name:', action.payload.studentInfo?.hostel_name);
+      
       return { 
         ...state, 
         user: action.payload.user, 
         bookingForm: { 
           ...state.bookingForm, 
           ...action.payload.formDetails,
-          hostelName: action.payload.user?.hostel_name || 'Hostel A' // Get hostel from student info
+          hostelName: action.payload.studentInfo?.hostel_name || 'Hostel A' // Get hostel from student info
         } 
       };
     case 'SET_BOOKINGS':
@@ -123,10 +127,17 @@ const SlotBooking = () => {
           } else {
             dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: false });
           }
+          // Debug: Log the student info to verify hostel_name
+          if (info) {
+            console.log('Student info fetched:', info);
+            console.log('Hostel name from student info:', info.hostel_name);
+          }
+          
           dispatch({ 
             type: 'SET_USER_INFO', 
             payload: { 
               user, 
+              studentInfo: info, // Pass the student info object
               formDetails: { email, name, parentEmail, parentPhone } 
             }
           });
