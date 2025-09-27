@@ -87,8 +87,6 @@ CREATE POLICY "superadmins_read_own_admin" ON admins
   TO authenticated
   USING (email = get_user_email());
 
-
-
 -- =====================================================
 -- WARDENS TABLE POLICIES
 -- =====================================================

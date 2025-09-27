@@ -168,10 +168,19 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     setSearchQuery('');
     setSearchActive(false);
     
-    // Don't auto-load data when switching tabs - let user manually refresh if needed
-    // This prevents unnecessary API calls and improves performance
-    setAllBookings([]);
-  }, []);
+    // Auto-load data for "still_out" tab as it needs real-time updates for late comers
+    // Manual refresh for other tabs to prevent unnecessary API calls
+    if (status === 'still_out') {
+      if (wardenLoggedIn) {
+        fetchAllBookings(wardenEmail);
+      } else {
+        fetchAllBookings(user?.email);
+      }
+    } else {
+      // For other tabs, clear data and let user manually refresh
+      setAllBookings([]);
+    }
+  }, [wardenLoggedIn, wardenEmail, user?.email, fetchAllBookings]);
 
   const handleWardenAction = useCallback((bookingId, action) => {
     if (wardenLoggedIn) {
@@ -709,30 +718,36 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       ) : (
         <div className="no-bookings" style={{ textAlign: 'center', padding: '20px' }}>
           <p>No {selectedStatus} requests available</p>
-          <button 
-            onClick={() => {
-              if (selectedStatus === 'waiting') {
-                loadWaitingData();
-              } else if (selectedStatus === 'still_out') {
-                if (wardenLoggedIn) {
-                  fetchAllBookings(wardenEmail);
-                } else {
-                  fetchAllBookings(user?.email);
+          {/* Only show refresh button for tabs that don't auto-load */}
+          {selectedStatus !== 'still_out' && (
+            <button 
+              onClick={() => {
+                if (selectedStatus === 'waiting') {
+                  loadWaitingData();
+                } else if (selectedStatus === 'confirmed' || selectedStatus === 'rejected') {
+                  // For confirmed/rejected, show search message instead
+                  setSearchQuery('');
+                  setSearchActive(false);
                 }
-              }
-            }}
-            style={{
-              background: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginTop: '10px'
-            }}
-          >
-            Refresh {selectedStatus} Data
-          </button>
+              }}
+              style={{
+                background: '#007bff',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginTop: '10px'
+              }}
+            >
+              Refresh {selectedStatus} Data
+            </button>
+          )}
+          {selectedStatus === 'still_out' && (
+            <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+              Still Out data auto-loads to show real-time status of late comers
+            </p>
+          )}
         </div>
       )}
       {rejectionModal.open && (
