@@ -94,27 +94,30 @@ function App() {
 
   const checkAdminStatus = async (email) => {
     try {
-      // Check admin status
+      // Check admin status first (priority)
       const adminInfo = await fetchAdminInfoByEmail(email);
       if (adminInfo) {
         setIsAdmin(true);
         setAdminRole(adminInfo.role);
         setAdminHostels(adminInfo.hostels || []);
+        // If user is admin, don't set warden privileges
+        setIsWarden(false);
+        setWardenHostels([]);
       } else {
         setIsAdmin(false);
         setAdminRole(null);
         setAdminHostels([]);
-      }
-      
-      // Check warden status
-      const { fetchWardenInfoByEmail } = await import('./services/api');
-      const wardenInfo = await fetchWardenInfoByEmail(email);
-      if (wardenInfo) {
-        setIsWarden(true);
-        setWardenHostels(wardenInfo.hostels || []);
-      } else {
-        setIsWarden(false);
-        setWardenHostels([]);
+        
+        // Only check warden status if not an admin
+        const { fetchWardenInfoByEmail } = await import('./services/api');
+        const wardenInfo = await fetchWardenInfoByEmail(email);
+        if (wardenInfo) {
+          setIsWarden(true);
+          setWardenHostels(wardenInfo.hostels || []);
+        } else {
+          setIsWarden(false);
+          setWardenHostels([]);
+        }
       }
     } catch (err) {
       setIsAdmin(false);
