@@ -30,6 +30,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   // Warden session support
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
   const wardenHostels = wardenLoggedIn ? JSON.parse(sessionStorage.getItem('wardenHostels') || '[]') : [];
+  const wardenEmail = wardenLoggedIn ? sessionStorage.getItem('wardenEmail') : null;
 
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
@@ -91,11 +92,11 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
 
   useEffect(() => {
     if (wardenLoggedIn) {
-      fetchAllBookings();
+      fetchAllBookings(wardenEmail);
     } else {
       checkAdminAndFetchBookings();
     }
-  }, [wardenLoggedIn, checkAdminAndFetchBookings, fetchAllBookings]);
+  }, [wardenLoggedIn, wardenEmail, checkAdminAndFetchBookings, fetchAllBookings]);
 
   const handleStatusChange = useCallback((status) => {
     setSelectedStatus(status);
@@ -105,7 +106,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   const processBookingAction = useCallback(async (bookingId, action, reason) => {
     try {
       setLoading(true);
-      let emailToUse = null;
+      let emailToUse = wardenLoggedIn ? wardenEmail : null;
       if (!wardenLoggedIn) {
         const { data: { user } } = await supabase.auth.getUser();
         emailToUse = user?.email;
@@ -139,7 +140,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     } finally {
       setLoading(false);
     }
-  }, [wardenLoggedIn, selectedStatus, fetchAllBookings, fetchBans, handleBookingAction]);
+  }, [wardenLoggedIn, wardenEmail, selectedStatus, fetchAllBookings, fetchBans, handleBookingAction]);
 
   const handleInTimeChange = useCallback((bookingId, value) => {
     setEditInTime((prev) => ({ ...prev, [bookingId]: value }));
@@ -152,7 +153,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       await updateBookingInTime(bookingId, newInTime);
       // Refresh all data after update
       if (wardenLoggedIn) {
-        await fetchAllBookings();
+        await fetchAllBookings(wardenEmail);
       } else {
         const { data: { user } } = await supabase.auth.getUser();
         await fetchAllBookings(user.email);
@@ -163,7 +164,7 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
     } finally {
       setSavingInTimeId(null);
     }
-  }, [editInTime, wardenLoggedIn, fetchAllBookings]);
+  }, [editInTime, wardenLoggedIn, wardenEmail, fetchAllBookings]);
 
   // Bookings filtered by status, hostel/warden/admin, but NOT by date
   const hostelFilteredBookings = useMemo(() => {

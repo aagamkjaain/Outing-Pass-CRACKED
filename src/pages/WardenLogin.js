@@ -20,6 +20,8 @@ const WardenLogin = () => {
         sessionStorage.setItem('wardenLoggedIn', 'true');
         sessionStorage.setItem('wardenUsername', warden.username);
         sessionStorage.setItem('wardenHostels', JSON.stringify(warden.hostels || []));
+        sessionStorage.setItem('wardenEmail', warden.email || '');
+        sessionStorage.setItem('wardenRole', warden.role || 'warden');
         window.location.href = '/pending-bookings'; // Force full reload
       } else {
         setError('Invalid username or password');
