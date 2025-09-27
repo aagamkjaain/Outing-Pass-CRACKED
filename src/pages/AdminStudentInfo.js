@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback, useReducer } from 'react';
-import { addOrUpdateStudentInfo, fetchAllStudentInfo, deleteStudentInfo, banStudent, fetchAdminInfoByEmail, fetchAllBans, deleteBan, downloadStudentInfoTemplate } from '../services/api';
+import { addOrUpdateStudentInfo, fetchAllStudentInfo, searchStudentInfoWithHostels, deleteStudentInfo, banStudent, fetchAdminInfoByEmail, fetchAllBans, deleteBan, downloadStudentInfoTemplate } from '../services/api';
 import { supabase } from '../supabaseClient';
 import * as XLSX from 'xlsx';
 
@@ -96,24 +96,16 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_FIELD', field: 'error', value: '' });
     try {
-      const data = await fetchAllStudentInfo();
-      
-      // For wardens, filter by their assigned hostels first
-      let filteredData = data;
+      // Determine allowed hostels for server-side filtering
       const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+      const allowedHostels = ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) 
+        ? wardenHostels 
+        : undefined;
       
-      if ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) {
-        filteredData = data.filter(info => 
-          wardenHostels.includes(info.hostel_name)
-        );
-      }
+      // Use server-side search with hostel filtering
+      const data = await searchStudentInfoWithHostels(searchQuery, allowedHostels);
       
-      // Then filter by search query
-      filteredData = filteredData.filter(info => 
-        info.student_email && info.student_email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      
-      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: filteredData || [] });
+      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: data || [] });
       await fetchBans();
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to search student info' });
@@ -318,12 +310,8 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
 
   const filteredInfo = useMemo(() => {
-    let filtered = studentInfo.filter(info => {
-      if ((wardenLoggedIn || isWarden) && wardenHostels.length > 0) {
-        return wardenHostels.map(h => h.trim().toLowerCase()).includes((info.hostel_name || '').trim().toLowerCase());
-      }
-      return true;
-    });
+    // No client-side filtering needed - server handles everything
+    let filtered = studentInfo;
 
     // Apply search filter if search is active - only search through student email
     if (searchActive && searchQuery.trim()) {
@@ -334,7 +322,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     }
 
     return filtered;
-  }, [studentInfo, searchQuery, searchActive, wardenLoggedIn, isWarden, wardenHostels]);
+  }, [studentInfo, searchQuery, searchActive]);
 
   return (
     <div className="admin-student-info-page" style={{ 

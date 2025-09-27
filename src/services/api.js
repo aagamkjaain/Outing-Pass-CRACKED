@@ -320,15 +320,50 @@ export async function addOrUpdateStudentInfo(info) {
 }
 
 /**
- * Fetch all student info (admin only)
+ * Fetch all student info with optional hostel filtering
+ * @param {string[]} allowedHostels - Optional list of hostel names to filter by
  * @returns {Promise<Array>} - Array of student info
  */
-export const fetchAllStudentInfo = async () => {
+export const fetchAllStudentInfo = async (allowedHostels) => {
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('student_info')
       .select('*')
       .order('student_email', { ascending: true });
+    
+    // Apply server-side hostel restriction when provided
+    if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
+      query.in('hostel_name', allowedHostels);
+    }
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    throw handleError(error);
+  }
+};
+
+/**
+ * Search student info with optional hostel filtering
+ * @param {string} searchQuery - Search term (student email)
+ * @param {string[]} allowedHostels - Optional list of hostel names to filter by
+ * @returns {Promise<Array>} - Array of filtered student info
+ */
+export const searchStudentInfoWithHostels = async (searchQuery, allowedHostels) => {
+  try {
+    const query = supabase
+      .from('student_info')
+      .select('*')
+      .ilike('student_email', `%${searchQuery}%`)
+      .order('student_email', { ascending: true });
+    
+    // Apply server-side hostel restriction when provided
+    if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
+      query.in('hostel_name', allowedHostels);
+    }
+    
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   } catch (error) {
