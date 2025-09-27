@@ -567,8 +567,8 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
-    // Set user context for RLS policies
-    await supabase.rpc('set_user_context', { user_name: username });
+    // RLS is disabled, so no need for user context
+    // await supabase.rpc('set_user_context', { user_name: username });
     
     const { data, error } = await supabase
       .from('system_users')
