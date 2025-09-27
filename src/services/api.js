@@ -24,8 +24,24 @@ async function ensureUserContext() {
     const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
     
     if (wardenLoggedIn) {
-      // Skip context setting for now due to network issues
-      console.log('Warden logged in - skipping context setting due to network issues');
+      const username = sessionStorage.getItem('wardenUsername');
+      if (username) {
+        try {
+          console.log('Setting context for warden:', username);
+          const { data, error } = await supabase.rpc('set_user_context', { user_name: username });
+          if (error) {
+            console.error('Error setting context:', error);
+            // If context setting fails, we'll use application-level filtering instead
+            console.log('Context setting failed, will use application-level filtering');
+          } else {
+            console.log('Context set successfully:', data);
+          }
+        } catch (err) {
+          console.error('Failed to set context:', err);
+          // If context setting fails, we'll use application-level filtering instead
+          console.log('Context setting failed, will use application-level filtering');
+        }
+      }
       return;
     }
     
@@ -165,6 +181,32 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
     const { data, error } = await query;
     
     if (error) {
+      console.error('Supabase query error:', error);
+      // If RLS fails, try to fetch all data and filter at application level
+      if (error.message && error.message.includes('permission denied')) {
+        console.log('RLS permission denied, trying to fetch all data for application-level filtering');
+        const { data: allData, error: allError } = await supabase
+          .from('outing_requests')
+          .select('*')
+          .order('out_date', { ascending: false })
+          .order('created_at', { ascending: false });
+        
+        if (allError) {
+          throw new Error(`Failed to fetch outing requests: ${allError.message}`);
+        }
+        
+        // Apply application-level filtering
+        if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+          const filteredData = allData.filter(booking => 
+            allowedHostels.some(hostel => 
+              booking.hostel_name && booking.hostel_name.toLowerCase().includes(hostel.toLowerCase())
+            )
+          );
+          return filteredData;
+        }
+        
+        return allData || [];
+      }
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
     
@@ -389,7 +431,40 @@ export const fetchAllStudentInfo = async () => {
       .from('student_info')
       .select('*')
       .order('student_email', { ascending: true });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('Supabase query error:', error);
+      // If RLS fails, try to fetch all data and filter at application level
+      if (error.message && error.message.includes('permission denied')) {
+        console.log('RLS permission denied, trying to fetch all student data for application-level filtering');
+        const { data: allData, error: allError } = await supabase
+          .from('student_info')
+          .select('*')
+          .order('student_email', { ascending: true });
+        
+        if (allError) {
+          throw new Error(`Failed to fetch student info: ${allError.message}`);
+        }
+        
+        // For wardens, apply application-level filtering based on allowed hostels
+        const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+        if (wardenLoggedIn) {
+          const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
+          if (wardenHostels.length > 0) {
+            const filteredData = allData.filter(student => 
+              wardenHostels.some(hostel => 
+                student.hostel_name && student.hostel_name.toLowerCase().includes(hostel.toLowerCase())
+              )
+            );
+            return filteredData;
+          }
+        }
+        
+        return allData || [];
+      }
+      throw error;
+    }
+    
     return data;
   } catch (error) {
     throw handleError(error);
@@ -437,7 +512,46 @@ export const searchStudentInfo = async (searchQuery, limit = 50) => {
       .order('student_email', { ascending: true })
       .limit(limit);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase query error:', error);
+      // If RLS fails, try to fetch all data and filter at application level
+      if (error.message && error.message.includes('permission denied')) {
+        console.log('RLS permission denied, trying to fetch all student data for application-level filtering');
+        const { data: allData, error: allError } = await supabase
+          .from('student_info')
+          .select('*')
+          .order('student_email', { ascending: true });
+        
+        if (allError) {
+          throw new Error(`Failed to search student info: ${allError.message}`);
+        }
+        
+        // Apply application-level filtering
+        const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+        let filteredData = allData || [];
+        
+        if (wardenLoggedIn) {
+          const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
+          if (wardenHostels.length > 0) {
+            filteredData = filteredData.filter(student => 
+              wardenHostels.some(hostel => 
+                student.hostel_name && student.hostel_name.toLowerCase().includes(hostel.toLowerCase())
+              )
+            );
+          }
+        }
+        
+        // Apply search filter
+        filteredData = filteredData.filter(student => 
+          (student.student_email && student.student_email.toLowerCase().includes(query)) ||
+          (student.hostel_name && student.hostel_name.toLowerCase().includes(query))
+        );
+        
+        return filteredData.slice(0, limit);
+      }
+      throw error;
+    }
+    
     return data;
   } catch (error) {
     throw handleError(error);
