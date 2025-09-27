@@ -59,7 +59,7 @@ function reducer(state, action) {
         bookingForm: { 
           ...state.bookingForm, 
           ...action.payload.formDetails,
-          hostelName: action.payload.studentInfo?.hostel_name || 'Hostel A' // Get hostel from student info
+          hostelName: action.payload.studentInfo?.hostel_name || '' // Empty if no student info
         } 
       };
     case 'SET_BOOKINGS':
@@ -124,23 +124,32 @@ const SlotBooking = () => {
             parentEmail = info.parent_email || '';
             parentPhone = info.parent_phone || '';
             dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: true });
-          } else {
-            dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: false });
-          }
-          // Debug: Log the student info to verify hostel_name
-          if (info) {
+            
+            // Debug: Log the student info to verify hostel_name
             console.log('Student info fetched:', info);
             console.log('Hostel name from student info:', info.hostel_name);
+            
+            dispatch({ 
+              type: 'SET_USER_INFO', 
+              payload: { 
+                user, 
+                studentInfo: info, // Pass the student info object
+                formDetails: { email, name, parentEmail, parentPhone } 
+              }
+            });
+          } else {
+            // Student not found in student_info - not allowed to use the app
+            dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: false });
+            dispatch({ type: 'SET_ERROR', payload: 'Student information not found. Please contact administration to add your details.' });
+            dispatch({ 
+              type: 'SET_USER_INFO', 
+              payload: { 
+                user, 
+                studentInfo: null, // No student info
+                formDetails: { email, name, parentEmail: '', parentPhone: '' } 
+              }
+            });
           }
-          
-          dispatch({ 
-            type: 'SET_USER_INFO', 
-            payload: { 
-              user, 
-              studentInfo: info, // Pass the student info object
-              formDetails: { email, name, parentEmail, parentPhone } 
-            }
-          });
           const ban = await checkAndAutoUnban(email);
           dispatch({ type: 'SET_FIELD', field: 'banInfo', value: ban });
           if (user.email) {
@@ -193,7 +202,12 @@ const SlotBooking = () => {
       return;
     }
     try {
-      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
+      // Check if student info exists
+      if (!studentInfoExists) {
+        throw new Error('Student information not found. Please contact administration to add your details.');
+      }
+      
+      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.hostelName || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
         throw new Error('Please fill all required fields.');
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -458,6 +472,7 @@ const SlotBooking = () => {
               !bookingForm.name ||
               !bookingForm.email ||
               !bookingForm.roomNumber ||
+              !bookingForm.hostelName ||
               !bookingForm.outDate ||
               !bookingForm.outTime ||
               !bookingForm.inDate ||
