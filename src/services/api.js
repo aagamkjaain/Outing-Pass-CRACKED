@@ -166,6 +166,41 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
     await ensureUserContext();
     
+    console.log('fetchPendingBookings called with:', { adminEmail, allowedHostels });
+    
+    // Check if warden is logged in - if so, use application-level filtering
+    const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+    
+    if (wardenLoggedIn) {
+      console.log('Warden logged in, using application-level filtering');
+      // For wardens, fetch all data and filter at application level
+      const { data: allData, error: allError } = await supabase
+        .from('outing_requests')
+        .select('*')
+        .order('out_date', { ascending: false })
+        .order('created_at', { ascending: false });
+      
+      if (allError) {
+        throw new Error(`Failed to fetch outing requests: ${allError.message}`);
+      }
+      
+      console.log('Fetched all data for warden filtering:', allData?.length || 0, 'records');
+      
+      // Apply application-level filtering based on allowed hostels
+      if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+        const filteredData = allData.filter(booking => 
+          allowedHostels.some(hostel => 
+            booking.hostel_name && booking.hostel_name.toLowerCase().includes(hostel.toLowerCase())
+          )
+        );
+        console.log('Filtered data for warden:', filteredData.length, 'records');
+        return filteredData;
+      }
+      
+      return allData || [];
+    }
+    
+    // For super admins, use normal query with RLS
     const query = supabase
       .from('outing_requests')
       .select('*')
@@ -174,41 +209,20 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
 
     // Apply server-side hostel restriction when provided and not 'all'
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+      console.log('Applying hostel filter:', allowedHostels);
       // Supabase supports in() for filtering
       query.in('hostel_name', allowedHostels);
     }
 
+    console.log('Executing query...');
     const { data, error } = await query;
     
     if (error) {
       console.error('Supabase query error:', error);
-      // If RLS fails, try to fetch all data and filter at application level
-      if (error.message && error.message.includes('permission denied')) {
-        console.log('RLS permission denied, trying to fetch all data for application-level filtering');
-        const { data: allData, error: allError } = await supabase
-          .from('outing_requests')
-          .select('*')
-          .order('out_date', { ascending: false })
-          .order('created_at', { ascending: false });
-        
-        if (allError) {
-          throw new Error(`Failed to fetch outing requests: ${allError.message}`);
-        }
-        
-        // Apply application-level filtering
-        if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
-          const filteredData = allData.filter(booking => 
-            allowedHostels.some(hostel => 
-              booking.hostel_name && booking.hostel_name.toLowerCase().includes(hostel.toLowerCase())
-            )
-          );
-          return filteredData;
-        }
-        
-        return allData || [];
-      }
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
+    
+    console.log('Query successful, returned', data?.length || 0, 'records');
     
     if (!data) {
       throw new Error('No outing request data available');
@@ -216,6 +230,7 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
     
     return data;
   } catch (error) {
+    console.error('fetchPendingBookings error:', error);
     throw handleError(error);
   }
 };
@@ -427,6 +442,40 @@ export async function addOrUpdateStudentInfo(info, adminEmail = null) {
 export const fetchAllStudentInfo = async () => {
   try {
     await ensureUserContext();
+    
+    // Check if warden is logged in - if so, use application-level filtering
+    const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+    
+    if (wardenLoggedIn) {
+      console.log('Warden logged in, using application-level filtering for student info');
+      // For wardens, fetch all data and filter at application level
+      const { data: allData, error: allError } = await supabase
+        .from('student_info')
+        .select('*')
+        .order('student_email', { ascending: true });
+      
+      if (allError) {
+        throw new Error(`Failed to fetch student info: ${allError.message}`);
+      }
+      
+      console.log('Fetched all student data for warden filtering:', allData?.length || 0, 'records');
+      
+      // Apply application-level filtering based on allowed hostels
+      const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
+      if (wardenHostels.length > 0) {
+        const filteredData = allData.filter(student => 
+          wardenHostels.some(hostel => 
+            student.hostel_name && student.hostel_name.toLowerCase().includes(hostel.toLowerCase())
+          )
+        );
+        console.log('Filtered student data for warden:', filteredData.length, 'records');
+        return filteredData;
+      }
+      
+      return allData || [];
+    }
+    
+    // For super admins, use normal query with RLS
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -434,34 +483,6 @@ export const fetchAllStudentInfo = async () => {
     
     if (error) {
       console.error('Supabase query error:', error);
-      // If RLS fails, try to fetch all data and filter at application level
-      if (error.message && error.message.includes('permission denied')) {
-        console.log('RLS permission denied, trying to fetch all student data for application-level filtering');
-        const { data: allData, error: allError } = await supabase
-          .from('student_info')
-          .select('*')
-          .order('student_email', { ascending: true });
-        
-        if (allError) {
-          throw new Error(`Failed to fetch student info: ${allError.message}`);
-        }
-        
-        // For wardens, apply application-level filtering based on allowed hostels
-        const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-        if (wardenLoggedIn) {
-          const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
-          if (wardenHostels.length > 0) {
-            const filteredData = allData.filter(student => 
-              wardenHostels.some(hostel => 
-                student.hostel_name && student.hostel_name.toLowerCase().includes(hostel.toLowerCase())
-              )
-            );
-            return filteredData;
-          }
-        }
-        
-        return allData || [];
-      }
       throw error;
     }
     
