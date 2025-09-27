@@ -37,17 +37,13 @@ async function ensureUserContext() {
         
         if (error) {
           console.error('Error setting context:', error);
+          // Continue anyway - context might not be critical
         } else {
           console.log('Context set successfully');
         }
         
-        // Verify context was set
-        const { data: contextData, error: contextError } = await supabase.rpc('get_user_name');
-        if (contextError) {
-          console.error('Error getting context:', contextError);
-        } else {
-          console.log('Context verification:', contextData); // Debug log
-        }
+        // Skip context verification to prevent infinite loop
+        console.log('Skipping context verification to prevent loop');
         return;
       } else {
         console.log('No username found in session storage');
@@ -177,7 +173,11 @@ export const deleteBookedSlot = async (slotId) => {
  */
 export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
+    console.log('fetchPendingBookings called with:', { adminEmail, allowedHostels });
+    
     await ensureUserContext();
+    console.log('ensureUserContext completed');
+    
     const query = supabase
       .from('outing_requests')
       .select('*')
@@ -186,15 +186,20 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
 
     // Apply server-side hostel restriction when provided and not 'all'
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+      console.log('Applying hostel filter:', allowedHostels);
       // Supabase supports in() for filtering
       query.in('hostel_name', allowedHostels);
     }
 
+    console.log('Executing query...');
     const { data, error } = await query;
     
     if (error) {
+      console.error('Supabase query error:', error);
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
+    
+    console.log('Query successful, returned', data?.length || 0, 'records');
     
     if (!data) {
       throw new Error('No outing request data available');
@@ -202,6 +207,7 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
     
     return data;
   } catch (error) {
+    console.error('fetchPendingBookings error:', error);
     throw handleError(error);
   }
 };
