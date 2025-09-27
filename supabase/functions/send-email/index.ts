@@ -17,10 +17,12 @@ function getStatusUpdateEmail(booking, statusMsg) {
         <li><b>Out Time:</b> ${booking.out_time}</li>
         <li><b>In Date:</b> ${booking.in_date}</li>
         <li><b>In Time:</b> ${booking.in_time}</li>
+        <li><b>Reason:</b> ${booking.reason}</li>
       </ul>
       <p>
-        If you have any questions, please contact the hostel administration.<br>
-        <i>This is an automated message. Please do not reply.</i>
+        If you have any questions, please contact your ward's respective hostel administration. <br>
+        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
+        <b><i>This is an automated message. Please do not reply.</i></b>
       </p>
     `
   };
@@ -33,7 +35,11 @@ function getStillOutAlertEmail(booking) {
       <p>Dear Parent,</p>
       <p>Your ward <b>${booking.name}</b> (${booking.email}) from <b>${booking.hostel_name}</b> has not returned by the expected time.</p>
       <p>Please contact the hostel administration for more information.</p>
-      <p><i>This is an automated alert.</i></p>
+      <p>
+        If you have any questions, please contact your ward's respective hostel administration. <br>
+        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
+        <b><i>This is an automated message. Please do not reply.</i></b>
+      </p>
     `
   };
 }
@@ -49,11 +55,13 @@ function getNowOutEmail(booking, wardenEmail) {
         <li><b>Out Time:</b> ${booking.out_time}</li>
         <li><b>In Date:</b> ${booking.in_date}</li>
         <li><b>In Time:</b> ${booking.in_time}</li>
+        <li><b>Reason:</b> ${booking.reason}</li>
       </ul>
       <p>
         <b>Warden:</b> ${wardenEmail || 'Hostel Warden'}<br>
-        If you have any questions, please contact the hostel administration.<br>
-        <i>This is an automated message. Please do not reply.</i>
+        If you have any questions, please contact your ward's respective hostel administration. <br>
+        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
+        <b><i>This is an automated message. Please do not reply.</i></b>
       </p>
     `
   };
@@ -70,10 +78,12 @@ function getReturnedEmail(booking) {
         <li><b>Out Time:</b> ${booking.out_time}</li>
         <li><b>In Date:</b> ${booking.in_date}</li>
         <li><b>In Time:</b> ${booking.in_time}</li>
+        <li><b>Reason:</b> ${booking.reason}</li>
       </ul>
       <p>
-        If you have any questions, please contact the hostel administration.<br>
-        <i>This is an automated message. Please do not reply.</i>
+        If you have any questions, please contact your ward's respective hostel administration. <br>
+        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
+        <b><i>This is an automated message. Please do not reply.</i></b>
       </p>
     `
   };

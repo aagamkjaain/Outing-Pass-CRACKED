@@ -9,9 +9,8 @@ A modern outing pass management system for hostels, built with React and Supabas
 - **Student Outing Requests:**  Students can request outings, specifying dates, times, and parent contact info.
 - **Admin & Warden Dashboard:**  Admins and wardens can view, approve, reject, or mark students as “still out.”
 - **Parent Notifications:**  Automated email notifications to parents for status updates (using Mailgun).
-- **Secure Authentication:**  All logins (admin, warden, arch_gate) are managed via the `system_users` table in Supabase.
+- **Secure Authentication:**  All logins (admin, warden, arch_gate) are managed via the `admins` table in Supabase.
 - **Student Info Management:**  Admins can manage student info, including parent contact details.
-- **Day Order Management:**  Admins can set and view day orders.
 - **Mobile-Friendly UI:**  Responsive design for all devices.
 
 ---
@@ -36,11 +35,9 @@ Stores student and parent contact info.
 ### 3. `outing_requests`
 Tracks all outing requests and their statuses.
 
-### 4. `system_users`
-Handles all custom logins (warden, arch_gate, etc.).
+### 4. `admins`
+Handles all admin logins (superadmin, warden, arch_gate, etc.).
 
-### 5. `day_orders`
-Manages day order references.
 
 ### 6. `health_check`
 For API health checks.

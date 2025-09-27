@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authenticateSystemUser } from '../services/api';
+import { authenticateWarden } from '../services/api';
 
 const WardenLogin = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,17 +14,17 @@ const WardenLogin = () => {
     setLoading(true);
     setError('');
     try {
-      const warden = await authenticateSystemUser(username, password);
+      const warden = await authenticateWarden(email, password);
       if (warden) {
         // Set session info in sessionStorage
         sessionStorage.setItem('wardenLoggedIn', 'true');
-        sessionStorage.setItem('wardenUsername', warden.username);
+        sessionStorage.setItem('wardenUsername', warden.email);
         sessionStorage.setItem('wardenHostels', JSON.stringify(warden.hostels || []));
         sessionStorage.setItem('wardenEmail', warden.email || '');
         sessionStorage.setItem('wardenRole', warden.role || 'warden');
         window.location.href = '/pending-bookings'; // Force full reload
       } else {
-        setError('Invalid username or password');
+        setError('Invalid email or password');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
@@ -38,8 +38,8 @@ const WardenLogin = () => {
       <form onSubmit={handleSubmit} style={{border:'1px solid #ccc',padding:32,borderRadius:8,minWidth:320,boxShadow:'0 2px 8px #0001'}}>
         <h2>Warden Login</h2>
         <div style={{marginBottom:16}}>
-          <label>Username<br/>
-            <input value={username} onChange={e=>setUsername(e.target.value)} required style={{width:'100%',padding:8}} />
+          <label>Email<br/>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required style={{width:'100%',padding:8}} />
           </label>
         </div>
         <div style={{marginBottom:16}}>

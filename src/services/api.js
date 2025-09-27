@@ -13,54 +13,6 @@ const handleError = (error) => {
   return new Error(error.message || 'An error occurred with the Supabase request');
 };
 
-// Best-effort: set per-request user context so RLS works without JWT
-async function ensureUserContext() {
-  try {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    
-    // Check if warden is logged in
-    const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
-    
-    if (wardenLoggedIn) {
-      const username = sessionStorage.getItem('wardenUsername');
-      if (username) {
-        try {
-          console.log('Setting context for warden:', username);
-          const { data, error } = await supabase.rpc('set_user_context', { user_name: username });
-          if (error) {
-            console.error('Error setting context:', error);
-            // If context setting fails, we'll use application-level filtering instead
-            console.log('Context setting failed, will use application-level filtering');
-          } else {
-            console.log('Context set successfully:', data);
-          }
-        } catch (err) {
-          console.error('Failed to set context:', err);
-          // If context setting fails, we'll use application-level filtering instead
-          console.log('Context setting failed, will use application-level filtering');
-        }
-      }
-      return;
-    }
-    
-    // Check if super admin is logged in via Supabase Auth
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        const adminInfo = await fetchAdminInfoByEmail(user.email);
-        if (adminInfo?.role === 'superadmin') {
-          return;
-        }
-      }
-    } catch (err) {
-      // Continue if auth check fails
-    }
-  } catch (e) {
-    // ignore
-  }
-}
 
 /**
  * Book a lab slot
@@ -164,39 +116,6 @@ export const deleteBookedSlot = async (slotId) => {
  */
 export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
-    await ensureUserContext();
-    
-    console.log('fetchPendingBookings called with:', { adminEmail, allowedHostels });
-    
-    // Check if warden is logged in - if so, use application-level filtering
-    const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    
-    if (wardenLoggedIn) {
-      console.log('Warden logged in, using RPC function for data fetching');
-      const username = sessionStorage.getItem('wardenUsername');
-      
-      if (!username) {
-        throw new Error('Warden username not found in session');
-      }
-      
-      console.log('Fetching data for warden:', username);
-      const { data: allData, error: allError } = await supabase
-        .rpc('get_warden_outing_requests', { warden_username: username });
-      
-      if (allError) {
-        console.error('Error fetching warden outing requests:', allError);
-        throw new Error(`Failed to fetch outing requests: ${allError.message}`);
-      }
-      
-      console.log('Fetched warden data:', allData?.length || 0, 'records');
-      console.log('Sample data:', allData?.slice(0, 2));
-      
-      // RPC function already handles filtering by warden's assigned hostels
-      // No additional application-level filtering needed
-      return allData || [];
-    }
-    
-    // For super admins, use normal query with RLS
     const query = supabase
       .from('outing_requests')
       .select('*')
@@ -205,20 +124,15 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
 
     // Apply server-side hostel restriction when provided and not 'all'
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
-      console.log('Applying hostel filter:', allowedHostels);
       // Supabase supports in() for filtering
       query.in('hostel_name', allowedHostels);
     }
 
-    console.log('Executing query...');
     const { data, error } = await query;
     
     if (error) {
-      console.error('Supabase query error:', error);
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
-    
-    console.log('Query successful, returned', data?.length || 0, 'records');
     
     if (!data) {
       throw new Error('No outing request data available');
@@ -226,7 +140,6 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
     
     return data;
   } catch (error) {
-    console.error('fetchPendingBookings error:', error);
     throw handleError(error);
   }
 };
@@ -246,86 +159,28 @@ function generateOTP() {
  */
 export const handleBookingAction = async (bookingId, action, adminEmail, rejectionReason) => {
   try {
-    await ensureUserContext();
     // Validate handled_by (adminEmail used here as handler name) must be non-empty
     if (!adminEmail || !String(adminEmail).trim()) {
       throw new Error('Approver name is required');
     }
-    
-    let data; // Declare data variable at the beginning
-    
     // action is now the new status: 'still_out', 'confirmed', 'rejected'
     let newStatus = action;
     if (action === 'reject') newStatus = 'rejected';
-    
-    // Check if warden is logged in - if so, use RPC function
-    const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    
-    if (wardenLoggedIn) {
-      const wardenUsername = sessionStorage.getItem('wardenUsername');
-      if (!wardenUsername) {
-        throw new Error('Warden username not found in session');
-      }
-      
-      console.log('Using RPC function for warden update:', { bookingId, newStatus, wardenUsername });
-      
-      console.log('Calling RPC with params:', {
-        request_id: bookingId,
-        new_status: newStatus,
-        handler_username: wardenUsername,
-        rejection_reason_param: rejectionReason || null
-      });
-      
-      // Use RPC function for warden updates (same approach as login)
-      console.log('Using RPC function for warden update:', { bookingId, newStatus, wardenUsername });
-      
-      // Use direct update for wardens (bypass RPC function for now)
-      console.log('Using direct update for warden:', { bookingId, newStatus, wardenUsername });
-      
-      const updateObj = {
-        status: newStatus,
-        handled_by: wardenUsername,
-        handled_at: new Date().toISOString(),
-      };
-      if (newStatus === 'rejected') {
-        updateObj.rejection_reason = rejectionReason || null;
-      }
-      
-      console.log('Update object:', updateObj);
-      
-      const { data: updateResult, error: updateError } = await supabase
-        .from('outing_requests')
-        .update(updateObj)
-        .eq('id', bookingId)
-        .select();
-      
-      if (updateError) {
-        console.error('Direct update failed:', updateError);
-        console.error('Error details:', JSON.stringify(updateError, null, 2));
-        throw new Error(`Failed to update request: ${updateError.message}`);
-      }
-      
-      console.log('Direct update successful:', updateResult);
-      data = updateResult;
-    } else {
-      // For super admins, use normal update
-      const updateObj = {
-        status: newStatus,
-        handled_by: adminEmail,
-        handled_at: new Date().toISOString(),
-      };
-      if (newStatus === 'rejected') {
-        updateObj.rejection_reason = rejectionReason || null;
-      }
-      const { data: updateResult, error } = await supabase
-        .from('outing_requests')
-        .update(updateObj)
-        .eq('id', bookingId)
-        .select();
-      if (error) {
-        throw new Error(`Supabase error: ${error.message || error}`);
-      }
-      data = updateResult;
+    const updateObj = {
+      status: newStatus,
+      handled_by: adminEmail,
+      handled_at: new Date().toISOString(),
+    };
+    if (newStatus === 'rejected') {
+      updateObj.rejection_reason = rejectionReason || null;
+    }
+    const { data, error } = await supabase
+      .from('outing_requests')
+      .update(updateObj)
+      .eq('id', bookingId)
+      .select();
+    if (error) {
+      throw new Error(`Supabase error: ${error.message || error}`);
     }
 
     let emailResult = { sent: false, error: null };
@@ -383,7 +238,6 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
  */
 export const generateOtpForBooking = async (bookingId) => {
   try {
-    await ensureUserContext();
     const today = new Date().toISOString().split('T')[0];
     const { data: booking, error: fetchErr } = await supabase
       .from('outing_requests')
@@ -432,7 +286,6 @@ export const generateOtpForBooking = async (bookingId) => {
  */
 export const updateBookingInTime = async (bookingId, newInTime) => {
   try {
-    await ensureUserContext();
     const { data, error } = await supabase
       .from('outing_requests')
       .update({ in_time: newInTime })
@@ -454,29 +307,7 @@ export const updateBookingInTime = async (bookingId, newInTime) => {
  * @param {Object} info - student info object
  * @returns {Promise<Object>} - inserted/updated row
  */
-export async function addOrUpdateStudentInfo(info, adminEmail = null) {
-  // Application-level security: Check if user is authorized
-  const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-  let adminRole = '';
-  
-  // Check if user is super admin via Supabase Auth
-  if (!isWardenLoggedIn) {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        const adminInfo = await fetchAdminInfoByEmail(user.email);
-        adminRole = adminInfo?.role || '';
-      }
-    } catch (err) {
-      // Continue if auth check fails
-    }
-  }
-
-  // Only allow superadmin to add/update student info (wardens can only view)
-  if (!isWardenLoggedIn && adminRole !== 'superadmin') {
-    throw new Error('Unauthorized: Only super admins can manage student info.');
-  }
-
+export async function addOrUpdateStudentInfo(info) {
   // Convert all string fields to lowercase
   const lowerInfo = Object.fromEntries(
     Object.entries(info).map(([k, v]) => [k, typeof v === 'string' ? v.toLowerCase() : v])
@@ -494,47 +325,11 @@ export async function addOrUpdateStudentInfo(info, adminEmail = null) {
  */
 export const fetchAllStudentInfo = async () => {
   try {
-    await ensureUserContext();
-    
-    // Check if warden is logged in - if so, use application-level filtering
-    const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    
-    if (wardenLoggedIn) {
-      console.log('Warden logged in, using RPC function for student info');
-      const username = sessionStorage.getItem('wardenUsername');
-      
-      if (!username) {
-        throw new Error('Warden username not found in session');
-      }
-      
-      console.log('Fetching student info for warden:', username);
-      const { data: allData, error: allError } = await supabase
-        .rpc('get_warden_student_info', { warden_username: username });
-      
-      if (allError) {
-        console.error('Error fetching warden student info:', allError);
-        throw new Error(`Failed to fetch student info: ${allError.message}`);
-      }
-      
-      console.log('Fetched warden student data:', allData?.length || 0, 'records');
-      console.log('Sample student data:', allData?.slice(0, 2));
-      
-      // RPC function already handles filtering by warden's assigned hostels
-      // No additional application-level filtering needed
-      return allData || [];
-    }
-    
-    // For super admins, use normal query with RLS
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
       .order('student_email', { ascending: true });
-    
-    if (error) {
-      console.error('Supabase query error:', error);
-      throw error;
-    }
-    
+    if (error) throw error;
     return data;
   } catch (error) {
     throw handleError(error);
@@ -548,7 +343,6 @@ export const fetchAllStudentInfo = async () => {
  */
 export const fetchLimitedStudentInfo = async (limit = 20) => {
   try {
-    await ensureUserContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -569,7 +363,6 @@ export const fetchLimitedStudentInfo = async (limit = 20) => {
  */
 export const searchStudentInfo = async (searchQuery, limit = 50) => {
   try {
-    await ensureUserContext();
     if (!searchQuery || searchQuery.trim().length < 2) {
       return [];
     }
@@ -582,46 +375,7 @@ export const searchStudentInfo = async (searchQuery, limit = 50) => {
       .order('student_email', { ascending: true })
       .limit(limit);
     
-    if (error) {
-      console.error('Supabase query error:', error);
-      // If RLS fails, try to fetch all data and filter at application level
-      if (error.message && error.message.includes('permission denied')) {
-        console.log('RLS permission denied, trying to fetch all student data for application-level filtering');
-        const { data: allData, error: allError } = await supabase
-          .from('student_info')
-          .select('*')
-          .order('student_email', { ascending: true });
-        
-        if (allError) {
-          throw new Error(`Failed to search student info: ${allError.message}`);
-        }
-        
-        // Apply application-level filtering
-        const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-        let filteredData = allData || [];
-        
-        if (wardenLoggedIn) {
-          const wardenHostels = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
-          if (wardenHostels.length > 0) {
-            filteredData = filteredData.filter(student => 
-              wardenHostels.some(hostel => 
-                student.hostel_name && student.hostel_name.toLowerCase().includes(hostel.toLowerCase())
-              )
-            );
-          }
-        }
-        
-        // Apply search filter
-        filteredData = filteredData.filter(student => 
-          (student.student_email && student.student_email.toLowerCase().includes(query)) ||
-          (student.hostel_name && student.hostel_name.toLowerCase().includes(query))
-        );
-        
-        return filteredData.slice(0, limit);
-      }
-      throw error;
-    }
-    
+    if (error) throw error;
     return data;
   } catch (error) {
     throw handleError(error);
@@ -705,7 +459,6 @@ export const downloadStudentInfoTemplate = async () => {
  */
 export const fetchStudentInfoByEmail = async (email) => {
   try {
-    await ensureUserContext();
     const { data, error } = await supabase
       .from('student_info')
       .select('*')
@@ -745,28 +498,6 @@ export const fetchAdminInfoByEmail = async (email) => {
  */
 export const deleteStudentInfo = async (student_email) => {
   try {
-    // Application-level security: Check if user is authorized
-    const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    let adminRole = '';
-    
-    // Check if user is super admin via Supabase Auth
-    if (!isWardenLoggedIn) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          const adminInfo = await fetchAdminInfoByEmail(user.email);
-          adminRole = adminInfo?.role || '';
-        }
-      } catch (err) {
-        // Continue if auth check fails
-      }
-    }
-
-    // Only allow superadmin to delete student info (wardens can only view)
-    if (!isWardenLoggedIn && adminRole !== 'superadmin') {
-      throw new Error('Unauthorized: Only super admins can delete student info.');
-    }
-
     const { error } = await supabase
       .from('student_info')
       .delete()
@@ -779,18 +510,18 @@ export const deleteStudentInfo = async (student_email) => {
 };
 
 /**
- * Authenticate warden by username and password
- * @param {string} username
+ * Authenticate warden or arch_gate by email and password
+ * @param {string} email
  * @param {string} password
- * @returns {Promise<Object|null>} - Warden info or null if not found/invalid
+ * @returns {Promise<Object|null>} - User info or null if not found/invalid
  */
-export const authenticateWarden = async (username, password) => {
+export const authenticateWarden = async (email, password) => {
   try {
     const { data, error } = await supabase
       .from('admins')
       .select('*')
-      .eq('username', username)
-      .eq('role', 'warden') // Re-enabled role validation for security
+      .eq('email', email.toLowerCase())
+      .in('role', ['warden', 'arch_gate']) // Allow both warden and arch_gate roles
       .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
@@ -801,54 +532,7 @@ export const authenticateWarden = async (username, password) => {
   }
 };
 
-/**
- * Authenticate system user by username and password
- * @param {string} username - The user's username
- * @param {string} password - The user's password
- * @returns {Promise<Object|null>} - User info or null if not found/invalid
- */
-export const authenticateSystemUser = async (username, password) => {
-  try {
-    // Use RPC function for secure authentication
-    const { data, error } = await supabase
-      .rpc('authenticate_warden', { 
-        warden_username: username, 
-        warden_password: password 
-      });
-    
-    if (error) {
-      console.error('Warden authentication RPC error:', error);
-      return null;
-    }
-    
-    // Return the first (and should be only) result
-    return data && data.length > 0 ? data[0] : null;
-  } catch (error) {
-    console.error('Warden authentication error:', error);
-    return null;
-  }
-};
 
-/**
- * Helper function to maintain user context for warden operations
- * @param {string} username - The warden's username
- * @returns {Promise<void>}
- */
-export const maintainWardenContext = async (username) => {
-  try {
-    console.log('Setting user context for warden:', username);
-    const { data, error } = await supabase.rpc('set_user_context', { user_name: username });
-    if (error) {
-      console.error('Error setting user context:', error);
-      throw error; // Re-throw to stop execution
-    } else {
-      console.log('User context set successfully:', data);
-    }
-  } catch (error) {
-    console.error('Failed to set user context:', error);
-    throw error; // Re-throw to stop execution
-  }
-};
 
 // Health check function checks if we can connect to Supabase
 export const checkApiHealth = async () => {
@@ -917,26 +601,16 @@ export const banStudent = async (banData) => {
 
     // Application-level security: Check if user is authorized to ban
     const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+    const adminEmail = sessionStorage.getItem('adminEmail') || '';
     
-    // Get admin info - check both sessionStorage and Supabase auth
+    // Get admin info if admin is logged in
     let adminRole = '';
-    let adminEmail = '';
-    
-    if (isWardenLoggedIn) {
-      // Warden is logged in via sessionStorage
-      adminEmail = sessionStorage.getItem('wardenEmail') || '';
-      adminRole = sessionStorage.getItem('wardenRole') || 'warden';
-    } else {
-      // Check if user is authenticated via Supabase Auth (super admin)
+    if (adminEmail) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          adminEmail = user.email;
-          const adminInfo = await fetchAdminInfoByEmail(user.email);
-          adminRole = adminInfo?.role || '';
-        }
+        const adminInfo = await fetchAdminInfoByEmail(adminEmail);
+        adminRole = adminInfo?.role || '';
       } catch (err) {
-        // Continue if auth check fails
+        // Continue if admin info fetch fails
       }
     }
 
@@ -992,7 +666,6 @@ export const banStudent = async (banData) => {
  */
 export const fetchAllBans = async () => {
   try {
-    await ensureUserContext();
     const { data, error } = await supabase
       .from('ban_students')
       .select('*')
@@ -1011,7 +684,6 @@ export const fetchAllBans = async () => {
  */
 export const fetchStudentBans = async (studentEmail) => {
   try {
-    await ensureUserContext();
     const { data, error } = await supabase
       .from('ban_students')
       .select('*')
