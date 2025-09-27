@@ -630,7 +630,18 @@ export const authenticateArchGate = async (username, password) => {
       return null;
     }
     
+    // Test if we can find the specific user by username only
+    console.log('Testing username-only query...');
+    const { data: userData, error: userError } = await supabase
+      .from('arch_gate')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
+    console.log('Username-only query result:', { userData, userError });
+    
     // Check if user exists in arch_gate table with matching username and password
+    console.log('Querying for username:', username, 'password:', password);
+    
     const { data, error } = await supabase
       .from('arch_gate')
       .select('*')
@@ -639,6 +650,7 @@ export const authenticateArchGate = async (username, password) => {
       .maybeSingle();
       
     console.log('Arch gate auth result:', { data, error });
+    console.log('Data type:', typeof data, 'Data value:', data);
     
     if (error && error.code !== 'PGRST116') {
       console.error('Arch gate auth error:', error);
