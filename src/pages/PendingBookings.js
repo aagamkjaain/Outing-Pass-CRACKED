@@ -7,9 +7,10 @@ import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 
 const PendingBookings = ({ adminRole, adminHostels }) => {
+  console.log('PendingBookings component rendering', { adminRole, adminHostels });
   const [allBookings, setAllBookings] = useState([]); // Store all bookings (unfiltered)
   const [selectedStatus, setSelectedStatus] = useState('waiting');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [counts, setCounts] = useState({ waiting: 0, still_out: 0, confirmed: 0, rejected: 0 });
@@ -123,25 +124,21 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   }, [navigate, adminRole, fetchAllBookings]);
 
   useEffect(() => {
-    // Don't automatically load all data - only load when needed
+    // Initialize user authentication
     if (wardenLoggedIn) {
-      // For wardens, only load data when searching or when specific status is selected
+      // For wardens, load data based on status
       if (selectedStatus === 'waiting') {
-        // For waiting tab, show only today's requests
         loadWaitingData();
       } else if (selectedStatus === 'still_out') {
-        // For still_out tab, load all data
         fetchAllBookings(wardenEmail);
       }
-      // For confirmed and rejected, don't load data automatically
     } else {
-      // For admins, only load data for waiting and still_out tabs
+      // For admins, load data for waiting and still_out tabs only
       if (selectedStatus === 'waiting' || selectedStatus === 'still_out') {
         checkAdminAndFetchBookings();
       }
-      // For confirmed and rejected, don't load data automatically
     }
-  }, [wardenLoggedIn, wardenEmail, selectedStatus, loadWaitingData, fetchAllBookings, checkAdminAndFetchBookings]);
+  }, [wardenLoggedIn, selectedStatus]);
 
   const loadWaitingData = useCallback(async () => {
     try {
@@ -487,7 +484,23 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
   const handleSendStillOutAlertFactory = useCallback((booking) => () => sendStillOutAlert(booking), [sendStillOutAlert]);
 
   if (loading) return <div className="loading">Loading...<br/>{error && <span style={{color:'red'}}>{error}</span>}</div>;
+  
+  // Add error boundary to prevent white screen
+  if (error && !allBookings.length) {
+    return (
+      <div className="pending-bookings-page">
+        <h2>Outing Requests</h2>
+        <div className="error-message" style={{color: 'red', padding: '20px', textAlign: 'center'}}>
+          {error}
+        </div>
+        <button onClick={() => window.location.reload()} style={{margin: '10px', padding: '10px'}}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
+  // Always render something to prevent white screen
   return (
     <div className="pending-bookings-page">
       <Toast message={toast.message} type={toast.type} onClose={handleToastClose} />
