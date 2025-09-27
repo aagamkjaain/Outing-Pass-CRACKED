@@ -316,11 +316,10 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   }, []);
 
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-  const wardenHostels = wardenLoggedIn ? JSON.parse(sessionStorage.getItem('wardenHostels') || '[]') : [];
 
   const filteredInfo = useMemo(() => {
     let filtered = studentInfo.filter(info => {
-      if (wardenLoggedIn && wardenHostels.length > 0) {
+      if ((wardenLoggedIn || isWarden) && wardenHostels.length > 0) {
         return wardenHostels.map(h => h.trim().toLowerCase()).includes((info.hostel_name || '').trim().toLowerCase());
       }
       return true;
@@ -335,7 +334,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     }
 
     return filtered;
-  }, [studentInfo, searchQuery, searchActive, wardenLoggedIn, wardenHostels]);
+  }, [studentInfo, searchQuery, searchActive, wardenLoggedIn, isWarden, wardenHostels]);
 
   return (
     <div className="admin-student-info-page" style={{ 
