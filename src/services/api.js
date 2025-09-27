@@ -752,18 +752,20 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
+    // Use RPC function for secure authentication
     const { data, error } = await supabase
-      .from('system_users')
-      .select('*')
-      .eq('username', username)
-      .maybeSingle();
-    if (error && error.code !== 'PGRST116') throw error;
-    if (!data) return null;
+      .rpc('authenticate_warden', { 
+        warden_username: username, 
+        warden_password: password 
+      });
     
-    // Direct password comparison
-    if (data.password !== password) return null;
+    if (error) {
+      console.error('Warden authentication RPC error:', error);
+      return null;
+    }
     
-    return data;
+    // Return the first (and should be only) result
+    return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Warden authentication error:', error);
     return null;
