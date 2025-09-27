@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback, useReducer } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useCallback, useReducer } from 'react';
 import { 
   bookSlot, 
   fetchBookedSlots, 
   deleteBookedSlot, 
   checkApiHealth,
-  fetchPendingBookings,
-  handleBookingAction,
   fetchStudentInfoByEmail,
   fetchAdminInfoByEmail,
   checkAndAutoUnban
@@ -52,7 +49,15 @@ function reducer(state, action) {
     case 'RESET_BOOKING_FORM':
       return { ...state, bookingForm: { ...initialState.bookingForm, email: state.bookingForm.email } };
     case 'SET_USER_INFO':
-      return { ...state, user: action.payload.user, bookingForm: { ...state.bookingForm, ...action.payload.formDetails } };
+      return { 
+        ...state, 
+        user: action.payload.user, 
+        bookingForm: { 
+          ...state.bookingForm, 
+          ...action.payload.formDetails,
+          hostelName: action.payload.user?.hostel_name || 'Hostel A' // Get hostel from student info
+        } 
+      };
     case 'SET_BOOKINGS':
       return { ...state, bookedSlots: action.payload.bookings, bookingCounts: action.payload.counts };
     case 'SET_LOADING':
@@ -122,7 +127,7 @@ const SlotBooking = () => {
             type: 'SET_USER_INFO', 
             payload: { 
               user, 
-              formDetails: { email, name, roomNumber, hostelName, parentEmail, parentPhone } 
+              formDetails: { email, name, parentEmail, parentPhone } 
             }
           });
           const ban = await checkAndAutoUnban(email);
@@ -177,7 +182,7 @@ const SlotBooking = () => {
       return;
     }
     try {
-      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.hostelName || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
+      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
         throw new Error('Please fill all required fields.');
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -340,10 +345,11 @@ const SlotBooking = () => {
             id="hostelName"
             name="hostelName"
             value={bookingForm.hostelName}
-            onChange={handleBookingChange}
+            readOnly
+            disabled
+            className="readonly-input"
             required
-            placeholder="Enter your hostel name"
-            disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
+            placeholder="Hostel name from student info"
           />
 
         <div className="form-group">
@@ -441,7 +447,6 @@ const SlotBooking = () => {
               !bookingForm.name ||
               !bookingForm.email ||
               !bookingForm.roomNumber ||
-              !bookingForm.hostelName ||
               !bookingForm.outDate ||
               !bookingForm.outTime ||
               !bookingForm.inDate ||
