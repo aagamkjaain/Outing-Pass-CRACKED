@@ -538,16 +538,22 @@ export const deleteStudentInfo = async (student_email) => {
  */
 export const authenticateWarden = async (username, password) => {
   try {
+    // Set user context for RLS policies
+    await supabase.rpc('set_user_context', { user_name: username });
+    
     const { data, error } = await supabase
-      .from('admins')
-      .select('*')
+      .from('system_users')
+      .select('username, password, role, hostels, email')
       .eq('username', username)
-      .eq('role', 'warden') // Re-enabled role validation for security
+      .eq('role', 'warden') // Only wardens from system_users table
       .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
     if (data.password !== password) return null;
-    return data;
+    
+    // Return only what's needed (exclude password from response)
+    const { password: _, ...wardenData } = data;
+    return wardenData;
   } catch (error) {
     return null;
   }
@@ -566,7 +572,7 @@ export const authenticateSystemUser = async (username, password) => {
     
     const { data, error } = await supabase
       .from('system_users')
-      .select('*')
+      .select('username, password, role, hostels, email')
       .eq('username', username)
       .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
@@ -575,7 +581,9 @@ export const authenticateSystemUser = async (username, password) => {
     // Direct password comparison
     if (data.password !== password) return null;
     
-    return data;
+    // Return only what's needed (exclude password from response)
+    const { password: _, ...userData } = data;
+    return userData;
   } catch (error) {
     return null;
   }
