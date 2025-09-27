@@ -694,9 +694,10 @@ export const checkApiHealth = async () => {
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
     const today = new Date().toISOString().split('T')[0];
+    // Only select necessary fields for arch gate verification
     const { data, error } = await supabase
       .from('outing_requests')
-      .select('*')
+      .select('id, otp, otp_used, status, out_date, in_date, name, email, hostel_name, room_number')
       .eq('otp', otp)
       .eq('otp_used', false)
       .eq('status', 'still_out')
@@ -711,11 +712,12 @@ export const fetchOutingDetailsByOTP = async (otp) => {
 
 export const markOTPAsUsed = async (otp) => {
   try {
+    // Only update the otp_used field, not other sensitive data
     const { data, error } = await supabase
       .from('outing_requests')
       .update({ otp_used: true })
       .eq('otp', otp)
-      .select();
+      .select('id, otp, otp_used, status');
 
     if (error) throw error;
     return data[0];
