@@ -603,44 +603,10 @@ export const authenticateWarden = async (email, password) => {
  * @param {string} password
  * @returns {Promise<Object|null>} - Arch gate info or null if not found/invalid
  */
-// Test function to check arch_gate table access
-export const testArchGateAccess = async () => {
-  try {
-    console.log('Testing arch_gate table access...');
-    const { data, error } = await supabase
-      .from('arch_gate')
-      .select('*');
-      
-    console.log('Arch gate table test result:', { data, error });
-    return { data, error };
-  } catch (error) {
-    console.error('Arch gate table test failed:', error);
-    return { data: null, error };
-  }
-};
 
 export const authenticateArchGate = async (username, password) => {
   try {
-    console.log('Authenticating arch gate user:', username);
     
-    // First test if we can access the table at all
-    const testResult = await testArchGateAccess();
-    if (testResult.error) {
-      console.error('Cannot access arch_gate table:', testResult.error);
-      return null;
-    }
-    
-    // Test if we can find the specific user by username only
-    console.log('Testing username-only query...');
-    const { data: userData, error: userError } = await supabase
-      .from('arch_gate')
-      .select('*')
-      .eq('username', username)
-      .maybeSingle();
-    console.log('Username-only query result:', { userData, userError });
-    
-    // Check if user exists in arch_gate table with matching username and password
-    console.log('Querying for username:', username, 'password:', password);
     
     const { data, error } = await supabase
       .from('arch_gate')
@@ -649,22 +615,14 @@ export const authenticateArchGate = async (username, password) => {
       .eq('password', password)
       .maybeSingle();
       
-    console.log('Arch gate auth result:', { data, error });
-    console.log('Data type:', typeof data, 'Data value:', data);
-    
     if (error && error.code !== 'PGRST116') {
-      console.error('Arch gate auth error:', error);
       throw error;
     }
     if (!data) {
-      console.log('No arch gate user found with credentials:', username);
       return null;
     }
-    
-    console.log('Arch gate user authenticated successfully:', data);
     return { ...data, role: 'arch_gate' }; // Add role for compatibility
   } catch (error) {
-    console.error('Arch gate authentication failed:', error);
     return null;
   }
 };
@@ -686,7 +644,6 @@ export const checkApiHealth = async () => {
     const { error } = await supabase.auth.getSession();
     return !error;
   } catch (error) {
-    // console.error('Supabase connection error:', error);
     return false;
   }
 };

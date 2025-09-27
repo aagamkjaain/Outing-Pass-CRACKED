@@ -7,7 +7,6 @@ import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 
 const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: propWardenHostels }) => {
-  console.log('PendingBookings component rendering', { adminRole, adminHostels });
   const [allBookings, setAllBookings] = useState([]); // Store all bookings (unfiltered)
   const [selectedStatus, setSelectedStatus] = useState('waiting');
   const [loading, setLoading] = useState(false);
@@ -246,7 +245,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       }
       await fetchBans();
     } catch (error) {
-      console.error('Booking action error:', error);
       setError(`Failed to process booking action: ${error.message}`);
     } finally {
       setLoading(false);

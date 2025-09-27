@@ -50,9 +50,6 @@ function reducer(state, action) {
     case 'RESET_BOOKING_FORM':
       return { ...state, bookingForm: { ...initialState.bookingForm, email: state.bookingForm.email } };
     case 'SET_USER_INFO':
-      // Debug: Log the student info and hostel name
-      console.log('SET_USER_INFO - studentInfo:', action.payload.studentInfo);
-      console.log('SET_USER_INFO - hostel_name:', action.payload.studentInfo?.hostel_name);
       
       return { 
         ...state, 
@@ -126,9 +123,6 @@ const SlotBooking = () => {
             parentPhone = info.parent_phone || '';
             dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: true });
             
-            // Debug: Log the student info to verify hostel_name
-            console.log('Student info fetched:', info);
-            console.log('Hostel name from student info:', info.hostel_name);
             
             dispatch({ 
               type: 'SET_USER_INFO', 
@@ -158,7 +152,6 @@ const SlotBooking = () => {
           }
         }
       } catch (error) {
-        // console.error('Error initializing user:', error);
       }
     };
     
