@@ -6,7 +6,8 @@ import {
   checkApiHealth,
   fetchStudentInfoByEmail,
   fetchAdminInfoByEmail,
-  checkAndAutoUnban
+  checkAndAutoUnban,
+  generateOtpForBooking
 } from '../services/api';
 import './SlotBooking.css';
 import { supabase } from '../supabaseClient';
@@ -182,7 +183,26 @@ const SlotBooking = () => {
     dispatch({ type: 'SET_ERROR', payload: '' });
     dispatch({ type: 'SET_SUCCESS', payload: '' });
     dispatch({ type: 'SET_BOOKING_FIELD', field: name, value });
-  }, []);
+    
+    // Real-time validation for date and time fields
+    if (name === 'outDate' || name === 'outTime' || name === 'inDate' || name === 'inTime') {
+      const currentForm = { ...bookingForm, [name]: value };
+      
+      // Only validate if both out and in dates/times are filled
+      if (currentForm.outDate && currentForm.outTime && currentForm.inDate && currentForm.inTime) {
+        try {
+          const outDateTime = new Date(`${currentForm.outDate}T${currentForm.outTime}`);
+          const inDateTime = new Date(`${currentForm.inDate}T${currentForm.inTime}`);
+          
+          if (inDateTime <= outDateTime) {
+            dispatch({ type: 'SET_ERROR', payload: 'In date and time must be after out date and time.' });
+          }
+        } catch (error) {
+          // Ignore validation errors during typing
+        }
+      }
+    }
+  }, [bookingForm]);
 
   const handleRetryConnection = async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -213,6 +233,28 @@ const SlotBooking = () => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(bookingForm.parentEmail)) {
         throw new Error('Please enter a valid parent email address.');
+      }
+      
+      // Date and time validation
+      const outDateTime = new Date(`${bookingForm.outDate}T${bookingForm.outTime}`);
+      const inDateTime = new Date(`${bookingForm.inDate}T${bookingForm.inTime}`);
+      const now = new Date();
+      
+      // Check if out date is not in the past
+      if (outDateTime < now) {
+        throw new Error('Out date and time cannot be in the past.');
+      }
+      
+      // Check if in date is not before out date
+      if (inDateTime < outDateTime) {
+        throw new Error('In date and time must be after out date and time.');
+      }
+      
+      // Check if the outing duration is reasonable (not more than 7 days)
+      const durationMs = inDateTime - outDateTime;
+      const durationDays = durationMs / (1000 * 60 * 60 * 24);
+      if (durationDays > 7) {
+        throw new Error('Outing duration cannot exceed 7 days.');
       }
       const bookingData = {
         name: bookingForm.name,
@@ -297,6 +339,36 @@ const SlotBooking = () => {
   , [bookedSlots]);
 
   const handleDeleteBookingFactory = useCallback((id) => () => handleDeleteBooking(id), [handleDeleteBooking]);
+
+  // Helper function to check if current form has valid times
+  const hasValidTimes = useMemo(() => {
+    if (!bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime) {
+      return true; // Don't show error if fields are empty
+    }
+    try {
+      const outDateTime = new Date(`${bookingForm.outDate}T${bookingForm.outTime}`);
+      const inDateTime = new Date(`${bookingForm.inDate}T${bookingForm.inTime}`);
+      return inDateTime > outDateTime;
+    } catch {
+      return true; // Don't show error if dates are invalid
+    }
+  }, [bookingForm.outDate, bookingForm.outTime, bookingForm.inDate, bookingForm.inTime]);
+
+  const handleGenerateOtp = useCallback(async (bookingId) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: '' });
+    dispatch({ type: 'SET_SUCCESS', payload: '' });
+    try {
+      const result = await generateOtpForBooking(bookingId);
+      dispatch({ type: 'SET_SUCCESS', payload: `OTP generated successfully: ${result.otp}` });
+      // Refresh bookings to show the new OTP
+      await fetchUserBookings(bookingForm.email);
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to generate OTP' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [bookingForm.email, fetchUserBookings]);
 
   return (
     <div className="slot-booking-container">
@@ -425,7 +497,16 @@ const SlotBooking = () => {
             onChange={handleBookingChange}
             required
             disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
+            style={{
+              borderColor: !hasValidTimes ? '#dc3545' : undefined,
+              backgroundColor: !hasValidTimes ? '#fff5f5' : undefined
+            }}
           />
+          {!hasValidTimes && bookingForm.outDate && bookingForm.outTime && bookingForm.inDate && bookingForm.inTime && (
+            <div style={{ color: '#dc3545', fontSize: '12px', marginTop: '4px' }}>
+              ⚠️ In time must be after out time
+            </div>
+          )}
         </div>
         <div className="form-group">
           <label htmlFor="reason">Reason for Outing:</label>
@@ -478,7 +559,8 @@ const SlotBooking = () => {
               !bookingForm.inDate ||
               !bookingForm.inTime ||
               !bookingForm.parentEmail ||
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingForm.parentEmail)
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingForm.parentEmail) ||
+              !hasValidTimes
             }
           >
             {loading ? 'Sending...' : 'Send Request'}
@@ -549,7 +631,25 @@ const SlotBooking = () => {
                 {currentBooking.status === 'waiting' && (
                   <button onClick={handleDeleteBookingFactory(currentBooking.id)} disabled={loading} style={{ marginTop: 16, background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, padding: '8px 20px', fontWeight: 500, cursor: 'pointer' }}>
                     {loading ? 'Deleting...' : 'Delete'}
-            </button>
+                  </button>
+                )}
+                {currentBooking.status === 'still_out' && !currentBooking.otp && (
+                  <button 
+                    onClick={() => handleGenerateOtp(currentBooking.id)} 
+                    disabled={loading} 
+                    style={{ 
+                      marginTop: 16, 
+                      background: '#28a745', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: 4, 
+                      padding: '8px 20px', 
+                      fontWeight: 500, 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    {loading ? 'Generating...' : 'Generate OTP'}
+                  </button>
                 )}
                 {currentBooking && currentBooking.status === 'rejected' && currentBooking.rejection_reason && (
                   <div style={{ color: '#c62828', fontWeight: 600, margin: '12px 0' }}>
