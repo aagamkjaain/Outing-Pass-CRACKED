@@ -529,7 +529,7 @@ export const deleteStudentInfo = async (student_email) => {
 };
 
 /**
- * Authenticate warden by email (using Supabase Auth)
+ * Authenticate warden by email (simple check like super admin)
  * @param {string} email
  * @param {string} password
  * @returns {Promise<Object|null>} - Warden info or null if not found/invalid
@@ -546,12 +546,12 @@ export const authenticateWarden = async (email, password) => {
       return null;
     }
     
-    // Check if user exists in wardens table
+    // Check if user exists in wardens table (like super admin check)
     const { data, error } = await supabase
       .from('wardens')
       .select('*')
       .eq('email', email.toLowerCase())
-      .maybeSingle();
+      .single();
       
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
@@ -680,7 +680,7 @@ export const banStudent = async (banData) => {
       }
     }
     
-    // Check if user is a warden
+    // Check if user is a warden (like super admin check)
     if (isWardenLoggedIn) {
       isWarden = true;
     } else if (user && user.email) {
