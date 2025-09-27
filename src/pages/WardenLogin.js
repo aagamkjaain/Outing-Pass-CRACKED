@@ -11,34 +11,22 @@ const WardenLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Form submitted!'); // Simple test
-    console.log('=== FORM SUBMISSION START ===');
-    console.log('Username:', username);
-    console.log('Password:', password);
-    
     setLoading(true);
     setError('');
     try {
-      console.log('Calling authenticateSystemUser...');
       const warden = await authenticateSystemUser(username, password);
-      console.log('Authentication result:', warden);
-      
       if (warden) {
-        console.log('Authentication successful, setting session...');
         // Set session info in sessionStorage
         sessionStorage.setItem('wardenLoggedIn', 'true');
-        sessionStorage.setItem('wardenUsername', warden.username);
+        sessionStorage.setItem('wardenUsername', warden.id);
         sessionStorage.setItem('wardenHostels', JSON.stringify(warden.hostels || []));
         sessionStorage.setItem('wardenEmail', warden.email || '');
         sessionStorage.setItem('wardenRole', warden.role || 'warden');
-        console.log('Session set, redirecting...');
         window.location.href = '/pending-bookings'; // Force full reload
       } else {
-        console.log('Authentication failed - no warden returned');
         setError('Invalid username or password');
       }
     } catch (err) {
-      console.error('Authentication error:', err);
       setError('Login failed. Please try again.');
     } finally {
       setLoading(false);

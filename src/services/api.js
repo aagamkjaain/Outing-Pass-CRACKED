@@ -21,16 +21,9 @@ async function ensureWardenContext() {
     if (!wardenLoggedIn) return;
     const username = sessionStorage.getItem('wardenUsername') || '';
     if (!username) return;
-    
-    // Force set the context every time with error handling
-    const { error } = await supabase.rpc('set_user_context', { user_name: username });
-    if (error) {
-      console.error('Failed to set warden context:', error);
-      return;
-    }
-    console.log('Warden context set successfully for:', username);
+    await supabase.rpc('set_user_context', { user_name: username });
   } catch (e) {
-    console.error('Error in ensureWardenContext:', e);
+    // ignore
   }
 }
 
@@ -568,52 +561,22 @@ export const authenticateWarden = async (username, password) => {
  */
 export const authenticateSystemUser = async (username, password) => {
   try {
-    console.log('=== WARDEN AUTHENTICATION DEBUG ===');
-    console.log('Username:', username);
-    console.log('Password length:', password.length);
+    // Set user context for RLS policies
+    await supabase.rpc('set_user_context', { user_name: username });
     
-    // First, try to authenticate without RLS (for login purposes)
     const { data, error } = await supabase
       .from('system_users')
-      .select('username, password, role, hostels, email')
+      .select('*')
       .eq('username', username)
       .maybeSingle();
-    
-    console.log('Query result:', { data, error });
-    
-    if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error);
-      throw error;
-    }
-    if (!data) {
-      console.log('No data found for username:', username);
-      return null;
-    }
-    
-    console.log('Found user data:', { username: data.username, role: data.role });
-    console.log('Stored password length:', data.password.length);
-    console.log('Entered password length:', password.length);
-    console.log('Password match:', data.password === password);
+    if (error && error.code !== 'PGRST116') throw error;
+    if (!data) return null;
     
     // Direct password comparison
-    if (data.password !== password) {
-      console.log('Password mismatch');
-      return null;
-    }
-    
-    console.log('Authentication successful, setting context...');
-    
-    // If authentication successful, set user context for future RLS operations
-    const { error: contextError } = await supabase.rpc('set_user_context', { user_name: username });
-    if (contextError) {
-      console.error('Context error:', contextError);
-    } else {
-      console.log('Context set successfully');
-    }
+    if (data.password !== password) return null;
     
     return data;
   } catch (error) {
-    console.error('Authentication error:', error);
     return null;
   }
 };
