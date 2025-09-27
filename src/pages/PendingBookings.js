@@ -139,7 +139,8 @@ const PendingBookings = ({ adminRole, adminHostels }) => {
       }
       await fetchBans();
     } catch (error) {
-      setError('Failed to process booking action.');
+      console.error('Booking action error:', error);
+      setError(`Failed to process booking action: ${error.message}`);
     } finally {
       setLoading(false);
     }
