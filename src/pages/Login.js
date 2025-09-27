@@ -84,25 +84,6 @@ const Login = () => {
       >
         Custom Login
       </button>
-      {/* Warden Login Button */}
-      <button
-        style={{
-          position: 'fixed',
-          bottom: 24,
-          left: 24,
-          background: '#fff',
-          color: '#333',
-          border: '1px solid #ccc',
-          borderRadius: 24,
-          padding: '10px 18px',
-          fontSize: 14,
-          boxShadow: '0 2px 8px #0001',
-          zIndex: 1000
-        }}
-        onClick={() => navigate('/warden-login')}
-      >
-        Warden Login
-      </button>
       {/* Arch Gate Modal */}
       {showArchModal && (
         <div className="arch-gate-modal-overlay" onClick={() => setShowArchModal(false)}>

@@ -18,7 +18,6 @@ const initialState = {
   bookingForm: {
     name: '',
     email: '',
-    department: '',
     roomNumber: '',
     outDate: '',
     outTime: '',
@@ -106,14 +105,12 @@ const SlotBooking = () => {
         if (user) {
           let name = user.user_metadata?.full_name || user.email;
           let email = user.email;
-          let department = '';
           let parentEmail = '';
           let parentPhone = '';
           const adminInfo = await fetchAdminInfoByEmail(email);
           dispatch({ type: 'SET_FIELD', field: 'isAdmin', value: !!adminInfo });
           const info = await fetchStudentInfoByEmail(email);
           if (info) {
-            department = info.hostel_name;
             parentEmail = info.parent_email || '';
             parentPhone = info.parent_phone || '';
             dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: true });
@@ -124,7 +121,7 @@ const SlotBooking = () => {
             type: 'SET_USER_INFO', 
             payload: { 
               user, 
-              formDetails: { email, name, department, parentEmail, parentPhone } 
+              formDetails: { email, name, parentEmail, parentPhone } 
             }
           });
           const ban = await checkAndAutoUnban(email);
@@ -179,7 +176,7 @@ const SlotBooking = () => {
       return;
     }
     try {
-      if (!bookingForm.name || !bookingForm.email || !bookingForm.department || !bookingForm.roomNumber || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
+      if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
         throw new Error('Please fill all required fields.');
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -189,7 +186,7 @@ const SlotBooking = () => {
       const bookingData = {
         name: bookingForm.name,
         email: bookingForm.email,
-        hostelName: bookingForm.department,
+        hostelName: 'Hostel A', // Default hostel name
         roomNumber: bookingForm.roomNumber,
         outDate: bookingForm.outDate,
         outTime: bookingForm.outTime,
@@ -323,16 +320,6 @@ const SlotBooking = () => {
           className="readonly-input"
         />
 
-        <label htmlFor="department">Hostel Name:</label>
-          <input
-            type="text"
-            id="department"
-            name="department"
-            value={bookingForm.department}
-            readOnly
-            disabled
-            className="readonly-input"
-          />
 
         <label htmlFor="roomNumber">Room Number:</label>
           <input
@@ -440,7 +427,6 @@ const SlotBooking = () => {
             disabled={(!isAdmin && !studentInfoExists) || loading || apiError ||
               !bookingForm.name ||
               !bookingForm.email ||
-              !bookingForm.department ||
               !bookingForm.roomNumber ||
               !bookingForm.outDate ||
               !bookingForm.outTime ||
