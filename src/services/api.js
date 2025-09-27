@@ -254,6 +254,10 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
     
     let data; // Declare data variable at the beginning
     
+    // action is now the new status: 'still_out', 'confirmed', 'rejected'
+    let newStatus = action;
+    if (action === 'reject') newStatus = 'rejected';
+    
     // Check if warden is logged in - if so, use RPC function
     const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
     
@@ -262,10 +266,6 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       if (!wardenUsername) {
         throw new Error('Warden username not found in session');
       }
-      
-      // action is now the new status: 'still_out', 'confirmed', 'rejected'
-      let newStatus = action;
-      if (action === 'reject') newStatus = 'rejected';
       
       console.log('Using RPC function for warden update:', { bookingId, newStatus, wardenUsername });
       
@@ -292,8 +292,6 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       data = [updatedBooking];
     } else {
       // For super admins, use normal update
-      let newStatus = action;
-      if (action === 'reject') newStatus = 'rejected';
       const updateObj = {
         status: newStatus,
         handled_by: adminEmail,
