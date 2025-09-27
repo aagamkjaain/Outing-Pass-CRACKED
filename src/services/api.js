@@ -276,32 +276,13 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
         rejection_reason_param: rejectionReason || null
       });
       
-      // Test with simpler function first
-      const { data: testResult, error: testError } = await supabase
-        .rpc('test_warden_update', {
+      const { data: rpcData, error } = await supabase
+        .rpc('warden_update_outing_request', {
           request_id: bookingId,
           new_status: newStatus,
-          handler_username: wardenUsername
+          handler_username: wardenUsername,
+          rejection_reason_param: rejectionReason || null
         });
-      
-      if (testError) {
-        console.error('Test RPC error:', testError);
-        throw new Error(`Test failed: ${testError.message}`);
-      }
-      
-      console.log('Test result:', testResult);
-      
-      // If test passes, do the actual update
-      const { data, error } = await supabase
-        .from('outing_requests')
-        .update({
-          status: newStatus,
-          handled_by: wardenUsername,
-          handled_at: new Date().toISOString(),
-          rejection_reason: rejectionReason || null
-        })
-        .eq('id', bookingId)
-        .select();
       
       if (error) {
         console.error('RPC update error:', error);
@@ -309,10 +290,10 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
         throw new Error(`Failed to update request: ${error.message}`);
       }
       
-      console.log('RPC update successful:', data);
+      console.log('RPC update successful:', rpcData);
       
       // RPC returns array, get first element
-      const updatedBooking = data && data.length > 0 ? data[0] : null;
+      const updatedBooking = rpcData && rpcData.length > 0 ? rpcData[0] : null;
       if (!updatedBooking) {
         throw new Error('No data returned from update');
       }
