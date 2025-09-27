@@ -3,10 +3,10 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../supabaseClient';
 import './Login.css';
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   return (
     <div className="login-page">
       <div className="login-container">
@@ -47,8 +47,8 @@ const Login = () => {
         />
         <p className="note">* Only @srmist.edu.in email addresses are allowed</p>
       </div>
-      {/* Arch Gate Login Button - HIDDEN */}
-      {/* <button
+      {/* Arch Gate Login Button */}
+      <button
         style={{
           position: 'fixed',
           bottom: 24,
@@ -64,8 +64,8 @@ const Login = () => {
         }}
         onClick={() => navigate('/arch-gate-login')}
       >
-        Custom Login
-      </button> */}
+        Arch Gate Login
+      </button>
     </div>
   );
 };
