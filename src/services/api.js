@@ -606,22 +606,32 @@ export const authenticateWarden = async (email, password) => {
 
 export const authenticateArchGate = async (username, password) => {
   try {
-    
-    
+    // Use a more secure approach - check if user exists first
     const { data, error } = await supabase
       .from('arch_gate')
-      .select('*')
+      .select('username, password')
       .eq('username', username)
-      .eq('password', password)
       .maybeSingle();
       
     if (error && error.code !== 'PGRST116') {
       throw error;
     }
+    
+    // If no user found, return null
     if (!data) {
       return null;
     }
-    return { ...data, role: 'arch_gate' }; // Add role for compatibility
+    
+    // Verify password (simple comparison for now, but should be hashed in production)
+    if (data.password !== password) {
+      return null;
+    }
+    
+    // Return user info without password
+    return { 
+      username: data.username, 
+      role: 'arch_gate' 
+    };
   } catch (error) {
     return null;
   }
