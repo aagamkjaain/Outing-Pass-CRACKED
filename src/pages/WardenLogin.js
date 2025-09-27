@@ -11,6 +11,7 @@ const WardenLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    alert('Form submitted!'); // Simple test
     console.log('=== FORM SUBMISSION START ===');
     console.log('Username:', username);
     console.log('Password:', password);
