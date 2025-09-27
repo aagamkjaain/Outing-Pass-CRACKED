@@ -540,6 +540,12 @@ const SlotBooking = () => {
                 <div><b>In Time:</b> {currentBooking.in_time}</div>
                 <div><b>Reason:</b> {currentBooking.reason}</div>
                 <div><b>Status:</b> {currentBooking.status}</div>
+                {currentBooking.handled_by && currentBooking.status !== 'waiting' && (
+                  <div style={{ marginTop: 8, padding: 8, background: '#f8f9fa', borderRadius: 4, border: '1px solid #dee2e6' }}>
+                    <div><b>Handled on:</b> {currentBooking.handled_at ? new Date(currentBooking.handled_at).toLocaleString() : ''}</div>
+                    <div><b>Handled by:</b> {currentBooking.handled_by}</div>
+                  </div>
+                )}
                 {currentBooking.status === 'waiting' && (
                   <button onClick={handleDeleteBookingFactory(currentBooking.id)} disabled={loading} style={{ marginTop: 16, background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, padding: '8px 20px', fontWeight: 500, cursor: 'pointer' }}>
                     {loading ? 'Deleting...' : 'Delete'}
@@ -588,6 +594,12 @@ const SlotBooking = () => {
                   <div><b>In Time:</b> {booking.in_time}</div>
                   <div><b>Reason:</b> {booking.reason}</div>
                   <div><b>Status:</b> {booking.status}</div>
+                  {booking.handled_by && booking.status !== 'waiting' && (
+                    <div style={{ marginTop: 8, padding: 8, background: '#f8f9fa', borderRadius: 4, border: '1px solid #dee2e6' }}>
+                      <div><b>Handled on:</b> {booking.handled_at ? new Date(booking.handled_at).toLocaleString() : ''}</div>
+                      <div><b>Handled by:</b> {booking.handled_by}</div>
+                    </div>
+                  )}
                   {booking.status === 'rejected' && booking.rejection_reason && (
                     <div style={{ color: '#c62828', fontWeight: 600, marginTop: 8 }}>
                       <b>Rejection Reason:</b> {booking.rejection_reason}
