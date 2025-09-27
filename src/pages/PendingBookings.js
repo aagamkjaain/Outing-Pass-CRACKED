@@ -121,7 +121,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         navigate('/login');
         return;
       }
-      if (!adminRole) {
+      if (!adminRole && !isWarden) {
         navigate('/');
         return;
       }
@@ -129,7 +129,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     } catch (error) {
       setError('Failed to authenticate');
     }
-  }, [navigate, adminRole, fetchAllBookings]);
+  }, [navigate, adminRole, isWarden, fetchAllBookings]);
 
   useEffect(() => {
     // Initialize user authentication
