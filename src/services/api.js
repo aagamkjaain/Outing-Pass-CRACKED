@@ -269,18 +269,47 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
       
       console.log('Using RPC function for warden update:', { bookingId, newStatus, wardenUsername });
       
-      const { data, error } = await supabase
-        .rpc('warden_update_outing_request', {
+      console.log('Calling RPC with params:', {
+        request_id: bookingId,
+        new_status: newStatus,
+        handler_username: wardenUsername,
+        rejection_reason_param: rejectionReason || null
+      });
+      
+      // Test with simpler function first
+      const { data: testResult, error: testError } = await supabase
+        .rpc('test_warden_update', {
           request_id: bookingId,
           new_status: newStatus,
-          handler_username: wardenUsername,
-          rejection_reason_param: rejectionReason || null
+          handler_username: wardenUsername
         });
+      
+      if (testError) {
+        console.error('Test RPC error:', testError);
+        throw new Error(`Test failed: ${testError.message}`);
+      }
+      
+      console.log('Test result:', testResult);
+      
+      // If test passes, do the actual update
+      const { data, error } = await supabase
+        .from('outing_requests')
+        .update({
+          status: newStatus,
+          handled_by: wardenUsername,
+          handled_at: new Date().toISOString(),
+          rejection_reason: rejectionReason || null
+        })
+        .eq('id', bookingId)
+        .select();
       
       if (error) {
         console.error('RPC update error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw new Error(`Failed to update request: ${error.message}`);
       }
+      
+      console.log('RPC update successful:', data);
       
       // RPC returns array, get first element
       const updatedBooking = data && data.length > 0 ? data[0] : null;
