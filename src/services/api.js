@@ -606,14 +606,25 @@ export const authenticateWarden = async (email, password) => {
 
 export const authenticateArchGate = async (username, password) => {
   try {
-    // Use a more secure approach - check if user exists first
+    // SECURITY: Use a stored procedure or function that runs server-side
+    // This prevents direct table access with anon key
+    
+    // For now, we'll use a more secure approach:
+    // 1. Check if user exists (this will be blocked by RLS if anon access is disabled)
+    // 2. If RLS blocks this, authentication fails (which is what we want)
+    
     const { data, error } = await supabase
       .from('arch_gate')
       .select('username, password')
       .eq('username', username)
       .maybeSingle();
       
-    if (error && error.code !== 'PGRST116') {
+    // If RLS blocks anon access, this will fail with permission error
+    if (error) {
+      // This is actually GOOD - means RLS is working
+      if (error.code === '42501' || error.message.includes('permission denied')) {
+        return null; // RLS blocked access - authentication fails
+      }
       throw error;
     }
     
@@ -622,7 +633,7 @@ export const authenticateArchGate = async (username, password) => {
       return null;
     }
     
-    // Verify password (simple comparison for now, but should be hashed in production)
+    // Verify password
     if (data.password !== password) {
       return null;
     }

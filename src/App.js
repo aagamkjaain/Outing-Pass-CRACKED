@@ -167,9 +167,9 @@ function App() {
               }
             />
             <Route path="/" element={user ? <SlotBooking /> : <Login />} />
-            <Route path="/arch-gate-login" element={<ArchGateLogin />} />
-            <Route path="/arch-otp" element={<ArchGateOTP />} />
-            <Route path="/arch-outing-details" element={<ArchGateOutingDetails />} />
+            {/* <Route path="/arch-gate-login" element={<ArchGateLogin />} /> */}
+            {/* <Route path="/arch-otp" element={<ArchGateOTP />} />
+            <Route path="/arch-outing-details" element={<ArchGateOutingDetails />} /> */}
           </Routes>
         </main>
       </div>

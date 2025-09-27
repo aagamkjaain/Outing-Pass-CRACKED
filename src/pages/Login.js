@@ -47,8 +47,8 @@ const Login = () => {
         />
         <p className="note">* Only @srmist.edu.in email addresses are allowed</p>
       </div>
-      {/* Arch Gate Login Button */}
-      <button
+      {/* Arch Gate Login Button - HIDDEN */}
+      {/* <button
         style={{
           position: 'fixed',
           bottom: 24,
@@ -65,7 +65,7 @@ const Login = () => {
         onClick={() => navigate('/arch-gate-login')}
       >
         Custom Login
-      </button>
+      </button> */}
     </div>
   );
 };
