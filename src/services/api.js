@@ -15,21 +15,42 @@ const handleError = (error) => {
 
 // Best-effort: set per-request user context so RLS works without JWT
 async function ensureUserContext() {
+  console.log('ensureUserContext called'); // Debug log
+  
   try {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+      console.log('Window is undefined, skipping context setting');
+      return;
+    }
     
     // Check if warden is logged in
     const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
+    console.log('Warden logged in:', wardenLoggedIn); // Debug log
+    
     if (wardenLoggedIn) {
       const username = sessionStorage.getItem('wardenUsername') || '';
+      console.log('Warden username from session:', username); // Debug log
+      
       if (username) {
         console.log('Setting context for warden:', username); // Debug log
-        await supabase.rpc('set_user_context', { user_name: username });
+        const { error } = await supabase.rpc('set_user_context', { user_name: username });
+        
+        if (error) {
+          console.error('Error setting context:', error);
+        } else {
+          console.log('Context set successfully');
+        }
         
         // Verify context was set
-        const { data: contextData } = await supabase.rpc('get_user_name');
-        console.log('Context verification:', contextData); // Debug log
+        const { data: contextData, error: contextError } = await supabase.rpc('get_user_name');
+        if (contextError) {
+          console.error('Error getting context:', contextError);
+        } else {
+          console.log('Context verification:', contextData); // Debug log
+        }
         return;
+      } else {
+        console.log('No username found in session storage');
       }
     }
     
@@ -37,17 +58,20 @@ async function ensureUserContext() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
+        console.log('Super admin logged in:', user.email);
         const adminInfo = await fetchAdminInfoByEmail(user.email);
         if (adminInfo?.role === 'superadmin') {
-          // For super admin, we don't need to set context as RLS policies handle it
+          console.log('Super admin context - no context setting needed');
           return;
         }
       }
     } catch (err) {
-      // Continue if auth check fails
+      console.log('Super admin check failed:', err);
     }
+    
+    console.log('No user context to set');
   } catch (e) {
-    console.error('Error setting user context:', e); // Debug log
+    console.error('Error in ensureUserContext:', e); // Debug log
   }
 }
 
@@ -366,9 +390,9 @@ export async function addOrUpdateStudentInfo(info, adminEmail = null) {
     }
   }
 
-  // Only allow superadmin or warden to add/update student info
+  // Only allow superadmin to add/update student info (wardens can only view)
   if (!isWardenLoggedIn && adminRole !== 'superadmin') {
-    throw new Error('Unauthorized: Only super admins and wardens can manage student info.');
+    throw new Error('Unauthorized: Only super admins can manage student info.');
   }
 
   // Convert all string fields to lowercase
@@ -582,9 +606,9 @@ export const deleteStudentInfo = async (student_email) => {
       }
     }
 
-    // Only allow superadmin or warden to delete student info
+    // Only allow superadmin to delete student info (wardens can only view)
     if (!isWardenLoggedIn && adminRole !== 'superadmin') {
-      throw new Error('Unauthorized: Only super admins and wardens can delete student info.');
+      throw new Error('Unauthorized: Only super admins can delete student info.');
     }
 
     const { error } = await supabase

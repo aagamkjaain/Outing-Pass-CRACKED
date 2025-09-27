@@ -33,7 +33,12 @@ const AdminDashboard = () => {
   const fetchAllBookings = async (adminEmail) => {
     try {
       setLoading(true);
-      const data = await fetchPendingBookings(adminEmail);
+      // Check if warden is logged in for hostel filtering
+      const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+      const wardenHostels = wardenLoggedIn ? JSON.parse(sessionStorage.getItem('wardenHostels') || '[]') : [];
+      const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      
+      const data = await fetchPendingBookings(adminEmail, allowedHostels);
       setBookings(data);
       setError('');
     } catch (error) {
