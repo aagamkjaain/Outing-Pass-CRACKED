@@ -12,16 +12,12 @@ export default function ArchGateOutingDetails() {
         <h2>Outing Details</h2>
         {details ? (
           <div style={{marginTop:16}}>
-            <p><strong>Name:</strong> {details.name}</p>
-            <p><strong>Email:</strong> {details.email}</p>
-            <p><strong>Hostel:</strong> {details.hostel_name}</p>
-            <p><strong>Out Date:</strong> {details.out_date}</p>
-            <p><strong>Out Time:</strong> {details.out_time}</p>
-            <p><strong>In Date:</strong> {details.in_date}</p>
-            <p><strong>In Time:</strong> {details.in_time}</p>
-            <p><strong>Reason:</strong> {details.reason}</p>
-            <p><strong>Status:</strong> {details.status}</p>
-            <p><strong>OTP:</strong> {details.otp}</p>
+            {details.name && <p><strong>Name:</strong> {details.name}</p>}
+            {details.hostel_name && <p><strong>Hostel:</strong> {details.hostel_name}</p>}
+            {details.out_date && <p><strong>Out Date:</strong> {details.out_date}</p>}
+            {details.in_date && <p><strong>In Date:</strong> {details.in_date}</p>}
+            {details.status && <p><strong>Status:</strong> {details.status}</p>}
+            {details.otp && <p><strong>OTP:</strong> {details.otp}</p>}
           </div>
         ) : (
           <p>No outing details found. Please verify the OTP again.</p>
