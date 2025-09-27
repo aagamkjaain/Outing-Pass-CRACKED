@@ -7,9 +7,9 @@ import PendingBookings from './pages/PendingBookings';
 import Login from './pages/Login';
 import AdminStudentInfo from './pages/AdminStudentInfo';
 import { fetchAdminInfoByEmail } from './services/api';
-import ArchGateLogin from './pages/ArchGateLogin';
-import ArchGateOTP from './pages/ArchGateOTP';
-import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
+// import ArchGateLogin from './pages/ArchGateLogin';
+// import ArchGateOTP from './pages/ArchGateOTP';
+// import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
 import './App.css';
 import Toast from './components/Toast';
 

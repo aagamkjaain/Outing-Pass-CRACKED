@@ -50,20 +50,20 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
     }
   };
 
-  const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        prompt: 'select_account', // Always prompt for account selection
-        redirectTo: window.location.origin
-      }
-    });
-  };
+  // const handleLogin = async () => {
+  //   await supabase.auth.signInWithOAuth({
+  //     provider: 'google',
+  //     options: {
+  //       prompt: 'select_account', // Always prompt for account selection
+  //       redirectTo: window.location.origin
+  //     }
+  //   });
+  // };
 
-  const handleArchGateLogout = () => {
-    sessionStorage.clear();
-    navigate('/login');
-  };
+  // const handleArchGateLogout = () => {
+  //   sessionStorage.clear();
+  //   navigate('/login');
+  // };
 
   const handleWardenLogout = () => {
     sessionStorage.clear();

@@ -3,10 +3,10 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../supabaseClient';
 import './Login.css';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   return (
     <div className="login-page">
       <div className="login-container">
