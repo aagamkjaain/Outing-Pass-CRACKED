@@ -60,10 +60,10 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
   //   });
   // };
 
-  const handleArchGateLogout = () => {
-    sessionStorage.clear();
-    navigate('/login');
-  };
+  // const handleArchGateLogout = () => {
+  //   sessionStorage.clear();
+  //   navigate('/login');
+  // };
 
   const handleWardenLogout = () => {
     sessionStorage.clear();
@@ -110,23 +110,23 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
             <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
           </>
         )}
-        {isArchGate && (
+        {/* {isArchGate && (
           <>
             <button onClick={() => navigate('/arch-otp')} className="nav-btn">OTP</button>
             <button onClick={() => navigate('/arch-outing-details')} className="nav-btn">Outing Details</button>
           </>
-        )}
+        )} */}
       </div>
 
       <div className="auth-section">
-        {isArchGate ? (
+        {/* {isArchGate ? (
           <div className="user-info">
             <span>{sessionStorage.getItem('archGateId')}</span>
             <button onClick={handleArchGateLogout} className="logout-button">
               Logout
             </button>
           </div>
-        ) : wardenLoggedIn ? (
+        ) : */} {wardenLoggedIn ? (
           <div className="user-info">
             <span>{wardenUsername}</span>
             <button onClick={handleWardenLogout} className="logout-button">
