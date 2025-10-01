@@ -101,9 +101,18 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       const allowedHostels = ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) 
         ? wardenHostels 
         : undefined;
-      
+
+      // Auto-append domain for fast, precise search when first 6 chars are entered
+      let term = (searchQuery || '').trim();
+      if (term.length >= 6 && !term.includes('@')) {
+        term = `${term}@srmist.edu.in`;
+      }
+
+      // Reflect the effective query in UI
+      dispatch({ type: 'SET_FIELD', field: 'searchQuery', value: term });
+
       // Use server-side search with hostel filtering
-      const result = await searchStudentInfoWithHostels(searchQuery, allowedHostels, { page: 1, pageSize: 25, minimal: true, includeCount: false });
+      const result = await searchStudentInfoWithHostels(term, allowedHostels, { page: 1, pageSize: 25, minimal: true, includeCount: false });
       const rows = Array.isArray(result) ? result : (result?.rows || []);
       dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: rows });
       await fetchBans();
