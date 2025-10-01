@@ -427,6 +427,40 @@ USING (
     )
 );
 
+-- Wardens can create bans for students from their assigned hostels
+CREATE POLICY "wardens_insert_assigned_hostel_bans" ON ban_students
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  is_warden() AND 
+  EXISTS (
+    SELECT 1 FROM student_info s
+    WHERE s.student_email = ban_students.student_email
+    AND s.hostel_name = ANY(get_warden_hostels())
+  )
+);
+
+-- Wardens can modify bans for students from their assigned hostels
+CREATE POLICY "wardens_update_assigned_hostel_bans" ON ban_students
+FOR UPDATE
+TO authenticated
+USING (
+  is_warden() AND 
+  EXISTS (
+    SELECT 1 FROM student_info s
+    WHERE s.student_email = ban_students.student_email
+    AND s.hostel_name = ANY(get_warden_hostels())
+  )
+)
+WITH CHECK (
+  is_warden() AND 
+  EXISTS (
+    SELECT 1 FROM student_info s
+    WHERE s.student_email = ban_students.student_email
+    AND s.hostel_name = ANY(get_warden_hostels())
+  )
+);
+
 -- =====================================================
 -- 11. HEALTH_CHECK TABLE RLS POLICIES
 -- =====================================================
