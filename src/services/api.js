@@ -144,6 +144,74 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   }
 };
 
+/**
+ * Fetch bookings with server-side filters and pagination
+ * @param {Object} opts
+ * @param {string} [opts.status] - Filter by status: waiting|still_out|confirmed|rejected
+ * @param {string} [opts.startDate] - Inclusive start date (YYYY-MM-DD) for out_date
+ * @param {string} [opts.endDate] - Inclusive end date (YYYY-MM-DD) for out_date
+ * @param {string[]} [opts.allowedHostels] - Hostels restriction (warden scope)
+ * @param {string} [opts.searchRoom] - Case-insensitive room number search (prefix/substring)
+ * @param {number} [opts.page] - 1-based page number
+ * @param {number} [opts.pageSize] - Page size (default 50)
+ * @returns {Promise<{rows: any[], count: number, page: number, pageSize: number}>}
+ */
+export const fetchBookingsFiltered = async (opts = {}) => {
+  const {
+    status,
+    startDate,
+    endDate,
+    allowedHostels,
+    searchRoom,
+    page = 1,
+    pageSize = 50
+  } = opts;
+
+  try {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = supabase
+      .from('outing_requests')
+      .select('*', { count: 'exact' })
+      .order('out_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    if (startDate) {
+      query = query.gte('out_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('out_date', endDate);
+    }
+
+    if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+      query = query.in('hostel_name', allowedHostels);
+    }
+
+    if (searchRoom && searchRoom.trim().length >= 3) {
+      query = query.ilike('room_number', `%${searchRoom.trim()}%`);
+    }
+
+    const { data, error, count } = await query;
+    if (error) {
+      throw new Error(`Failed to fetch outing requests: ${error.message}`);
+    }
+    return { rows: data || [], count: count || 0, page, pageSize };
+  } catch (error) {
+    // Surface statement timeout hint
+    if (String(error.message || '').includes('statement timeout')) {
+      const hint = 'The query timed out. Try narrowing filters or reducing date range.';
+      throw new Error(`${error.message}. ${hint}`);
+    }
+    throw handleError(error);
+  }
+};
+
 
 
 function generateOTP() {

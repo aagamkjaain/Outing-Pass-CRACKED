@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { handleBookingAction, fetchPendingBookings, updateBookingInTime, fetchAllBans } from '../services/api';
+import { handleBookingAction, fetchBookingsFiltered, updateBookingInTime, fetchAllBans } from '../services/api';
 import { supabase } from '../supabaseClient';
 import './PendingBookings.css';
 import Toast from '../components/Toast';
@@ -18,6 +18,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [user, setUser] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [total, setTotal] = useState(0);
   const [toast, setToast] = useState({ message: '', type: 'info' });
   const navigate = useNavigate();
   const [banStatuses, setBanStatuses] = useState({}); // { student_email: banObject or null }
@@ -48,35 +51,43 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const fetchAllBookings = useCallback(async (adminEmail) => {
     try {
       setLoading(true);
-      // Pass warden hostels for filtering
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
-      const bookingsData = await fetchPendingBookings(adminEmail, allowedHostels) || [];
+      const { rows, count } = await fetchBookingsFiltered({
+        status: selectedStatus,
+        startDate,
+        endDate,
+        allowedHostels,
+        searchRoom: searchActive ? searchQuery : undefined,
+        page,
+        pageSize
+      });
       
-      if (!Array.isArray(bookingsData)) {
-        setError('Supabase returned non-array data: ' + JSON.stringify(bookingsData));
+      if (!Array.isArray(rows)) {
+        setError('Supabase returned non-array data: ' + JSON.stringify(rows));
         setLoading(false);
         return;
       }
       
-      // Server-side filtering is already applied in fetchPendingBookings
-      // No need for additional client-side filtering
-      setAllBookings(bookingsData);
+      setAllBookings(rows);
+      setTotal(count || 0);
       
-      // Calculate counts from filtered data
-      const waiting = bookingsData.filter(booking => booking.status === 'waiting').length;
-      const still_out = bookingsData.filter(booking => booking.status === 'still_out').length;
-      const confirmed = bookingsData.filter(booking => booking.status === 'confirmed').length;
-      const rejected = bookingsData.filter(booking => booking.status === 'rejected').length;
+      // Calculate counts from current page (approximate)
+      const waiting = rows.filter(booking => booking.status === 'waiting').length;
+      const still_out = rows.filter(booking => booking.status === 'still_out').length;
+      const confirmed = rows.filter(booking => booking.status === 'confirmed').length;
+      const rejected = rows.filter(booking => booking.status === 'rejected').length;
       setCounts({ waiting, still_out, confirmed, rejected });
       
       setError(null);
       await fetchBans();
     } catch (error) {
-      setError('Failed to fetch bookings: ' + (error.message || JSON.stringify(error)));
+      const msg = String(error.message || '');
+      const timeoutHint = msg.includes('statement timeout') ? ' Tip: Narrow the date range or use search to reduce results.' : '';
+      setError('Failed to fetch bookings: ' + msg + timeoutHint);
     } finally {
       setLoading(false);
     }
-  }, [fetchBans, wardenLoggedIn, isWarden, wardenHostels]);
+  }, [fetchBans, wardenLoggedIn, isWarden, wardenHostels, selectedStatus, startDate, endDate, searchQuery, searchActive, page, pageSize]);
 
   const searchBookings = useCallback(async (roomNumber) => {
     if (!roomNumber || roomNumber.trim().length < 3) {
@@ -87,23 +98,29 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     
     try {
       setLoading(true);
+      setPage(1);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
-      const bookingsData = await fetchPendingBookings(wardenEmail || user?.email, allowedHostels) || [];
-      
-      // Filter by room number
-      const filteredBookings = bookingsData.filter(booking => 
-        booking.room_number && booking.room_number.toLowerCase().includes(roomNumber.toLowerCase())
-      );
-      
-      setAllBookings(filteredBookings);
+      const { rows, count } = await fetchBookingsFiltered({
+        status: selectedStatus,
+        startDate,
+        endDate,
+        allowedHostels,
+        searchRoom: roomNumber,
+        page: 1,
+        pageSize
+      });
+      setAllBookings(rows || []);
+      setTotal(count || 0);
       setSearchActive(true);
       setError(null);
     } catch (error) {
-      setError('Failed to search bookings: ' + (error.message || JSON.stringify(error)));
+      const msg = String(error.message || '');
+      const timeoutHint = msg.includes('statement timeout') ? ' Tip: Narrow the date range or refine the room number.' : '';
+      setError('Failed to search bookings: ' + msg + timeoutHint);
     } finally {
       setLoading(false);
     }
-  }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn]);
+  }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn, selectedStatus, startDate, endDate, pageSize]);
 
   const checkAdminAndFetchBookings = useCallback(async () => {
     try {
@@ -143,29 +160,32 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const loadWaitingData = useCallback(async () => {
     try {
       setLoading(true);
+      setPage(1);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
-      const bookingsData = await fetchPendingBookings(wardenEmail || user?.email, allowedHostels) || [];
-      
       const today = new Date().toISOString().split('T')[0];
-      
-      // Filter for today's waiting requests only
-      const todayWaiting = bookingsData.filter(booking => 
-        booking.status === 'waiting' && booking.out_date === today
-      );
-      
-      setAllBookings(todayWaiting);
+      const { rows, count } = await fetchBookingsFiltered({
+        status: 'waiting',
+        startDate: today,
+        endDate: today,
+        allowedHostels,
+        page: 1,
+        pageSize
+      });
+      setAllBookings(rows || []);
+      setTotal(count || 0);
       setError(null);
     } catch (error) {
       setError('Failed to load waiting data: ' + (error.message || JSON.stringify(error)));
     } finally {
       setLoading(false);
     }
-  }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn]);
+  }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn, pageSize]);
 
   const handleStatusChange = useCallback((status) => {
     setSelectedStatus(status);
     setSearchQuery('');
     setSearchActive(false);
+    setPage(1);
     
     // Auto-load data for "still_out" tab as it needs real-time updates for late comers
     // Manual refresh for other tabs to prevent unnecessary API calls
@@ -426,8 +446,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   }, []);
 
   const handleStatusChangeFactory = useCallback((status) => () => handleStatusChange(status), [handleStatusChange]);
-  const handleStartDateChange = useCallback((e) => setStartDate(e.target.value), []);
-  const handleEndDateChange = useCallback((e) => setEndDate(e.target.value), []);
+  const handleStartDateChange = useCallback((e) => { setStartDate(e.target.value); setPage(1); }, []);
+  const handleEndDateChange = useCallback((e) => { setEndDate(e.target.value); setPage(1); }, []);
   const handleToastClose = useCallback(() => setToast({ message: '', type: 'info' }), []);
   const handleInTimeChangeFactory = useCallback((id) => (e) => handleInTimeChange(id, e.target.value), [handleInTimeChange]);
   const handleProcessBookingStillOutConfirmFactory = useCallback((id) => () => processBookingAction(id, 'confirm'), [processBookingAction]);
@@ -748,6 +768,18 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           )}
         </div>
       )}
+
+      {/* Pagination controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', marginTop: 16 }}>
+        <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
+        <span>Page {page} of {Math.max(1, Math.ceil(total / pageSize))}</span>
+        <button disabled={page >= Math.ceil(total / pageSize)} onClick={() => setPage(p => p + 1)}>Next</button>
+        <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+      </div>
       {rejectionModal.open && (
         <Modal onClose={() => setRejectionModal({ open: false, bookingId: null })}>
           <h3>Reject Booking</h3>
