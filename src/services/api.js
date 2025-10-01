@@ -164,16 +164,39 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     allowedHostels,
     searchRoom,
     page = 1,
-    pageSize = 50
+    pageSize = 50,
+    includeCount = true,
+    minimal = true
   } = opts;
 
   try {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
+    // Select only the columns required by PendingBookings to reduce IO
+    const columns = minimal
+      ? [
+          'id',
+          'name',
+          'email',
+          'hostel_name',
+          'room_number',
+          'parent_email',
+          'parent_phone',
+          'status',
+          'out_date',
+          'out_time',
+          'in_date',
+          'in_time',
+          'reason',
+          'handled_by',
+          'handled_at'
+        ].join(',')
+      : '*';
+
     let query = supabase
       .from('outing_requests')
-      .select('*', { count: 'exact' })
+      .select(columns, { count: includeCount ? 'planned' : undefined })
       .order('out_date', { ascending: false })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -201,7 +224,7 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     if (error) {
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
-    return { rows: data || [], count: count || 0, page, pageSize };
+    return { rows: data || [], count: includeCount ? (count || 0) : 0, page, pageSize };
   } catch (error) {
     // Surface statement timeout hint
     if (String(error.message || '').includes('statement timeout')) {
@@ -418,23 +441,49 @@ export const fetchAllStudentInfo = async (allowedHostels) => {
  * @param {string[]} allowedHostels - Optional list of hostel names to filter by
  * @returns {Promise<Array>} - Array of filtered student info
  */
-export const searchStudentInfoWithHostels = async (searchQuery, allowedHostels) => {
+export const searchStudentInfoWithHostels = async (
+  searchQuery,
+  allowedHostels,
+  options = { page: 1, pageSize: 25, minimal: true, includeCount: false }
+) => {
   try {
-    const query = supabase
+    const page = options.page ?? 1;
+    const pageSize = options.pageSize ?? 25;
+    const minimal = options.minimal ?? true;
+    const includeCount = options.includeCount ?? false;
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const columns = minimal
+      ? ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',')
+      : '*';
+
+    let query = supabase
       .from('student_info')
-      .select('*')
-      .ilike('student_email', `%${searchQuery}%`)
-      .order('student_email', { ascending: true });
-    
-    // Apply server-side hostel restriction when provided
+      .select(columns, { count: includeCount ? 'planned' : undefined })
+      .order('student_email', { ascending: true })
+      .range(from, to);
+
+    const term = (searchQuery || '').trim();
+    if (term.includes('@')) {
+      query = query.ilike('student_email', term);
+    } else if (term) {
+      query = query.ilike('student_email', `%${term}%`);
+    }
+
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-      query.in('hostel_name', allowedHostels);
+      query = query.in('hostel_name', allowedHostels);
     }
     
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) throw error;
-    return data;
+    return { rows: data || [], count: includeCount ? (count || 0) : 0, page, pageSize };
   } catch (error) {
+    // If RLS blocks access, PostgREST often returns empty set without error; provide helpful hint
+    if (String(error.message || '').includes('permission denied')) {
+      throw new Error('Permission denied. Ensure your account is a super admin or warden with assigned hostels.');
+    }
     throw handleError(error);
   }
 };

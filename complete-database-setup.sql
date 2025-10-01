@@ -119,6 +119,13 @@ CREATE INDEX IF NOT EXISTS idx_outing_requests_status ON outing_requests(status)
 CREATE INDEX IF NOT EXISTS idx_outing_requests_hostel ON outing_requests(hostel_name);
 CREATE INDEX IF NOT EXISTS idx_outing_requests_otp ON outing_requests(otp);
 CREATE INDEX IF NOT EXISTS idx_outing_requests_dates ON outing_requests(out_date, in_date);
+-- Composite index to accelerate common filtered sorts
+CREATE INDEX IF NOT EXISTS idx_outings_status_outdate_created ON outing_requests(status, out_date DESC, created_at DESC);
+-- Composite index for warden hostel scope with date
+CREATE INDEX IF NOT EXISTS idx_outings_hostel_status_outdate ON outing_requests(hostel_name, status, out_date DESC);
+-- Trigram index for room_number ilike search (requires pg_trgm extension)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_outings_room_number_trgm ON outing_requests USING gin (room_number gin_trgm_ops);
 
 -- Indexes for ban_students table
 CREATE INDEX IF NOT EXISTS idx_ban_students_email ON ban_students(student_email);
