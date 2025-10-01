@@ -237,7 +237,14 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     }
 
     if (searchRoom && searchRoom.trim().length >= 3) {
-      query = query.ilike('room_number', `%${searchRoom.trim()}%`);
+      const term = searchRoom.trim();
+      if (/^\d+$/.test(term)) {
+        // Exact numeric room match is fastest
+        query = query.eq('room_number', term);
+      } else {
+        // Prefer prefix search to leverage indexes
+        query = query.ilike('room_number', `${term}%`);
+      }
     }
 
     const { data, error, count } = await query;
