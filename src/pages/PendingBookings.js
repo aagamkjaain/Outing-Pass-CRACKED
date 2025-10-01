@@ -57,6 +57,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       const defaultStartForStillOut = startDate;
 
       const effectiveStatus = statusOverride || selectedStatus;
+      const isStillOut = effectiveStatus === 'still_out';
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
         // For Still Out: ignore date filters and enforce late-only at server
@@ -64,8 +65,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         endDate: effectiveStatus === 'still_out' ? undefined : endDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
-        page,
-        pageSize,
+        page: isStillOut ? 1 : page,
+        pageSize: isStillOut ? 1000 : pageSize,
         includeCount: false,
         minimal: true,
         lateOnly: effectiveStatus === 'still_out'
@@ -78,8 +79,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       }
       
       setAllBookings(rows);
-      // Without includeCount to speed up, approximate total using current page info
-      setTotal(count || (rows?.length || 0) + ((page - 1) * pageSize));
+      // For Still Out, show all (no pagination). Otherwise approximate total.
+      if (isStillOut) {
+        setTotal(rows?.length || 0);
+      } else {
+        setTotal(count || (rows?.length || 0) + ((page - 1) * pageSize));
+      }
       
       // Calculate counts from current page (approximate)
       const waiting = rows.filter(booking => booking.status === 'waiting').length;
@@ -110,6 +115,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(true);
       setPage(1);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      const isStillOut = selectedStatus === 'still_out';
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
         // For Still Out searches: ignore date filters and enforce late-only
@@ -118,11 +124,11 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         allowedHostels,
         searchRoom: roomNumber,
         page: 1,
-        pageSize,
+        pageSize: isStillOut ? 1000 : pageSize,
         lateOnly: selectedStatus === 'still_out'
       });
       setAllBookings(rows || []);
-      setTotal(count || 0);
+      setTotal(isStillOut ? (rows?.length || 0) : (count || 0));
       setSearchActive(true);
       setError(null);
     } catch (error) {
@@ -782,17 +788,19 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         </div>
       )}
 
-      {/* Pagination controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', marginTop: 16 }}>
-        <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
-        <span>Page {page} of {Math.max(1, Math.ceil(total / pageSize))}</span>
-        <button disabled={page >= Math.ceil(total / pageSize)} onClick={() => setPage(p => p + 1)}>Next</button>
-        <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
-      </div>
+      {/* Pagination controls (hidden for Still Out) */}
+      {selectedStatus !== 'still_out' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', marginTop: 16 }}>
+          <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
+          <span>Page {page} of {Math.max(1, Math.ceil(total / pageSize))}</span>
+          <button disabled={page >= Math.ceil(total / pageSize)} onClick={() => setPage(p => p + 1)}>Next</button>
+          <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+      )}
       {rejectionModal.open && (
         <Modal onClose={() => setRejectionModal({ open: false, bookingId: null })}>
           <h3>Reject Booking</h3>

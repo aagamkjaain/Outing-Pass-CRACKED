@@ -38,6 +38,7 @@ const initialState = {
     isSuperAdmin: false,
     hostelOptions: [],
     search: '',
+    upload: { inProgress: false, total: 0, processed: 0, eta: '', message: '' },
 };
 
 function reducer(state, action) {
@@ -169,7 +170,7 @@ const WardenManagement = () => {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
-            dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
+            dispatch({ type: 'SET', payload: { loading: true, error: '', success: '', upload: { inProgress: true, total: 0, processed: 0, eta: '', message: 'Parsing file...' } } });
             const data = await file.arrayBuffer();
             const wb = XLSX.read(data);
             const ws = wb.Sheets[wb.SheetNames[0]];
@@ -189,12 +190,26 @@ const WardenManagement = () => {
                 throw new Error(`Unknown hostels in file: ${Array.from(new Set(invalid)).join(', ')}`);
             }
             if (payload.length === 0) throw new Error('No valid rows found in file');
-            const { error } = await supabase.from('wardens').upsert(payload, { onConflict: 'email' });
-            if (error) throw error;
-            dispatch({ type: 'SET', payload: { success: `Uploaded ${payload.length} wardens` } });
+            const total = payload.length;
+            const chunkSize = 100;
+            const startedAt = Date.now();
+            let processed = 0;
+            for (let i = 0; i < payload.length; i += chunkSize) {
+                const chunk = payload.slice(i, i + chunkSize);
+                const { error } = await supabase.from('wardens').upsert(chunk, { onConflict: 'email' });
+                if (error) throw error;
+                processed += chunk.length;
+                const elapsedSec = Math.max(1, Math.floor((Date.now() - startedAt) / 1000));
+                const rate = processed / elapsedSec; // rows per sec
+                const remaining = Math.max(0, total - processed);
+                const etaSec = rate > 0 ? Math.ceil(remaining / rate) : 0;
+                const eta = `${Math.floor(etaSec / 60)}m ${etaSec % 60}s`;
+                dispatch({ type: 'SET', payload: { upload: { inProgress: true, total, processed, eta, message: `Uploading ${processed}/${total}...` } } });
+            }
+            dispatch({ type: 'SET', payload: { success: `Uploaded ${total} wardens successfully.`, upload: { inProgress: false, total, processed: total, eta: '0s', message: 'Completed.' } } });
             await load();
         } catch (err) {
-            dispatch({ type: 'SET', payload: { error: err.message || 'Bulk upload failed' } });
+            dispatch({ type: 'SET', payload: { error: err.message || 'Bulk upload failed', upload: { inProgress: false, total: 0, processed: 0, eta: '', message: '' } } });
         } finally {
             dispatch({ type: 'SET', payload: { loading: false } });
             e.target.value = '';
@@ -221,10 +236,20 @@ const WardenManagement = () => {
                     {hostelOptions.map(h => (<option key={h} value={h}>{h}</option>))}
                 </select>
                 <button onClick={handleAdd} disabled={loading || !isSuperAdmin}>Add Warden</button>
-                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleBulkUpload} />
                 <button onClick={handleDownloadTemplate} type="button">Download Template</button>
+                <div style={{ width: '100%' }} />
+                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleBulkUpload} />
                 <button onClick={handleDeleteAll} type="button" style={{ color: '#b71c1c' }}>Delete All</button>
             </div>
+
+            {state.upload.inProgress && (
+                <div style={{ marginBottom: 12, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
+                    <div style={{ marginBottom: 6 }}>Uploading wardens... {state.upload.processed}/{state.upload.total} • ETA: {state.upload.eta}</div>
+                    <div style={{ height: 8, background: '#eee', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, Math.round((state.upload.processed / Math.max(1, state.upload.total)) * 100))}%`, height: '100%', background: '#007bff' }} />
+                    </div>
+                </div>
+            )}
 
             <div style={{ marginBottom: 12 }}>
                 <input
