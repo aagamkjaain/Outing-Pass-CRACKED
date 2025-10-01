@@ -64,23 +64,34 @@ export const bookSlot = async (bookingData) => {
  * @param {string} email - The user's email
  * @returns {Promise<Array>} - Array of booked slots with counts
  */
-export const fetchBookedSlots = async (email) => {
+export const fetchBookedSlots = async (email, opts = { limit: 50, minimal: true }) => {
   try {
+    const limit = opts.limit ?? 50;
+    const minimal = opts.minimal ?? true;
+    const columns = minimal
+      ? [
+          'id','status','out_date','out_time','in_date','in_time','reason',
+          'handled_by','handled_at','otp','otp_used','created_at'
+        ].join(',')
+      : '*';
+
     const { data, error } = await supabase
       .from('outing_requests')
-      .select('*')
-      .eq('email', email);
+      .select(columns)
+      .eq('email', email)
+      .order('created_at', { ascending: false })
+      .range(0, Math.max(0, limit - 1));
     
     if (error) throw error;
+    const rows = data || [];
     
-    // Calculate counts for each status
-    const waiting = data.filter(booking => booking.status === 'waiting').length;
-    const confirmed = data.filter(booking => booking.status === 'confirmed').length;
-    const rejected = data.filter(booking => booking.status === 'rejected').length;
+    // Calculate counts for each status within the fetched window (approximate)
+    const waiting = rows.filter(booking => booking.status === 'waiting').length;
+    const confirmed = rows.filter(booking => booking.status === 'confirmed').length;
+    const rejected = rows.filter(booking => booking.status === 'rejected').length;
     
-    data.counts = { waiting, confirmed, rejected };
-    
-    return data;
+    rows.counts = { waiting, confirmed, rejected };
+    return rows;
   } catch (error) {
     throw handleError(error);
   }

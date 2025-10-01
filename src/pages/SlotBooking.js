@@ -83,7 +83,25 @@ const SlotBooking = () => {
   const fetchUserBookings = useCallback(async (email) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const bookingsData = await fetchBookedSlots(email);
+      // Try a small TTL cache to avoid refetching immediately on mount
+      const cacheKey = `user_bookings_${email}`;
+      const cachedRaw = sessionStorage.getItem(cacheKey);
+      if (cachedRaw) {
+        try {
+          const cached = JSON.parse(cachedRaw);
+          if (cached && Date.now() - cached.ts < 2 * 60 * 1000) {
+            dispatch({ 
+              type: 'SET_BOOKINGS', 
+              payload: {
+                bookings: cached.rows || [],
+                counts: cached.rows?.counts || { waiting: 0, confirmed: 0, rejected: 0 }
+              }
+            });
+          }
+        } catch {}
+      }
+
+      const bookingsData = await fetchBookedSlots(email, { limit: 50, minimal: true });
       dispatch({ 
         type: 'SET_BOOKINGS', 
         payload: {
@@ -91,6 +109,7 @@ const SlotBooking = () => {
           counts: bookingsData?.counts || { waiting: 0, confirmed: 0, rejected: 0 }
         }
       });
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), rows: bookingsData })); } catch {}
       dispatch({ type: 'SET_ERROR', payload: '' });
     } catch (err) {
       if (err.message !== 'No bookings found') {

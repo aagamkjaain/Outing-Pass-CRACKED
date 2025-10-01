@@ -21,6 +21,50 @@ const initialState = {
   banStatuses: {},
   unbanLoading: {},
 };
+// Simple sessionStorage cache with TTL and tiny LRU behavior
+const CACHE_KEY = 'admin_student_info_cache_v1';
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_ENTRIES = 50;
+
+function readCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return { entries: {} };
+    return JSON.parse(raw);
+  } catch { return { entries: {} }; }
+}
+
+function writeCache(cache) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch {}
+}
+
+function setCacheEntry(query, rows) {
+  const cache = readCache();
+  const now = Date.now();
+  cache.entries = cache.entries || {};
+  // Evict oldest if exceeding limit
+  const keys = Object.keys(cache.entries);
+  if (keys.length >= CACHE_MAX_ENTRIES) {
+    let oldestKey = keys[0];
+    let oldestTs = cache.entries[oldestKey]?.ts || now;
+    for (const k of keys) {
+      const ts = cache.entries[k]?.ts || now;
+      if (ts < oldestTs) { oldestTs = ts; oldestKey = k; }
+    }
+    delete cache.entries[oldestKey];
+  }
+  cache.entries[query] = { ts: now, rows };
+  writeCache(cache);
+}
+
+function getCacheEntry(query) {
+  const cache = readCache();
+  const entry = cache.entries?.[query];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) return null;
+  return entry.rows || null;
+}
+
 
 function reducer(state, action) {
   switch (action.type) {
@@ -108,6 +152,12 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
         term = `${term}@srmist.edu.in`;
       }
 
+      // Cache-first: show cached result immediately if fresh
+      const cached = getCacheEntry(term);
+      if (cached) {
+        dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: cached });
+      }
+
       // Reflect the effective query in UI
       dispatch({ type: 'SET_FIELD', field: 'searchQuery', value: term });
 
@@ -115,6 +165,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       const result = await searchStudentInfoWithHostels(term, allowedHostels, { page: 1, pageSize: 25, minimal: true, includeCount: false });
       const rows = Array.isArray(result) ? result : (result?.rows || []);
       dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: rows });
+      setCacheEntry(term, rows);
       await fetchBans();
     } catch (err) {
       const msg = String(err.message || 'Failed to search student info');
