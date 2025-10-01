@@ -132,6 +132,11 @@ const WardenManagement = () => {
 
     const handleDeleteAll = async () => {
         if (!window.confirm('Delete ALL wardens? This cannot be undone.')) return;
+        const text = window.prompt('Type DELETE ALL to confirm');
+        if (!text || text.trim().toLowerCase() !== 'delete all') {
+            dispatch({ type: 'SET', payload: { error: 'Bulk delete cancelled. Confirmation text did not match.' } });
+            return;
+        }
         try {
             dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
             const { error } = await supabase.from('wardens').delete().neq('email', '');
