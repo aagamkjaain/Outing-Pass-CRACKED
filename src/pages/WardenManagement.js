@@ -130,6 +130,21 @@ const WardenManagement = () => {
 		}
 	};
 
+    const handleDeleteAll = async () => {
+        if (!window.confirm('Delete ALL wardens? This cannot be undone.')) return;
+        try {
+            dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
+            const { error } = await supabase.from('wardens').delete().neq('email', '');
+            if (error) throw error;
+            dispatch({ type: 'SET', payload: { success: 'All wardens deleted' } });
+            await load();
+        } catch (e) {
+            dispatch({ type: 'SET', payload: { error: e.message || 'Failed to delete all' } });
+        } finally {
+            dispatch({ type: 'SET', payload: { loading: false } });
+        }
+    };
+
     const handleDownloadTemplate = () => {
         const templateData = [
             { 'Warden Email': 'warden1@srmist.edu.in', 'Hostel': 'mullai' },
@@ -203,6 +218,7 @@ const WardenManagement = () => {
                 <button onClick={handleAdd} disabled={loading || !isSuperAdmin}>Add Warden</button>
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={handleBulkUpload} />
                 <button onClick={handleDownloadTemplate} type="button">Download Template</button>
+                <button onClick={handleDeleteAll} type="button" style={{ color: '#b71c1c' }}>Delete All</button>
             </div>
 
             <div style={{ marginBottom: 12 }}>

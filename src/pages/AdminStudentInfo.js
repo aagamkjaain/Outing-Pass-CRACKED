@@ -517,7 +517,12 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
                 <input name="student_email" value={form.student_email} onChange={handleChange} placeholder="Student Email" />
               </td>
               <td style={{ border: '1px solid #ccc', padding: 8 }}>
-                <input name="hostel_name" value={form.hostel_name} onChange={handleChange} placeholder="Hostel Name" />
+                  <select name="hostel_name" value={form.hostel_name} onChange={handleChange}>
+                    <option value="">Select hostel...</option>
+                    {Array.from(new Set(studentInfo.map(s => (s.hostel_name || '').trim()).filter(Boolean))).sort().map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
               </td>
               <td style={{ border: '1px solid #ccc', padding: 8 }}>
                 <input name="parent_email" value={form.parent_email} onChange={handleChange} placeholder="Parent Email" />
@@ -539,7 +544,12 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
                   <input name="student_email" value={form.student_email} onChange={handleChange} disabled />
                 </td>
                 <td style={{ border: '1px solid #ccc', padding: 8 }}>
-                  <input name="hostel_name" value={form.hostel_name} onChange={handleChange} />
+                  <select name="hostel_name" value={form.hostel_name} onChange={handleChange}>
+                    <option value="">Select hostel...</option>
+                    {Array.from(new Set(studentInfo.map(s => (s.hostel_name || '').trim()).filter(Boolean))).sort().map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
                 </td>
                 <td style={{ border: '1px solid #ccc', padding: 8 }}>
                   <input name="parent_email" value={form.parent_email} onChange={handleChange} />
