@@ -49,25 +49,26 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     setBanStatuses(statuses);
   }, []); // `fetchAllBans` is from API (stable), `setBanStatuses` is a setState dispatch (stable)
 
-  const fetchAllBookings = useCallback(async (adminEmail) => {
+  const fetchAllBookings = useCallback(async (adminEmail, statusOverride) => {
     try {
       setLoading(true);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
       // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
       const defaultStartForStillOut = startDate;
 
+      const effectiveStatus = statusOverride || selectedStatus;
       const { rows, count } = await fetchBookingsFiltered({
-        status: selectedStatus,
+        status: effectiveStatus,
         // For Still Out: ignore date filters and enforce late-only at server
-        startDate: selectedStatus === 'still_out' ? undefined : defaultStartForStillOut,
-        endDate: selectedStatus === 'still_out' ? undefined : endDate,
+        startDate: effectiveStatus === 'still_out' ? undefined : defaultStartForStillOut,
+        endDate: effectiveStatus === 'still_out' ? undefined : endDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page,
         pageSize,
         includeCount: false,
         minimal: true,
-        lateOnly: selectedStatus === 'still_out'
+        lateOnly: effectiveStatus === 'still_out'
       });
       
       if (!Array.isArray(rows)) {
@@ -158,7 +159,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       if (selectedStatus === 'waiting') {
         loadWaitingData();
       } else if (selectedStatus === 'still_out') {
-        fetchAllBookings(wardenEmail);
+        fetchAllBookings(wardenEmail, 'still_out');
       }
     } else {
       // For admins, only load data on initial mount
@@ -203,9 +204,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     // Manual refresh for other tabs to prevent unnecessary API calls
     if (status === 'still_out') {
       if (wardenLoggedIn) {
-        fetchAllBookings(wardenEmail);
+        fetchAllBookings(wardenEmail, 'still_out');
       } else {
-        fetchAllBookings(user?.email);
+        fetchAllBookings(user?.email, 'still_out');
       }
     } else {
       // For other tabs, clear data and let user manually refresh
