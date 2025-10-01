@@ -574,13 +574,13 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
                 <td style={{ border: '1px solid #ccc', padding: 8, display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <button onClick={handleEditFactory(info)} style={{ background: '#1976d2', color: 'white', border: 'none', borderRadius: 4, padding: '4px 8px', fontWeight: 500, cursor: 'pointer', transition: 'background 0.2s', fontSize: '12px' }}>Edit</button>
                     <button onClick={handleDeleteFactory(info)} style={{ background: '#dc3545', color: 'white', border: 'none', borderRadius: 4, padding: '4px 8px', fontWeight: 500, cursor: 'pointer', marginLeft: 4, transition: 'background 0.2s', fontSize: '12px' }}>Delete</button>
-                    {adminRole === 'superadmin' && (
+                    {(adminRole === 'superadmin' || isWarden || wardenLoggedIn) && (
                       <button onClick={handleBanModalFactory(info)} style={{ background: '#ff9800', color: 'white', border: 'none', borderRadius: 4, padding: '4px 8px', fontWeight: 500, cursor: 'pointer', marginLeft: 4, transition: 'background 0.2s', fontSize: '12px' }}>Ban</button>
                     )}
                     {banStatuses[info.student_email] && (
                       <>
                         <span style={{ background: '#dc3545', color: 'white', borderRadius: 4, padding: '2px 6px', fontWeight: 600, marginLeft: 4, fontSize: '10px' }}>BANNED</span>
-                        {adminRole === 'superadmin' && (
+                        {(adminRole === 'superadmin' || isWarden || wardenLoggedIn) && (
                         <button onClick={handleUnbanFactory(info.student_email)} style={{ background: '#388e3c', color: 'white', border: 'none', borderRadius: 4, padding: '4px 8px', fontWeight: 500, cursor: 'pointer', marginLeft: 4, transition: 'background 0.2s', fontSize: '12px' }} disabled={unbanLoading[info.student_email]}>
                           {unbanLoading[info.student_email] ? 'Unbanning...' : 'Unban'}
                         </button>
