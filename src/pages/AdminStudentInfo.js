@@ -132,7 +132,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   }, [fetchBans]);
 
   const searchStudentInfo = useCallback(async (searchQuery) => {
-    if (searchQuery.length < 5) {
+    if (searchQuery.length < 6) {
       dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
       return;
     }
@@ -342,22 +342,30 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   const handleSearchChange = useCallback((e) => {
     const value = e.target.value;
     dispatch({ type: 'SET_FIELD', field: 'searchQuery', value });
-    // Clear results if less than 5 characters
-    if (value.length < 5) {
+    // Clear results if less than 6 characters
+    if (value.length < 6) {
       dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: false });
     }
+    // Debounce search
+    if (window.__asi_search_timer) clearTimeout(window.__asi_search_timer);
+    window.__asi_search_timer = setTimeout(() => {
+      if (value.trim().length >= 6) {
+        dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
+        searchStudentInfo(value.trim());
+      }
+    }, 300);
   }, []);
 
   const handleSearchKeyPress = useCallback((e) => {
-    if (e.key === 'Enter' && searchQuery.trim().length >= 5) {
+    if (e.key === 'Enter' && searchQuery.trim().length >= 6) {
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
       searchStudentInfo(searchQuery.trim());
     }
   }, [searchQuery, searchStudentInfo]);
 
   const handleSearchClick = useCallback(() => {
-    if (searchQuery.trim().length >= 5) {
+    if (searchQuery.trim().length >= 6) {
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
       searchStudentInfo(searchQuery.trim());
     }
@@ -398,7 +406,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       <div style={{ marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search by student email (minimum 5 characters)..."
+          placeholder="Search by student email (minimum 6 characters)..."
           value={searchQuery}
           onChange={handleSearchChange}
           onKeyPress={handleSearchKeyPress}
@@ -406,7 +414,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
         />
         <button 
           onClick={handleSearchClick}
-          disabled={searchQuery.trim().length < 5}
+          disabled={searchQuery.trim().length < 6}
           style={{ marginRight: 8, padding: '8px 16px' }}
         >
           Search
@@ -429,7 +437,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       
       {!searchActive && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#e3f2fd', borderRadius: 4, textAlign: 'center' }}>
-          <p>Enter at least 5 characters in the search box to find student information.</p>
+          <p>Enter at least 6 characters in the search box to find student information.</p>
         </div>
       )}
       

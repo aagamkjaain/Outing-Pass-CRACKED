@@ -392,7 +392,13 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
   // Bookings filtered by hostel/warden/admin AND date AND search
   const filteredBookings = useMemo(() => {
-    let filtered = hostelFilteredBookings.filter(booking => {
+    let base = hostelFilteredBookings;
+    // If Still Out tab without search and without dates, show only late students
+    if (selectedStatus === 'still_out' && !searchActive && !startDate && !endDate) {
+      base = base.filter(b => isStudentLate(b));
+    }
+
+    let filtered = base.filter(booking => {
       if (!startDate && !endDate) return true;
       const outDate = booking.out_date;
       if (startDate && outDate < startDate) return false;

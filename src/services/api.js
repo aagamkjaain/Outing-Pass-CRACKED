@@ -225,8 +225,11 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     }
 
     if (lateOnly) {
-      const today = new Date().toISOString().split('T')[0];
-      query = query.lte('in_date', today);
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const nowTime = now.toTimeString().slice(0, 8); // HH:MM:SS
+      // Late if in_date < today OR (in_date == today AND in_time <= now)
+      query = query.or(`in_date.lt.${today},and(in_date.eq.${today},in_time.lte.${nowTime})`);
     }
 
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
