@@ -103,12 +103,14 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
         : undefined;
       
       // Use server-side search with hostel filtering
-      const data = await searchStudentInfoWithHostels(searchQuery, allowedHostels);
-      
-      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: data || [] });
+      const result = await searchStudentInfoWithHostels(searchQuery, allowedHostels, { page: 1, pageSize: 25, minimal: true, includeCount: false });
+      const rows = Array.isArray(result) ? result : (result?.rows || []);
+      dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: rows });
       await fetchBans();
     } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to search student info' });
+      const msg = String(err.message || 'Failed to search student info');
+      const hint = msg.includes('statement timeout') ? ' Tip: refine the email (e.g., full address) to reduce results.' : '';
+      dispatch({ type: 'SET_ERROR', payload: msg + hint });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }

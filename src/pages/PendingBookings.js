@@ -340,20 +340,22 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
   // Function to check if student is late
   const isStudentLate = useCallback((booking) => {
-    if (booking.status !== 'still_out') return false;
-    
-    const now = new Date();
-    const outTime = new Date(`${booking.out_date}T${booking.out_time}`);
-    const expectedReturn = new Date(`${booking.in_date}T${booking.in_time}`);
-    
-    // Check for impossible time combination (out time later than in time on same day)
-    if (booking.out_date === booking.in_date && outTime > expectedReturn) {
-      // This is likely a data entry error - assume in time should be PM if out time is AM
-      // or out time should be PM if in time is AM
-      return false; // Don't mark as late for impossible combinations
+    if ((booking.status || '').toLowerCase() !== 'still_out') return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // If in_date is before today, definitely late
+    if (booking.in_date && booking.in_date < todayStr) return true;
+
+    // If in_date equals today, compare times
+    if (booking.in_date && booking.in_date === todayStr) {
+      // Fallback: if in_time missing, treat as 00:00 which makes late check conservative after midnight
+      const inTime = booking.in_time || '00:00:00';
+      const expectedReturn = new Date(`${booking.in_date}T${inTime}`);
+      return new Date() > expectedReturn;
     }
-    
-    return now > expectedReturn;
+
+    // If in_date is after today, not late
+    return false;
   }, []);
 
   // Function to calculate how late the student is

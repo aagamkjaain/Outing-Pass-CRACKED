@@ -112,6 +112,9 @@ CREATE INDEX IF NOT EXISTS idx_arch_gate_auth_id ON arch_gate(id);
 -- Indexes for student_info table
 CREATE INDEX IF NOT EXISTS idx_student_info_email ON student_info(email);
 CREATE INDEX IF NOT EXISTS idx_student_info_hostel ON student_info(hostel_name);
+-- Trigram index to speed up partial email searches on Admin Student Info
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_student_info_email_trgm ON student_info USING gin (email gin_trgm_ops);
 
 -- Indexes for outing_requests table
 CREATE INDEX IF NOT EXISTS idx_outing_requests_email ON outing_requests(email);
