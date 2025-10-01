@@ -53,13 +53,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(true);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
       // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
-      const today = new Date();
-      const minusDays = (d) => {
-        const t = new Date(today);
-        t.setDate(t.getDate() - d);
-        return t.toISOString().split('T')[0];
-      };
-      const defaultStartForStillOut = (selectedStatus === 'still_out' && !startDate && !endDate && !searchActive) ? minusDays(7) : startDate;
+      const defaultStartForStillOut = startDate;
 
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
@@ -70,7 +64,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         page,
         pageSize,
         includeCount: false,
-        minimal: true
+        minimal: true,
+        lateOnly: selectedStatus === 'still_out' && !searchActive && !startDate && !endDate
       });
       
       if (!Array.isArray(rows)) {

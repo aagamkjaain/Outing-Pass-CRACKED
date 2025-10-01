@@ -177,7 +177,8 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     page = 1,
     pageSize = 50,
     includeCount = false,
-    minimal = true
+    minimal = true,
+    lateOnly = false
   } = opts;
 
   try {
@@ -221,6 +222,11 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     }
     if (endDate) {
       query = query.lte('out_date', endDate);
+    }
+
+    if (lateOnly) {
+      const today = new Date().toISOString().split('T')[0];
+      query = query.lte('in_date', today);
     }
 
     if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
