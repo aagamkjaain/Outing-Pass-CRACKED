@@ -19,7 +19,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const [endDate, setEndDate] = useState('');
   const [user, setUser] = useState(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState(0);
   const [toast, setToast] = useState({ message: '', type: 'info' });
   const navigate = useNavigate();
@@ -52,14 +52,25 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     try {
       setLoading(true);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
+      const today = new Date();
+      const minusDays = (d) => {
+        const t = new Date(today);
+        t.setDate(t.getDate() - d);
+        return t.toISOString().split('T')[0];
+      };
+      const defaultStartForStillOut = (selectedStatus === 'still_out' && !startDate && !endDate && !searchActive) ? minusDays(7) : startDate;
+
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
-        startDate,
+        startDate: defaultStartForStillOut,
         endDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page,
-        pageSize
+        pageSize,
+        includeCount: false,
+        minimal: true
       });
       
       if (!Array.isArray(rows)) {
@@ -69,7 +80,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       }
       
       setAllBookings(rows);
-      setTotal(count || 0);
+      // Without includeCount to speed up, approximate total using current page info
+      setTotal(count || (rows?.length || 0) + ((page - 1) * pageSize));
       
       // Calculate counts from current page (approximate)
       const waiting = rows.filter(booking => booking.status === 'waiting').length;

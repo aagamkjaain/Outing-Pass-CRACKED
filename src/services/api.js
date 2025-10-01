@@ -165,7 +165,7 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     searchRoom,
     page = 1,
     pageSize = 50,
-    includeCount = true,
+    includeCount = false,
     minimal = true
   } = opts;
 
@@ -459,16 +459,34 @@ export const searchStudentInfoWithHostels = async (
       ? ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',')
       : '*';
 
+    const term = (searchQuery || '').trim();
+
+    // Exact email search path: use indexed equality, no pagination
+    if (term && term.includes('@')) {
+      let exactQuery = supabase
+        .from('student_info')
+        .select(columns)
+        .eq('student_email', term.toLowerCase())
+        .order('student_email', { ascending: true })
+        .limit(10);
+
+      if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
+        exactQuery = exactQuery.in('hostel_name', allowedHostels);
+      }
+
+      const { data, error } = await exactQuery;
+      if (error) throw error;
+      return { rows: data || [], count: data?.length || 0, page: 1, pageSize: 10 };
+    }
+
+    // Partial search path: substring with limit and optional count
     let query = supabase
       .from('student_info')
       .select(columns, { count: includeCount ? 'planned' : undefined })
       .order('student_email', { ascending: true })
       .range(from, to);
 
-    const term = (searchQuery || '').trim();
-    if (term.includes('@')) {
-      query = query.ilike('student_email', term);
-    } else if (term) {
+    if (term) {
       query = query.ilike('student_email', `%${term}%`);
     }
 
