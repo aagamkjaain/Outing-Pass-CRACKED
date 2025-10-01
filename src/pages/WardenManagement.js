@@ -29,7 +29,7 @@ const initialState = {
     loading: false,
     error: '',
     success: '',
-    form: { email: '', selectedHostels: [] },
+    form: { email: '', selectedHostel: '' },
     isSuperAdmin: false,
     hostelOptions: [],
 };
@@ -61,12 +61,10 @@ const WardenManagement = () => {
 			dispatch({ type: 'SET', payload: { isSuperAdmin: superAdmin } });
 			if (!superAdmin) throw new Error('Only super admin can manage wardens');
         const data = await listWardens();
-        const { data: hostelRows, error: hostelErr } = await supabase
-            .from('student_info')
-            .select('hostel_name')
-            .order('hostel_name', { ascending: true });
-        if (hostelErr) throw hostelErr;
-        const options = Array.from(new Set((hostelRows || []).map(r => (r.hostel_name || '').trim()).filter(Boolean)));
+        // Derive hostel options from existing wardens to avoid heavy distinct scans
+        const optionsSet = new Set();
+        (data || []).forEach(w => (w.hostels || []).forEach(h => { if (h) optionsSet.add(String(h).trim()); }));
+        const options = Array.from(optionsSet).sort((a,b) => a.localeCompare(b));
         dispatch({ type: 'SET', payload: { rows: data, hostelOptions: options } });
 		} catch (e) {
 			dispatch({ type: 'SET', payload: { error: e.message || 'Failed to load wardens' } });
@@ -84,12 +82,10 @@ const WardenManagement = () => {
             if (!email || !email.endsWith('@srmist.edu.in')) {
                 throw new Error('Enter a valid @srmist.edu.in email');
             }
-            const hostels = (form.selectedHostels || []).filter(Boolean);
-            if (hostels.length === 0) {
-                throw new Error('Select at least one hostel');
-            }
-            await addWarden(email, hostels);
-            dispatch({ type: 'SET', payload: { success: 'Warden added', form: { email: '', selectedHostels: [] } } });
+            const hostel = (form.selectedHostel || '').trim();
+            if (!hostel) { throw new Error('Select a hostel'); }
+            await addWarden(email, [hostel]);
+            dispatch({ type: 'SET', payload: { success: 'Warden added', form: { email: '', selectedHostel: '' } } });
 			await load();
 		} catch (e) {
 			dispatch({ type: 'SET', payload: { error: e.message || 'Failed to add' } });
@@ -102,9 +98,9 @@ const WardenManagement = () => {
 		try {
 			dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
 			const row = rows.find(r => r.email === email);
-            const hostels = Array.isArray(row?.hostels_selected) ? row.hostels_selected : (row?.hostels || []);
-            if (hostels.length === 0) { throw new Error('Select at least one hostel'); }
-			await updateWarden(email, hostels);
+            const hostel = row?.hostel_selected || (row?.hostels && row.hostels[0]) || '';
+            if (!hostel) { throw new Error('Select a hostel'); }
+            await updateWarden(email, [hostel]);
 			dispatch({ type: 'SET', payload: { success: 'Warden updated' } });
 			await load();
 		} catch (e) {
@@ -141,10 +137,10 @@ const WardenManagement = () => {
                     onChange={(e) => dispatch({ type: 'SET_FORM_FIELD', field: 'email', value: e.target.value })}
                     style={{ padding: 8, minWidth: 280 }}
                 />
-                <select multiple size={6} value={form.selectedHostels} onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions).map(o => o.value);
-                    dispatch({ type: 'SET_FORM_FIELD', field: 'selectedHostels', value: selected });
+                <select value={form.selectedHostel} onChange={(e) => {
+                    dispatch({ type: 'SET_FORM_FIELD', field: 'selectedHostel', value: e.target.value });
                 }} style={{ minWidth: 280, padding: 6 }}>
+                    <option value="">Select hostel...</option>
                     {hostelOptions.map(h => (<option key={h} value={h}>{h}</option>))}
                 </select>
                 <button onClick={handleAdd} disabled={loading || !isSuperAdmin}>Add Warden</button>
@@ -163,9 +159,10 @@ const WardenManagement = () => {
 						<tr key={row.email}>
 							<td style={{ padding: 8 }}>{row.email}</td>
                             <td style={{ padding: 8 }}>
-                                <select multiple size={5} defaultValue={row.hostels || []} onChange={(e) => {
-                                    row.hostels_selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                                <select defaultValue={(row.hostels && row.hostels[0]) || ''} onChange={(e) => {
+                                    row.hostel_selected = e.target.value;
                                 }} style={{ width: '100%', padding: 6 }}>
+                                    <option value="">Select hostel...</option>
                                     {hostelOptions.map(h => (<option key={h} value={h}>{h}</option>))}
                                 </select>
                             </td>
