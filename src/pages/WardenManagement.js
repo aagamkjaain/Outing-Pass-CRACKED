@@ -1,6 +1,7 @@
 import React, { useEffect, useReducer, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { fetchAdminInfoByEmail } from '../services/api';
+import * as XLSX from 'xlsx';
 
 // Minimal API calls colocated to avoid large diffs in services
 async function listWardens() {
@@ -10,7 +11,11 @@ async function listWardens() {
 }
 
 async function addWarden(email, hostels) {
-	const { error } = await supabase.from('wardens').insert([{ email: email.toLowerCase(), hostels: hostels || [] }]);
+    // Upsert to avoid duplicate key violation
+    const { error } = await supabase.from('wardens').upsert(
+        [{ email: email.toLowerCase(), hostels: hostels || [] }],
+        { onConflict: 'email' }
+    );
 	if (error) throw new Error(error.message || 'Failed to add warden');
 }
 
@@ -124,6 +129,47 @@ const WardenManagement = () => {
 		}
 	};
 
+    const handleDownloadTemplate = () => {
+        const templateData = [
+            { 'Warden Email': 'warden1@srmist.edu.in', 'Hostel': 'mullai' },
+            { 'Warden Email': 'warden2@srmist.edu.in', 'Hostel': 'mbblock' }
+        ];
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        ws['!cols'] = [{ wch: 28 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Wardens');
+        XLSX.writeFile(wb, 'warden_template.xlsx');
+    };
+
+    const handleBulkUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data);
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws);
+            const payload = [];
+            for (const row of rows) {
+                const rawEmail = String(row['Warden Email'] || '').trim().toLowerCase();
+                const hostel = String(row['Hostel'] || '').trim();
+                if (!rawEmail || !rawEmail.endsWith('@srmist.edu.in') || !hostel) continue;
+                payload.push({ email: rawEmail, hostels: [hostel] });
+            }
+            if (payload.length === 0) throw new Error('No valid rows found in file');
+            const { error } = await supabase.from('wardens').upsert(payload, { onConflict: 'email' });
+            if (error) throw error;
+            dispatch({ type: 'SET', payload: { success: `Uploaded ${payload.length} wardens` } });
+            await load();
+        } catch (err) {
+            dispatch({ type: 'SET', payload: { error: err.message || 'Bulk upload failed' } });
+        } finally {
+            dispatch({ type: 'SET', payload: { loading: false } });
+            e.target.value = '';
+        }
+    };
+
 	return (
 		<div style={{ padding: 24 }}>
 			<h2>Super Admin: Warden Management</h2>
@@ -144,6 +190,8 @@ const WardenManagement = () => {
                     {hostelOptions.map(h => (<option key={h} value={h}>{h}</option>))}
                 </select>
                 <button onClick={handleAdd} disabled={loading || !isSuperAdmin}>Add Warden</button>
+                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleBulkUpload} />
+                <button onClick={handleDownloadTemplate} type="button">Download Template</button>
             </div>
 
 			<table style={{ width: '100%', borderCollapse: 'collapse' }}>
