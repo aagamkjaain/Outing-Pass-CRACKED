@@ -461,22 +461,47 @@ export const searchStudentInfoWithHostels = async (
 
     const term = (searchQuery || '').trim();
 
-    // Exact email search path: use indexed equality, no pagination
+    // Fast path: first 6 characters uniquely identify local-part and all emails share the same domain
+    if (term && !term.includes('@') && term.length >= 6) {
+      const domain = 'srmist.edu.in';
+      const pattern = `${term.toLowerCase()}%@${domain}`;
+      let fastQuery = supabase
+        .from('student_info')
+        .select(columns)
+        .ilike('student_email', pattern)
+        .limit(5);
+
+      if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
+        fastQuery = fastQuery.in('hostel_name', allowedHostels);
+      }
+
+      const { data, error } = await fastQuery;
+      if (error) throw error;
+      return { rows: data || [], count: data?.length || 0, page: 1, pageSize: 5 };
+    }
+
+    // Exact email search path: use indexed equality, no sort, no pagination
     if (term && term.includes('@')) {
       let exactQuery = supabase
         .from('student_info')
         .select(columns)
         .eq('student_email', term.toLowerCase())
-        .order('student_email', { ascending: true })
-        .limit(10);
+        .maybeSingle();
 
       if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-        exactQuery = exactQuery.in('hostel_name', allowedHostels);
+        // When using maybeSingle, apply hostel filter via eq/in before maybeSingle by reconstructing query
+        exactQuery = supabase
+          .from('student_info')
+          .select(columns)
+          .eq('student_email', term.toLowerCase())
+          .in('hostel_name', allowedHostels)
+          .maybeSingle();
       }
 
       const { data, error } = await exactQuery;
       if (error) throw error;
-      return { rows: data || [], count: data?.length || 0, page: 1, pageSize: 10 };
+      const rows = data ? [data] : [];
+      return { rows, count: rows.length, page: 1, pageSize: 1 };
     }
 
     // Partial search path: substring with limit and optional count
