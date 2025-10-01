@@ -37,6 +37,7 @@ const initialState = {
     form: { email: '', selectedHostel: '' },
     isSuperAdmin: false,
     hostelOptions: [],
+    search: '',
 };
 
 function reducer(state, action) {
@@ -138,6 +139,9 @@ const WardenManagement = () => {
         const ws = XLSX.utils.json_to_sheet(templateData);
         ws['!cols'] = [{ wch: 28 }, { wch: 20 }];
         XLSX.utils.book_append_sheet(wb, ws, 'Wardens');
+        // Add allowed hostels sheet for reference
+        const hostelsSheet = XLSX.utils.aoa_to_sheet([[ 'Allowed Hostels' ], ...((hostelOptions || []).map(h => [h]))]);
+        XLSX.utils.book_append_sheet(wb, hostelsSheet, 'Hostels');
         XLSX.writeFile(wb, 'warden_template.xlsx');
     };
 
@@ -151,11 +155,18 @@ const WardenManagement = () => {
             const ws = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(ws);
             const payload = [];
+            const invalid = [];
             for (const row of rows) {
                 const rawEmail = String(row['Warden Email'] || '').trim().toLowerCase();
-                const hostel = String(row['Hostel'] || '').trim();
-                if (!rawEmail || !rawEmail.endsWith('@srmist.edu.in') || !hostel) continue;
-                payload.push({ email: rawEmail, hostels: [hostel] });
+                const hostelRaw = String(row['Hostel'] || '').trim();
+                if (!rawEmail || !rawEmail.endsWith('@srmist.edu.in') || !hostelRaw) continue;
+                // Validate hostel against options (case-insensitive)
+                const match = (hostelOptions || []).find(h => h.toLowerCase() === hostelRaw.toLowerCase());
+                if (!match) { invalid.push(hostelRaw); continue; }
+                payload.push({ email: rawEmail, hostels: [match] });
+            }
+            if (invalid.length > 0) {
+                throw new Error(`Unknown hostels in file: ${Array.from(new Set(invalid)).join(', ')}`);
             }
             if (payload.length === 0) throw new Error('No valid rows found in file');
             const { error } = await supabase.from('wardens').upsert(payload, { onConflict: 'email' });
@@ -194,6 +205,15 @@ const WardenManagement = () => {
                 <button onClick={handleDownloadTemplate} type="button">Download Template</button>
             </div>
 
+            <div style={{ marginBottom: 12 }}>
+                <input
+                    placeholder="Search by email..."
+                    value={state.search}
+                    onChange={(e) => dispatch({ type: 'SET', payload: { search: e.target.value } })}
+                    style={{ padding: 8, minWidth: 320 }}
+                />
+            </div>
+
 			<table style={{ width: '100%', borderCollapse: 'collapse' }}>
 				<thead>
 					<tr>
@@ -202,8 +222,8 @@ const WardenManagement = () => {
 						<th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: 8 }}>Actions</th>
 					</tr>
 				</thead>
-				<tbody>
-					{rows.map(row => (
+                <tbody>
+                    {(rows || []).filter(r => !state.search || r.email.toLowerCase().includes(state.search.toLowerCase())).map(row => (
 						<tr key={row.email}>
 							<td style={{ padding: 8 }}>{row.email}</td>
                             <td style={{ padding: 8 }}>
@@ -219,7 +239,7 @@ const WardenManagement = () => {
 								<button onClick={() => handleDelete(row.email)} disabled={loading || !isSuperAdmin} style={{ color: '#b71c1c' }}>Delete</button>
 							</td>
 						</tr>
-					))}
+                    ))}
 				</tbody>
 			</table>
 		</div>
