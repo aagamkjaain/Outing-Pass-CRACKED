@@ -98,6 +98,9 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
         {(isAdmin && !isArchGate && !wardenLoggedIn) && (
           <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
         )}
+        {(isAdmin && !isArchGate && !wardenLoggedIn && sessionStorage.getItem('adminRole') === 'superadmin') && (
+          <Link to="/warden-management" onClick={() => setIsMenuOpen(false)}>Warden Management</Link>
+        )}
         {wardenLoggedIn && (
           <>
             <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>

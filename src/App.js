@@ -140,6 +140,8 @@ function App() {
       <div className="app">
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
         <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
+        {/* Persist adminRole in sessionStorage for Navbar link control */}
+        {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
         <main className="main-content">
           <Routes>
             <Route 
