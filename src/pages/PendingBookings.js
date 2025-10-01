@@ -21,6 +21,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState(0);
+  const [lateOnly, setLateOnly] = useState(true); // Apply only on still_out
   const [toast, setToast] = useState({ message: '', type: 'info' });
   const navigate = useNavigate();
   const [banStatuses, setBanStatuses] = useState({}); // { student_email: banObject or null }
@@ -64,8 +65,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         page,
         pageSize,
         includeCount: false,
-        minimal: true,
-        lateOnly: selectedStatus === 'still_out' && !searchActive && !startDate && !endDate
+        minimal: true
       });
       
       if (!Array.isArray(rows)) {
@@ -193,6 +193,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     setSearchQuery('');
     setSearchActive(false);
     setPage(1);
+    if (status === 'still_out') setLateOnly(true);
     
     // Auto-load data for "still_out" tab as it needs real-time updates for late comers
     // Manual refresh for other tabs to prevent unnecessary API calls
@@ -348,21 +349,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   // Function to check if student is late
   const isStudentLate = useCallback((booking) => {
     if ((booking.status || '').toLowerCase() !== 'still_out') return false;
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    // If in_date is before today, definitely late
-    if (booking.in_date && booking.in_date < todayStr) return true;
-
-    // If in_date equals today, compare times
-    if (booking.in_date && booking.in_date === todayStr) {
-      // Fallback: if in_time missing, treat as 00:00 which makes late check conservative after midnight
-      const inTime = booking.in_time || '00:00:00';
-      const expectedReturn = new Date(`${booking.in_date}T${inTime}`);
-      return new Date() > expectedReturn;
-    }
-
-    // If in_date is after today, not late
-    return false;
+    if (!booking.in_date || !booking.in_time) return false;
+    const expectedReturnLocal = new Date(`${booking.in_date}T${booking.in_time}`);
+    return new Date() > expectedReturnLocal;
   }, []);
 
   // Function to calculate how late the student is
@@ -393,8 +382,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   // Bookings filtered by hostel/warden/admin AND date AND search
   const filteredBookings = useMemo(() => {
     let base = hostelFilteredBookings;
-    // If Still Out tab without search and without dates, show only late students
-    if (selectedStatus === 'still_out' && !searchActive && !startDate && !endDate) {
+    // Late-only filter controlled by toggle; only applies on still_out
+    if (selectedStatus === 'still_out' && lateOnly) {
       base = base.filter(b => isStudentLate(b));
     }
 
@@ -426,6 +415,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
     return filtered;
   }, [hostelFilteredBookings, startDate, endDate, searchQuery, searchActive, isStudentLate]);
+  
 
   const sendStillOutAlert = useCallback(async (booking) => {
     try {
@@ -604,6 +594,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
             </button>
           )}
         </div>
+        {selectedStatus === 'still_out' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="checkbox" checked={lateOnly} onChange={(e) => setLateOnly(e.target.checked)} />
+            Show only late students
+          </label>
+        )}
       </div>
       {searchActive && (
         <div className="search-active-indicator">
