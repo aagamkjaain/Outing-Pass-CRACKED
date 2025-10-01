@@ -6,6 +6,7 @@ import SlotBooking from './pages/SlotBooking';
 import PendingBookings from './pages/PendingBookings';
 import Login from './pages/Login';
 import AdminStudentInfo from './pages/AdminStudentInfo';
+import WardenManagement from './pages/WardenManagement';
 import { fetchAdminInfoByEmail } from './services/api';
 // import ArchGateLogin from './pages/ArchGateLogin';
 // import ArchGateOTP from './pages/ArchGateOTP';
@@ -164,6 +165,18 @@ function App() {
                   : user
                     ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />
+              }
+            />
+            <Route 
+              path="/warden-management" 
+              element={
+                user
+                  ? (adminLoading 
+                      ? <div>Checking admin status...</div> 
+                      : (isAdmin && adminRole === 'superadmin' 
+                          ? <WardenManagement /> 
+                          : <Login />))
+                  : <Login />
               }
             />
             <Route path="/" element={user ? <SlotBooking /> : <Login />} />
