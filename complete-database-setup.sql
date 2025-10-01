@@ -435,7 +435,7 @@ WITH CHECK (
   is_warden() AND 
   EXISTS (
     SELECT 1 FROM student_info s
-    WHERE s.student_email = ban_students.student_email
+    WHERE s.email = ban_students.student_email
     AND s.hostel_name = ANY(get_warden_hostels())
   )
 );
@@ -448,7 +448,7 @@ USING (
   is_warden() AND 
   EXISTS (
     SELECT 1 FROM student_info s
-    WHERE s.student_email = ban_students.student_email
+    WHERE s.email = ban_students.student_email
     AND s.hostel_name = ANY(get_warden_hostels())
   )
 )
@@ -456,7 +456,7 @@ WITH CHECK (
   is_warden() AND 
   EXISTS (
     SELECT 1 FROM student_info s
-    WHERE s.student_email = ban_students.student_email
+    WHERE s.email = ban_students.student_email
     AND s.hostel_name = ANY(get_warden_hostels())
   )
 );

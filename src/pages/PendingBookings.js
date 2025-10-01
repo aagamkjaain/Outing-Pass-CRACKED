@@ -21,7 +21,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState(0);
-  const [lateOnly, setLateOnly] = useState(true); // Apply only on still_out
+  // lateOnly toggle removed; Still Out always shows only late students
   const [toast, setToast] = useState({ message: '', type: 'info' });
   const navigate = useNavigate();
   const [banStatuses, setBanStatuses] = useState({}); // { student_email: banObject or null }
@@ -58,14 +58,16 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
-        startDate: defaultStartForStillOut,
-        endDate,
+        // For Still Out: ignore date filters and enforce late-only at server
+        startDate: selectedStatus === 'still_out' ? undefined : defaultStartForStillOut,
+        endDate: selectedStatus === 'still_out' ? undefined : endDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page,
         pageSize,
         includeCount: false,
-        minimal: true
+        minimal: true,
+        lateOnly: selectedStatus === 'still_out'
       });
       
       if (!Array.isArray(rows)) {
@@ -109,12 +111,14 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
-        startDate,
-        endDate,
+        // For Still Out searches: ignore date filters and enforce late-only
+        startDate: selectedStatus === 'still_out' ? undefined : startDate,
+        endDate: selectedStatus === 'still_out' ? undefined : endDate,
         allowedHostels,
         searchRoom: roomNumber,
         page: 1,
-        pageSize
+        pageSize,
+        lateOnly: selectedStatus === 'still_out'
       });
       setAllBookings(rows || []);
       setTotal(count || 0);
@@ -193,7 +197,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     setSearchQuery('');
     setSearchActive(false);
     setPage(1);
-    if (status === 'still_out') setLateOnly(true);
+    // No late-only toggle; Still Out always shows late students
     
     // Auto-load data for "still_out" tab as it needs real-time updates for late comers
     // Manual refresh for other tabs to prevent unnecessary API calls
@@ -379,15 +383,17 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     }
   }, [isStudentLate]);
 
-  // Bookings filtered by hostel/warden/admin AND date AND search
+  // Bookings filtered by hostel/warden/admin AND search (no date filter for Still Out)
   const filteredBookings = useMemo(() => {
     let base = hostelFilteredBookings;
-    // Late-only filter controlled by toggle; only applies on still_out
-    if (selectedStatus === 'still_out' && lateOnly) {
+    // For Still Out, always show only late students
+    if (selectedStatus === 'still_out') {
       base = base.filter(b => isStudentLate(b));
     }
 
     let filtered = base.filter(booking => {
+      // Do not apply date range to Still Out
+      if (selectedStatus === 'still_out') return true;
       if (!startDate && !endDate) return true;
       const outDate = booking.out_date;
       if (startDate && outDate < startDate) return false;
@@ -594,12 +600,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
             </button>
           )}
         </div>
-        {selectedStatus === 'still_out' && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" checked={lateOnly} onChange={(e) => setLateOnly(e.target.checked)} />
-            Show only late students
-          </label>
-        )}
+        {/* Late-only checkbox removed: always showing late students in Still Out */}
       </div>
       {searchActive && (
         <div className="search-active-indicator">
@@ -627,7 +628,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       
       {!searchActive && selectedStatus === 'still_out' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f8d7da', borderRadius: 4, textAlign: 'center' }}>
-          <p><strong>Still Out:</strong> Showing students who are currently out (including late students). Use search to find specific room numbers.</p>
+          <p><strong>Still Out:</strong> Showing all late students across all dates. Use search to find specific room numbers.</p>
         </div>
       )}
       
@@ -774,7 +775,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           )}
           {selectedStatus === 'still_out' && (
             <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
-              Still Out data auto-loads to show real-time status of late comers
+              Still Out auto-loads and shows only late students across all dates.
             </p>
           )}
         </div>
