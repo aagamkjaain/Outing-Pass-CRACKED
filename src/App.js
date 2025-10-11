@@ -8,7 +8,6 @@ import PendingBookings from './pages/PendingBookings';
 import Login from './pages/Login';
 import AdminStudentInfo from './pages/AdminStudentInfo';
 import WardenManagement from './pages/WardenManagement';
-import ArchGateRedirect from './components/ArchGateRedirect';
 import ArchGateOTP from './pages/ArchGateOTP';
 import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
 import './App.css';
@@ -152,69 +151,67 @@ function App() {
     <Router>  
       <div className="app">
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
-        <ArchGateRedirect>
-          <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
-          {/* Persist adminRole in sessionStorage for Navbar link control */}
-          {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
-          <main className="main-content">
-            <Routes>
-              <Route 
-                path="/pending-bookings" 
-                element={
-                  wardenLoggedIn
-                    ? <PendingBookings />
-                    : user
-                      ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
-                      : <Login />
-                }
-              />
-              <Route 
-                path="/slot-booking" 
-                element={user ? <SlotBooking /> : <Login />} 
-              />
-              <Route path="/login" element={<Login />} />
-              <Route 
-                path="/admin-student-info" 
-                element={
-                  wardenLoggedIn
-                    ? <AdminStudentInfo />
-                    : user
-                      ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
-                      : <Login />
-                }
-              />
-              <Route 
-                path="/warden-management" 
-                element={
-                  user
-                    ? (adminLoading 
-                        ? <div>Checking admin status...</div> 
-                        : (isAdmin && adminRole === 'superadmin' 
-                            ? <WardenManagement /> 
-                            : <Login />))
+        <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
+        {/* Persist adminRole in sessionStorage for Navbar link control */}
+        {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
+        <main className="main-content">
+          <Routes>
+            <Route 
+              path="/pending-bookings" 
+              element={
+                wardenLoggedIn
+                  ? <PendingBookings />
+                  : user
+                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />
-                }
-              />
-              <Route path="/" element={user ? <SlotBooking /> : <Login />} />
-              <Route 
-                path="/arch-otp" 
-                element={
-                  user && isArchGate 
-                    ? <ArchGateOTP /> 
+              }
+            />
+            <Route 
+              path="/slot-booking" 
+              element={user ? <SlotBooking /> : <Login />} 
+            />
+            <Route path="/login" element={<Login />} />
+            <Route 
+              path="/admin-student-info" 
+              element={
+                wardenLoggedIn
+                  ? <AdminStudentInfo />
+                  : user
+                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />
-                } 
-              />
-              <Route 
-                path="/arch-outing-details" 
-                element={
-                  user && isArchGate 
-                    ? <ArchGateOutingDetails /> 
-                    : <Login />
-                } 
-              />
-            </Routes>
-          </main>
-        </ArchGateRedirect>
+              }
+            />
+            <Route 
+              path="/warden-management" 
+              element={
+                user
+                  ? (adminLoading 
+                      ? <div>Checking admin status...</div> 
+                      : (isAdmin && adminRole === 'superadmin' 
+                          ? <WardenManagement /> 
+                          : <Login />))
+                  : <Login />
+              }
+            />
+            <Route path="/" element={user ? <SlotBooking /> : <Login />} />
+            <Route 
+              path="/arch-otp" 
+              element={
+                user && isArchGate 
+                  ? <ArchGateOTP /> 
+                  : <Login />
+              } 
+            />
+            <Route 
+              path="/arch-outing-details" 
+              element={
+                user && isArchGate 
+                  ? <ArchGateOutingDetails /> 
+                  : <Login />
+              } 
+            />
+          </Routes>
+        </main>
       </div>
     </Router>
   );
