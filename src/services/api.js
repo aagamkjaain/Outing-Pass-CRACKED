@@ -853,36 +853,25 @@ export const checkApiHealth = async () => {
 
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
-    console.log('Fetching OTP details for:', otp);
-    
+    const today = new Date().toISOString().split('T')[0];
     // Only select minimal necessary fields for arch gate verification
-    // OTP can be used anytime, no date restrictions
     const { data, error } = await supabase
       .from('outing_requests')
       .select('id, otp, otp_used, status, out_date, in_date, name, hostel_name')
       .eq('otp', otp)
       .eq('otp_used', false)
       .eq('status', 'still_out')
+      .gte('in_date', today)
       .single();
-      
-    console.log('OTP query result:', { data, error });
-    
-    if (error) {
-      console.error('OTP query error:', error);
-      throw error;
-    }
-    
-    console.log('OTP found:', data);
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('OTP validation failed:', error);
     throw handleError(error);
   }
 };
 
 export const markOTPAsUsed = async (otp) => {
   try {
-    console.log('Marking OTP as used:', otp);
     // Only update the otp_used field, not other sensitive data
     const { data, error } = await supabase
       .from('outing_requests')
@@ -890,14 +879,9 @@ export const markOTPAsUsed = async (otp) => {
       .eq('otp', otp)
       .select('id, otp, otp_used, status');
 
-    console.log('Mark OTP result:', { data, error });
-    if (error) {
-      console.error('Mark OTP error:', error);
-      throw error;
-    }
+    if (error) throw error;
     return data[0];
   } catch (error) {
-    console.error('Mark OTP failed:', error);
     throw handleError(error);
   }
 };
