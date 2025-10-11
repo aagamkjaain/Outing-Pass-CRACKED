@@ -127,6 +127,10 @@ function App() {
       if (archGateInfo) {
         console.log('Setting isArchGate to true');
         setIsArchGate(true);
+        // Redirect arch gate users to their interface
+        if (window.location.pathname === '/' || window.location.pathname === '/slot-booking') {
+          window.location.href = '/arch-otp';
+        }
       } else {
         console.log('Setting isArchGate to false');
         setIsArchGate(false);
@@ -168,7 +172,11 @@ function App() {
             />
             <Route 
               path="/slot-booking" 
-              element={user ? <SlotBooking /> : <Login />} 
+              element={
+                user 
+                  ? (isArchGate ? <ArchGateOTP /> : <SlotBooking />)
+                  : <Login />
+              } 
             />
             <Route path="/login" element={<Login />} />
             <Route 
@@ -193,7 +201,14 @@ function App() {
                   : <Login />
               }
             />
-            <Route path="/" element={user ? <SlotBooking /> : <Login />} />
+            <Route 
+              path="/" 
+              element={
+                user 
+                  ? (isArchGate ? <ArchGateOTP /> : <SlotBooking />)
+                  : <Login />
+              } 
+            />
             <Route 
               path="/arch-otp" 
               element={
