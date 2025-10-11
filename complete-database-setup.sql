@@ -404,18 +404,12 @@ TO authenticated
 USING (email = get_user_email())
 WITH CHECK (email = get_user_email());
 
--- Arch gate can read only OTP-related fields for verification
+-- Arch gate can read outing requests for OTP verification
+-- This is needed because arch gate users need to verify OTPs
 CREATE POLICY "arch_gate_read_otp_outings" ON outing_requests
 FOR SELECT
 TO authenticated
 USING (is_arch_gate());
-
--- Allow all authenticated users to read outing requests for OTP verification
--- This is needed because arch gate users need to verify OTPs
-CREATE POLICY "authenticated_read_outings_for_otp" ON outing_requests
-FOR SELECT
-TO authenticated
-USING (true);
 
 -- Allow authenticated users to update the otp_used field
 -- This is needed for arch gate users to mark OTPs as used
