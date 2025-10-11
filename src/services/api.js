@@ -901,6 +901,7 @@ export const fetchOutingDetailsByOTP = async (otp) => {
       status: allData.status,
       out_date: allData.out_date,
       in_date: allData.in_date,
+      in_time: allData.in_time,
       name: allData.name,
       hostel_name: allData.hostel_name
     };

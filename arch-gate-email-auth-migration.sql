@@ -29,10 +29,6 @@ CREATE TABLE arch_gate (
 -- 2. CREATE INDEXES FOR PERFORMANCE
 -- =====================================================
 
--- Drop old indexes that reference username column
-DROP INDEX IF EXISTS idx_arch_gate_username;
-DROP INDEX IF EXISTS idx_arch_gate_auth_id;
-
 -- Indexes for arch_gate table
 CREATE INDEX IF NOT EXISTS idx_arch_gate_email ON arch_gate(email);
 
@@ -149,15 +145,14 @@ CREATE TRIGGER update_arch_gate_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 8. SAMPLE DATA (OPTIONAL - SKIP IF USERS ALREADY EXIST)
+-- 8. INSERT SAMPLE ARCH GATE USERS
 -- =====================================================
 
--- Note: Sample data insertion commented out since arch gate users already exist
--- Uncomment and modify if you need to add more users:
--- INSERT INTO arch_gate (email, display_name) VALUES
--- ('archgate1@srmist.edu.in', 'Arch Gate User 1'),
--- ('archgate2@srmist.edu.in', 'Arch Gate User 2')
--- ON CONFLICT (email) DO NOTHING;
+-- Insert sample arch gate users (replace with actual emails)
+INSERT INTO arch_gate (email, display_name) VALUES
+('archgate1@srmist.edu.in', 'Arch Gate User 1'),
+('archgate2@srmist.edu.in', 'Arch Gate User 2')
+ON CONFLICT (email) DO NOTHING;
 
 -- =====================================================
 -- 9. GRANT PERMISSIONS
