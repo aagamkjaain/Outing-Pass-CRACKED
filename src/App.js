@@ -22,6 +22,7 @@ function App() {
   const [adminHostels, setAdminHostels] = useState([]);
   const [adminRole, setAdminRole] = useState(null);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(true);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', type: 'info' });
 
@@ -44,7 +45,10 @@ function App() {
           }
         setUser(session.user);
           setAdminLoading(true);
-          checkAdminStatus(session.user.email).finally(() => setAdminLoading(false));
+          checkAdminStatus(session.user.email).finally(() => {
+            setAdminLoading(false);
+            setRoleLoading(false);
+          });
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -77,7 +81,10 @@ function App() {
           }
         setUser(session.user);
           setAdminLoading(true);
-          checkAdminStatus(session.user.email).finally(() => setAdminLoading(false));
+          checkAdminStatus(session.user.email).finally(() => {
+            setAdminLoading(false);
+            setRoleLoading(false);
+          });
       } else {
         setUser(null);
         setIsAdmin(false);
@@ -123,16 +130,9 @@ function App() {
       // Check arch gate status
       const { checkArchGateStatus } = await import('./services/api');
       const archGateInfo = await checkArchGateStatus(email);
-      console.log('Arch gate info result:', archGateInfo);
       if (archGateInfo) {
-        console.log('Setting isArchGate to true');
         setIsArchGate(true);
-        // Redirect arch gate users to their interface
-        if (window.location.pathname === '/' || window.location.pathname === '/slot-booking') {
-          window.location.href = '/arch-otp';
-        }
       } else {
-        console.log('Setting isArchGate to false');
         setIsArchGate(false);
       }
     } catch (err) {
@@ -147,8 +147,8 @@ function App() {
 
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
 
-  if (sessionLoading) {
-    return <div style={{textAlign:'center',marginTop:'100px',fontSize:'1.2em'}}>Loading session...</div>;
+  if (sessionLoading || (user && roleLoading)) {
+    return <div style={{textAlign:'center',marginTop:'100px',fontSize:'1.2em'}}>Loading...</div>;
   }
 
   return (

@@ -810,7 +810,6 @@ export const authenticateWarden = async (email, password) => {
  */
 export const checkArchGateStatus = async (email) => {
   try {
-    console.log('Checking arch gate status for email:', email);
     // Check if user exists in arch_gate table (like warden check)
     const { data, error } = await supabase
       .from('arch_gate')
@@ -818,21 +817,15 @@ export const checkArchGateStatus = async (email) => {
       .eq('email', email.toLowerCase())
       .single();
       
-    console.log('Arch gate query result:', { data, error });
-    
     if (error && error.code !== 'PGRST116') {
-      console.error('Arch gate query error:', error);
       throw error;
     }
     if (!data) {
-      console.log('No arch gate data found for email:', email);
       return null;
     }
     
-    console.log('Arch gate user found:', data);
     return { ...data, role: 'arch_gate' }; // Add role for compatibility
   } catch (error) {
-    console.error('Arch gate status check failed:', error);
     return null;
   }
 };
