@@ -854,18 +854,46 @@ export const checkApiHealth = async () => {
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    // Only select minimal necessary fields for arch gate verification
-    const { data, error } = await supabase
+    console.log('Fetching OTP details for:', otp, 'Today:', today);
+    
+    // First, let's check if the OTP exists at all
+    const { data: allOtpData, error: allError } = await supabase
       .from('outing_requests')
       .select('id, otp, otp_used, status, out_date, in_date, name, hostel_name')
       .eq('otp', otp)
-      .eq('otp_used', false)
-      .eq('status', 'still_out')
-      .gte('in_date', today)
       .single();
-    if (error) throw error;
-    return data;
+    
+    console.log('All OTP data:', allOtpData, 'Error:', allError);
+    
+    if (allError && allError.code !== 'PGRST116') {
+      throw allError;
+    }
+    
+    if (!allOtpData) {
+      console.log('OTP not found in database');
+      return null;
+    }
+    
+    // Check each condition
+    if (allOtpData.otp_used === true) {
+      console.log('OTP already used');
+      return null;
+    }
+    
+    if (allOtpData.status !== 'still_out') {
+      console.log('Status is not still_out:', allOtpData.status);
+      return null;
+    }
+    
+    if (allOtpData.in_date < today) {
+      console.log('In date is in the past:', allOtpData.in_date, 'Today:', today);
+      return null;
+    }
+    
+    console.log('OTP is valid, returning data');
+    return allOtpData;
   } catch (error) {
+    console.error('OTP validation failed:', error);
     throw handleError(error);
   }
 };
