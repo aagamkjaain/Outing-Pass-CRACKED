@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import { fetchAdminInfoByEmail } from './services/api';
 import Navbar from './components/Navbar';
 import SlotBooking from './pages/SlotBooking';
 import PendingBookings from './pages/PendingBookings';
 import Login from './pages/Login';
 import AdminStudentInfo from './pages/AdminStudentInfo';
 import WardenManagement from './pages/WardenManagement';
-import { fetchAdminInfoByEmail } from './services/api';
-import ArchGateLogin from './pages/ArchGateLogin';
+import ArchGateRedirect from './components/ArchGateRedirect';
 import ArchGateOTP from './pages/ArchGateOTP';
 import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
 import './App.css';
@@ -18,11 +18,12 @@ function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isWarden, setIsWarden] = useState(false);
+  const [isArchGate, setIsArchGate] = useState(false);
   const [wardenHostels, setWardenHostels] = useState([]);
-  const [adminRole, setAdminRole] = useState(null);
   const [adminHostels, setAdminHostels] = useState([]);
-  const [sessionLoading, setSessionLoading] = useState(true);
+  const [adminRole, setAdminRole] = useState(null);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', type: 'info' });
 
   useEffect(() => {
@@ -95,30 +96,41 @@ function App() {
 
   const checkAdminStatus = async (email) => {
     try {
-      // Check admin status first (priority)
+      // Check all roles independently - user can have multiple roles
+      
+      // Check admin status
       const adminInfo = await fetchAdminInfoByEmail(email);
       if (adminInfo) {
         setIsAdmin(true);
         setAdminRole(adminInfo.role);
         setAdminHostels(adminInfo.hostels || []);
-        // If user is admin, don't set warden privileges
-        setIsWarden(false);
-        setWardenHostels([]);
       } else {
         setIsAdmin(false);
         setAdminRole(null);
         setAdminHostels([]);
-        
-        // Only check warden status if not an admin
-        const { fetchWardenInfoByEmail } = await import('./services/api');
-        const wardenInfo = await fetchWardenInfoByEmail(email);
-        if (wardenInfo) {
-          setIsWarden(true);
-          setWardenHostels(wardenInfo.hostels || []);
-        } else {
-          setIsWarden(false);
-          setWardenHostels([]);
-        }
+      }
+      
+      // Check warden status
+      const { fetchWardenInfoByEmail } = await import('./services/api');
+      const wardenInfo = await fetchWardenInfoByEmail(email);
+      if (wardenInfo) {
+        setIsWarden(true);
+        setWardenHostels(wardenInfo.hostels || []);
+      } else {
+        setIsWarden(false);
+        setWardenHostels([]);
+      }
+      
+      // Check arch gate status
+      const { checkArchGateStatus } = await import('./services/api');
+      const archGateInfo = await checkArchGateStatus(email);
+      console.log('Arch gate info result:', archGateInfo);
+      if (archGateInfo) {
+        console.log('Setting isArchGate to true');
+        setIsArchGate(true);
+      } else {
+        console.log('Setting isArchGate to false');
+        setIsArchGate(false);
       }
     } catch (err) {
       setIsAdmin(false);
@@ -126,6 +138,7 @@ function App() {
       setAdminHostels([]);
       setIsWarden(false);
       setWardenHostels([]);
+      setIsArchGate(false);
     }
   };
 
@@ -139,54 +152,69 @@ function App() {
     <Router>  
       <div className="app">
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
-        <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
-        {/* Persist adminRole in sessionStorage for Navbar link control */}
-        {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
-        <main className="main-content">
-          <Routes>
-            <Route 
-              path="/pending-bookings" 
-              element={
-                wardenLoggedIn
-                  ? <PendingBookings />
-                  : user
-                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
+        <ArchGateRedirect>
+          <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
+          {/* Persist adminRole in sessionStorage for Navbar link control */}
+          {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
+          <main className="main-content">
+            <Routes>
+              <Route 
+                path="/pending-bookings" 
+                element={
+                  wardenLoggedIn
+                    ? <PendingBookings />
+                    : user
+                      ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
+                      : <Login />
+                }
+              />
+              <Route 
+                path="/slot-booking" 
+                element={user ? <SlotBooking /> : <Login />} 
+              />
+              <Route path="/login" element={<Login />} />
+              <Route 
+                path="/admin-student-info" 
+                element={
+                  wardenLoggedIn
+                    ? <AdminStudentInfo />
+                    : user
+                      ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
+                      : <Login />
+                }
+              />
+              <Route 
+                path="/warden-management" 
+                element={
+                  user
+                    ? (adminLoading 
+                        ? <div>Checking admin status...</div> 
+                        : (isAdmin && adminRole === 'superadmin' 
+                            ? <WardenManagement /> 
+                            : <Login />))
                     : <Login />
-              }
-            />
-            <Route 
-              path="/slot-booking" 
-              element={user ? <SlotBooking /> : <Login />} 
-            />
-            <Route path="/login" element={<Login />} />
-            <Route 
-              path="/admin-student-info" 
-              element={
-                wardenLoggedIn
-                  ? <AdminStudentInfo />
-                  : user
-                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
+                }
+              />
+              <Route path="/" element={user ? <SlotBooking /> : <Login />} />
+              <Route 
+                path="/arch-otp" 
+                element={
+                  user && isArchGate 
+                    ? <ArchGateOTP /> 
                     : <Login />
-              }
-            />
-            <Route 
-              path="/warden-management" 
-              element={
-                user
-                  ? (adminLoading 
-                      ? <div>Checking admin status...</div> 
-                      : (isAdmin && adminRole === 'superadmin' 
-                          ? <WardenManagement /> 
-                          : <Login />))
-                  : <Login />
-              }
-            />
-            <Route path="/" element={user ? <SlotBooking /> : <Login />} />
-            <Route path="/arch-gate-login" element={<ArchGateLogin />} />
-            <Route path="/arch-otp" element={<ArchGateOTP />} />
-            <Route path="/arch-outing-details" element={<ArchGateOutingDetails />} />
-          </Routes>
-        </main>
+                } 
+              />
+              <Route 
+                path="/arch-outing-details" 
+                element={
+                  user && isArchGate 
+                    ? <ArchGateOutingDetails /> 
+                    : <Login />
+                } 
+              />
+            </Routes>
+          </main>
+        </ArchGateRedirect>
       </div>
     </Router>
   );

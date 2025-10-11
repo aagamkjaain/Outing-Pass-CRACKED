@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS wardens (
 -- Arch Gate table (Security personnel) - Uses Supabase Auth
 CREATE TABLE IF NOT EXISTS arch_gate (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
+    username TEXT NOT NULL UNIQUE,
     display_name TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -106,7 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_admins_role ON admins(role);
 CREATE INDEX IF NOT EXISTS idx_wardens_email ON wardens(email);
 
 -- Indexes for arch_gate table
-CREATE INDEX IF NOT EXISTS idx_arch_gate_email ON arch_gate(email);
+CREATE INDEX IF NOT EXISTS idx_arch_gate_username ON arch_gate(username);
 CREATE INDEX IF NOT EXISTS idx_arch_gate_auth_id ON arch_gate(id);
 
 -- Indexes for student_info table
@@ -531,8 +531,8 @@ CREATE TRIGGER update_ban_students_updated_at
 -- ('warden@srmist.edu.in', ARRAY['mblock', 'fblock']);
 
 -- Insert sample arch gate user (uncomment for testing)
--- INSERT INTO arch_gate (email, display_name) VALUES 
--- ('gatekeeper1@srmist.edu.in', 'Gate Keeper 1');
+-- INSERT INTO arch_gate (username, password, email) VALUES 
+-- ('gatekeeper1', 'gate123', 'gatekeeper1@srmist.edu.in');
 
 -- Insert sample health check record
 INSERT INTO health_check (status) VALUES ('ok') ON CONFLICT DO NOTHING;

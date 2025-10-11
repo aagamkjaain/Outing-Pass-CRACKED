@@ -733,6 +733,25 @@ export const fetchWardenInfoByEmail = async (email) => {
 };
 
 /**
+ * Fetch arch gate info by email
+ * @param {string} email
+ * @returns {Promise<Object|null>} - Arch gate info or null if not found
+ */
+export const fetchArchGateInfoByEmail = async (email) => {
+  try {
+    const { data, error } = await supabase
+      .from('arch_gate')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
  * Delete student info by email (superadmin only)
  * @param {string} student_email - The student's email
  * @returns {Promise<Object>} - Deletion confirmation
@@ -778,42 +797,42 @@ export const authenticateWarden = async (email, password) => {
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
     
-    return { ...data, role: 'warden' }; // 
+    return { ...data, role: 'warden' }; // Add role for compatibility
   } catch (error) {
     return null;
   }
 };
 
 /**
- * Authenticate arch_gate by email and password (Supabase Auth)
+ * Check if user is arch gate (after Gmail login)
  * @param {string} email
- * @param {string} password
- * @returns {Promise<Object|null>} - Arch gate info or null if not found/invalid
+ * @returns {Promise<Object|null>} - Arch gate info or null if not found
  */
-export const authenticateArchGate = async (email, password) => {
+export const checkArchGateStatus = async (email) => {
   try {
-    // First authenticate with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase(),
-      password: password
-    });
-    
-    if (authError || !authData.user) {
-      return null;
-    }
-    
-    // Check if user exists in arch_gate table (like super admin check)
+    console.log('Checking arch gate status for email:', email);
+    // Check if user exists in arch_gate table (like warden check)
     const { data, error } = await supabase
       .from('arch_gate')
       .select('*')
       .eq('email', email.toLowerCase())
       .single();
       
-    if (error && error.code !== 'PGRST116') throw error;
-    if (!data) return null;
+    console.log('Arch gate query result:', { data, error });
     
+    if (error && error.code !== 'PGRST116') {
+      console.error('Arch gate query error:', error);
+      throw error;
+    }
+    if (!data) {
+      console.log('No arch gate data found for email:', email);
+      return null;
+    }
+    
+    console.log('Arch gate user found:', data);
     return { ...data, role: 'arch_gate' }; // Add role for compatibility
   } catch (error) {
+    console.error('Arch gate status check failed:', error);
     return null;
   }
 };
