@@ -232,14 +232,8 @@ export const fetchBookingsFiltered = async (opts = {}) => {
       query = query.or(`in_date.lt.${today},and(in_date.eq.${today},in_time.lte.${nowTime})`);
     }
 
-    // Apply hostel restrictions for wardens - this is CRITICAL for security
-    if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-      // Check if warden has 'all' access
-      const hasAllAccess = allowedHostels.some(h => h.toLowerCase() === 'all');
-      if (!hasAllAccess) {
-        // Apply strict hostel filtering for wardens
-        query = query.in('hostel_name', allowedHostels);
-      }
+    if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
+      query = query.in('hostel_name', allowedHostels);
     }
 
     if (searchRoom && searchRoom.trim().length >= 3) {

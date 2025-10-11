@@ -321,36 +321,20 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       (booking.status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
     
-    // Then filter by hostel permissions - SECURITY CRITICAL
+    // Then filter by hostel permissions
     const filtered = statusFiltered.filter(booking => {
-      // For wardens: strict hostel filtering
       if (wardenLoggedIn && Array.isArray(wardenHostels) && wardenHostels.length > 0) {
         const normalizedHostels = wardenHostels.map(h => h.trim().toLowerCase());
-        const hasAllAccess = normalizedHostels.includes('all');
-        
-        if (!hasAllAccess) {
+        if (!normalizedHostels.includes('all')) {
           const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
-          if (!normalizedHostels.includes(bookingHostel)) {
-            console.warn(`SECURITY: Warden attempted to access hostel ${booking.hostel_name} not in allowed list:`, wardenHostels);
-            return false;
-          }
+          if (!normalizedHostels.includes(bookingHostel)) return false;
         }
       }
-      
-      // For admin wardens: strict hostel filtering
       if (!wardenLoggedIn && adminRole === 'warden' && Array.isArray(adminHostels) && adminHostels.length > 0) {
         const normalizedHostels = adminHostels.map(h => h.trim().toLowerCase());
-        const hasAllAccess = normalizedHostels.includes('all');
-        
-        if (!hasAllAccess) {
-          const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
-          if (!normalizedHostels.includes(bookingHostel)) {
-            console.warn(`SECURITY: Admin warden attempted to access hostel ${booking.hostel_name} not in allowed list:`, adminHostels);
-            return false;
-          }
-        }
+        const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
+        if (!normalizedHostels.includes('all') && !normalizedHostels.includes(bookingHostel)) return false;
       }
-      
       return true;
     });
     return filtered;
