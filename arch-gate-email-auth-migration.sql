@@ -29,6 +29,10 @@ CREATE TABLE arch_gate (
 -- 2. CREATE INDEXES FOR PERFORMANCE
 -- =====================================================
 
+-- Drop old indexes that reference username column
+DROP INDEX IF EXISTS idx_arch_gate_username;
+DROP INDEX IF EXISTS idx_arch_gate_auth_id;
+
 -- Indexes for arch_gate table
 CREATE INDEX IF NOT EXISTS idx_arch_gate_email ON arch_gate(email);
 
