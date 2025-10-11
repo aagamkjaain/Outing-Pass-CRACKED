@@ -898,6 +898,8 @@ export const fetchOutingDetailsByOTP = async (otp) => {
       id: allData.id,
       otp: allData.otp,
       otp_used: allData.otp_used,
+      otp_verified_by: allData.otp_verified_by,
+      otp_verified_at: allData.otp_verified_at,
       status: allData.status,
       out_date: allData.out_date,
       in_date: allData.in_date,
@@ -919,12 +921,22 @@ export const markOTPAsUsed = async (otp) => {
     console.log('=== MARKING OTP AS USED ===');
     console.log('Marking OTP as used:', otp);
     
-    // Only update the otp_used field, not other sensitive data
+    // Get current user email for tracking
+    const { data: { user } } = await supabase.auth.getUser();
+    const archGateEmail = user?.email || 'unknown';
+    
+    console.log('Arch gate user email:', archGateEmail);
+    
+    // Update otp_used, otp_verified_by, and otp_verified_at fields
     const { data, error } = await supabase
       .from('outing_requests')
-      .update({ otp_used: true })
+      .update({ 
+        otp_used: true,
+        otp_verified_by: archGateEmail,
+        otp_verified_at: new Date().toISOString()
+      })
       .eq('otp', otp)
-      .select('id, otp, otp_used, status');
+      .select('id, otp, otp_used, otp_verified_by, otp_verified_at, status');
 
     console.log('Mark OTP result:', { data, error });
     

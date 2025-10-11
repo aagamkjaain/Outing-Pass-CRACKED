@@ -26,6 +26,15 @@ CREATE TABLE arch_gate (
 );
 
 -- =====================================================
+-- 1.1. ADD OTP_VERIFIED_BY COLUMN TO OUTING_REQUESTS
+-- =====================================================
+
+-- Add otp_verified_by column to track which arch gate user verified the OTP
+ALTER TABLE outing_requests 
+ADD COLUMN IF NOT EXISTS otp_verified_by TEXT,
+ADD COLUMN IF NOT EXISTS otp_verified_at TIMESTAMP WITH TIME ZONE;
+
+-- =====================================================
 -- 2. CREATE INDEXES FOR PERFORMANCE
 -- =====================================================
 

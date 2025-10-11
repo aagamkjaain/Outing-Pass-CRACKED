@@ -25,6 +25,12 @@ export default function ArchGateOutingDetails() {
             {details.in_time && <p><strong>In Time:</strong> {details.in_time}</p>}
             {details.status && <p><strong>Status:</strong> {details.status}</p>}
             {details.otp && <p><strong>OTP:</strong> {details.otp}</p>}
+            {details.otp_verified_by && (
+              <p><strong>Verified by:</strong> {details.otp_verified_by}</p>
+            )}
+            {details.otp_verified_at && (
+              <p><strong>Verified at:</strong> {new Date(details.otp_verified_at).toLocaleString()}</p>
+            )}
             
             <div style={{marginTop:24,textAlign:'center'}}>
               <button 
