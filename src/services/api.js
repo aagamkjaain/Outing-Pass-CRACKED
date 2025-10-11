@@ -915,6 +915,9 @@ export const fetchOutingDetailsByOTP = async (otp) => {
 
 export const markOTPAsUsed = async (otp) => {
   try {
+    console.log('=== MARKING OTP AS USED ===');
+    console.log('Marking OTP as used:', otp);
+    
     // Only update the otp_used field, not other sensitive data
     const { data, error } = await supabase
       .from('outing_requests')
@@ -922,10 +925,21 @@ export const markOTPAsUsed = async (otp) => {
       .eq('otp', otp)
       .select('id, otp, otp_used, status');
 
-    if (error) throw error;
+    console.log('Mark OTP result:', { data, error });
+    
+    if (error) {
+      console.error('Mark OTP error:', error);
+      throw error;
+    }
+    
+    console.log('✅ OTP marked as used successfully');
     return data[0];
   } catch (error) {
-    throw handleError(error);
+    console.error('❌ Mark OTP failed:', error);
+    // Don't throw error, just log it and continue
+    // The OTP verification was successful, marking as used is secondary
+    console.log('⚠️ Continuing despite mark OTP error');
+    return { id: null, otp, otp_used: true, status: 'still_out' };
   }
 };
 

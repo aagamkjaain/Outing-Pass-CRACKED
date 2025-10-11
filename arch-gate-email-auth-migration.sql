@@ -149,14 +149,15 @@ CREATE TRIGGER update_arch_gate_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 8. INSERT SAMPLE ARCH GATE USERS
+-- 8. SAMPLE DATA (OPTIONAL - SKIP IF USERS ALREADY EXIST)
 -- =====================================================
 
--- Insert sample arch gate users (replace with actual emails)
-INSERT INTO arch_gate (email, display_name) VALUES
-('archgate1@srmist.edu.in', 'Arch Gate User 1'),
-('archgate2@srmist.edu.in', 'Arch Gate User 2')
-ON CONFLICT (email) DO NOTHING;
+-- Note: Sample data insertion commented out since arch gate users already exist
+-- Uncomment and modify if you need to add more users:
+-- INSERT INTO arch_gate (email, display_name) VALUES
+-- ('archgate1@srmist.edu.in', 'Arch Gate User 1'),
+-- ('archgate2@srmist.edu.in', 'Arch Gate User 2')
+-- ON CONFLICT (email) DO NOTHING;
 
 -- =====================================================
 -- 9. GRANT PERMISSIONS
