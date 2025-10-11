@@ -113,6 +113,13 @@ FOR SELECT
 TO authenticated
 USING (is_arch_gate());
 
+-- Allow all authenticated users to read outing requests for OTP verification
+-- This is needed because arch gate users need to verify OTPs
+CREATE POLICY "authenticated_read_outings_for_otp" ON outing_requests
+FOR SELECT
+TO authenticated
+USING (true);
+
 -- =====================================================
 -- 6. HELPER FUNCTION FOR UPDATED_AT
 -- =====================================================
