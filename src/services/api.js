@@ -785,51 +785,34 @@ export const authenticateWarden = async (email, password) => {
 };
 
 /**
- * Authenticate arch_gate by username and password (custom authentication)
- * @param {string} username
+ * Authenticate arch_gate by email and password (Supabase Auth)
+ * @param {string} email
  * @param {string} password
  * @returns {Promise<Object|null>} - Arch gate info or null if not found/invalid
  */
-
-export const authenticateArchGate = async (username, password) => {
+export const authenticateArchGate = async (email, password) => {
   try {
-    // SECURITY: Use a stored procedure or function that runs server-side
-    // This prevents direct table access with anon key
+    // First authenticate with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password: password
+    });
     
-    // For now, we'll use a more secure approach:
-    // 1. Check if user exists (this will be blocked by RLS if anon access is disabled)
-    // 2. If RLS blocks this, authentication fails (which is what we want)
+    if (authError || !authData.user) {
+      return null;
+    }
     
+    // Check if user exists in arch_gate table (like super admin check)
     const { data, error } = await supabase
       .from('arch_gate')
-      .select('username, password')
-      .eq('username', username)
-      .maybeSingle();
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
       
-    // If RLS blocks anon access, this will fail with permission error
-    if (error) {
-      // This is actually GOOD - means RLS is working
-      if (error.code === '42501' || error.message.includes('permission denied')) {
-        return null; // RLS blocked access - authentication fails
-      }
-      throw error;
-    }
+    if (error && error.code !== 'PGRST116') throw error;
+    if (!data) return null;
     
-    // If no user found, return null
-    if (!data) {
-      return null;
-    }
-    
-    // Verify password
-    if (data.password !== password) {
-      return null;
-    }
-    
-    // Return user info without password
-    return { 
-      username: data.username, 
-      role: 'arch_gate' 
-    };
+    return { ...data, role: 'arch_gate' }; // Add role for compatibility
   } catch (error) {
     return null;
   }

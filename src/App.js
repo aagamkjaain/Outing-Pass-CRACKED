@@ -8,9 +8,9 @@ import Login from './pages/Login';
 import AdminStudentInfo from './pages/AdminStudentInfo';
 import WardenManagement from './pages/WardenManagement';
 import { fetchAdminInfoByEmail } from './services/api';
-// import ArchGateLogin from './pages/ArchGateLogin';
-// import ArchGateOTP from './pages/ArchGateOTP';
-// import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
+import ArchGateLogin from './pages/ArchGateLogin';
+import ArchGateOTP from './pages/ArchGateOTP';
+import ArchGateOutingDetails from './pages/ArchGateOutingDetails';
 import './App.css';
 import Toast from './components/Toast';
 
@@ -182,9 +182,9 @@ function App() {
               }
             />
             <Route path="/" element={user ? <SlotBooking /> : <Login />} />
-            {/* <Route path="/arch-gate-login" element={<ArchGateLogin />} /> */}
-            {/* <Route path="/arch-otp" element={<ArchGateOTP />} />
-            <Route path="/arch-outing-details" element={<ArchGateOutingDetails />} /> */}
+            <Route path="/arch-gate-login" element={<ArchGateLogin />} />
+            <Route path="/arch-otp" element={<ArchGateOTP />} />
+            <Route path="/arch-outing-details" element={<ArchGateOutingDetails />} />
           </Routes>
         </main>
       </div>

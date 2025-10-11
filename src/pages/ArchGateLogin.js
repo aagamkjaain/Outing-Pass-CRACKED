@@ -3,22 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { authenticateArchGate } from '../services/api';
 
 export default function ArchGateLogin() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-      setError('');
+    setError('');
     try {
-      const user = await authenticateArchGate(username, password);
+      const user = await authenticateArchGate(email, password);
       if (user && user.role === 'arch_gate') {
-      sessionStorage.setItem('archGateLoggedIn', 'true');
-        sessionStorage.setItem('archGateId', user.username);
-      navigate('/arch-otp');
-    } else {
-      setError('Invalid username or password');
+        sessionStorage.setItem('archGateLoggedIn', 'true');
+        sessionStorage.setItem('archGateEmail', user.email);
+        navigate('/arch-otp');
+      } else {
+        setError('Invalid email or password');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
@@ -28,10 +28,10 @@ export default function ArchGateLogin() {
   return (
     <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'80vh'}}>
       <form onSubmit={handleSubmit} style={{border:'1px solid #ccc',padding:32,borderRadius:8,minWidth:320,boxShadow:'0 2px 8px #0001'}}>
-        <h2>Custom Login</h2>
+        <h2>Arch Gate Login</h2>
         <div style={{marginBottom:16}}>
-          <label>Username<br/>
-            <input type="text" value={username} onChange={e=>setUsername(e.target.value)} required style={{width:'100%',padding:8}} />
+          <label>Email<br/>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required style={{width:'100%',padding:8}} />
           </label>
         </div>
         <div style={{marginBottom:16}}>
