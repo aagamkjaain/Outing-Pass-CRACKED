@@ -106,12 +106,22 @@ USING (true);
 -- 5. UPDATE OUTING_REQUESTS RLS POLICIES FOR ARCH GATE
 -- =====================================================
 
+-- Drop ALL existing arch gate policies to ensure clean state
+DROP POLICY IF EXISTS "arch_gate_read_otp_outings" ON outing_requests;
+
 -- Arch gate can read only OTP-related fields for verification
--- (Policy was already dropped above, now recreate with new function)
+-- Use the updated is_arch_gate() function that checks email
 CREATE POLICY "arch_gate_read_otp_outings" ON outing_requests
 FOR SELECT
 TO authenticated
 USING (is_arch_gate());
+
+-- Also add UPDATE policy for arch gate to mark OTP as used
+CREATE POLICY "arch_gate_update_otp_used" ON outing_requests
+FOR UPDATE
+TO authenticated
+USING (is_arch_gate())
+WITH CHECK (is_arch_gate());
 
 -- =====================================================
 -- 6. HELPER FUNCTION FOR UPDATED_AT

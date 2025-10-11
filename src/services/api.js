@@ -853,17 +853,16 @@ export const checkApiHealth = async () => {
 
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    console.log('Fetching OTP details for:', otp, 'Date:', today);
+    console.log('Fetching OTP details for:', otp);
     
     // Only select minimal necessary fields for arch gate verification
+    // OTP can be used anytime, no date restrictions
     const { data, error } = await supabase
       .from('outing_requests')
       .select('id, otp, otp_used, status, out_date, in_date, name, hostel_name')
       .eq('otp', otp)
       .eq('otp_used', false)
       .eq('status', 'still_out')
-      .gte('in_date', today)
       .single();
       
     console.log('OTP query result:', { data, error });
