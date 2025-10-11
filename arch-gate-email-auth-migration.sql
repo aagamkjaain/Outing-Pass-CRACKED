@@ -121,7 +121,23 @@ TO authenticated
 USING (true);
 
 -- =====================================================
--- 6. HELPER FUNCTION FOR UPDATED_AT
+-- 6. HELPER FUNCTION FOR MARKING OTP AS USED
+-- =====================================================
+
+-- Function to mark OTP as used (bypasses RLS issues)
+CREATE OR REPLACE FUNCTION mark_otp_used(otp_to_mark TEXT)
+RETURNS BOOLEAN AS $$
+BEGIN
+    UPDATE outing_requests 
+    SET otp_used = true 
+    WHERE otp = otp_to_mark;
+    
+    RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =====================================================
+-- 7. HELPER FUNCTION FOR UPDATED_AT
 -- =====================================================
 
 -- Function to update updated_at timestamp

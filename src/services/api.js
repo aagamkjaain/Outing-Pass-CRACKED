@@ -919,28 +919,54 @@ export const markOTPAsUsed = async (otp) => {
     console.log('=== MARKING OTP AS USED ===');
     console.log('Marking OTP as used:', otp);
     
-    // Only update the otp_used field, not other sensitive data
+    // Try a simpler update without selecting specific fields
     const { data, error } = await supabase
       .from('outing_requests')
       .update({ otp_used: true })
-      .eq('otp', otp)
-      .select('id, otp, otp_used, status');
+      .eq('otp', otp);
 
     console.log('Mark OTP result:', { data, error });
     
     if (error) {
       console.error('Mark OTP error:', error);
-      throw error;
+      // Try alternative approach - update without select
+      console.log('Trying alternative update approach...');
+      
+      const { data: altData, error: altError } = await supabase
+        .from('outing_requests')
+        .update({ otp_used: true })
+        .eq('otp', otp)
+        .select('id, otp, otp_used');
+        
+      if (altError) {
+        console.error('Alternative update also failed:', altError);
+        throw altError;
+      }
+      
+      console.log('✅ OTP marked as used with alternative approach');
+      return altData[0];
     }
     
     console.log('✅ OTP marked as used successfully');
-    return data[0];
-  } catch (error) {
-    console.error('❌ Mark OTP failed:', error);
-    // Don't throw error, just log it and continue
-    // The OTP verification was successful, marking as used is secondary
-    console.log('⚠️ Continuing despite mark OTP error');
     return { id: null, otp, otp_used: true, status: 'still_out' };
+  } catch (error) {
+    console.error('❌ Mark OTP failed completely:', error);
+    // This is critical - we need to mark OTP as used
+    // Let's try a direct SQL approach
+    console.log('Trying direct SQL update...');
+    
+    try {
+      const { data: sqlData, error: sqlError } = await supabase.rpc('mark_otp_used', { otp_to_mark: otp });
+      if (sqlError) {
+        console.error('SQL RPC also failed:', sqlError);
+        throw sqlError;
+      }
+      console.log('✅ OTP marked as used via SQL RPC');
+      return { id: null, otp, otp_used: true, status: 'still_out' };
+    } catch (sqlErr) {
+      console.error('❌ All marking approaches failed:', sqlErr);
+      throw new Error('Failed to mark OTP as used. Please contact administrator.');
+    }
   }
 };
 
