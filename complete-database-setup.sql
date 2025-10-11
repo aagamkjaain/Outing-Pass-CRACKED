@@ -31,10 +31,10 @@ CREATE TABLE IF NOT EXISTS wardens (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Arch Gate table (Security personnel) - Uses Gmail authentication
+-- Arch Gate table (Security personnel) - Uses Supabase Auth
 CREATE TABLE IF NOT EXISTS arch_gate (
-    id SERIAL PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
     display_name TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -70,8 +70,6 @@ CREATE TABLE IF NOT EXISTS outing_requests (
     status TEXT NOT NULL DEFAULT 'waiting',
     otp TEXT,
     otp_used BOOLEAN DEFAULT FALSE,
-    otp_verified_by TEXT,
-    otp_verified_at TIMESTAMP WITH TIME ZONE,
     handled_by TEXT,
     handled_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -108,7 +106,8 @@ CREATE INDEX IF NOT EXISTS idx_admins_role ON admins(role);
 CREATE INDEX IF NOT EXISTS idx_wardens_email ON wardens(email);
 
 -- Indexes for arch_gate table
-CREATE INDEX IF NOT EXISTS idx_arch_gate_email ON arch_gate(email);
+CREATE INDEX IF NOT EXISTS idx_arch_gate_username ON arch_gate(username);
+CREATE INDEX IF NOT EXISTS idx_arch_gate_auth_id ON arch_gate(id);
 
 -- Indexes for student_info table
 CREATE INDEX IF NOT EXISTS idx_student_info_email ON student_info(email);
@@ -182,24 +181,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to check if user is arch gate (updated for email-based auth)
+-- Function to check if user is arch gate
 CREATE OR REPLACE FUNCTION is_arch_gate()
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM arch_gate 
-        WHERE email = get_user_email()
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Function to get arch gate email
-CREATE OR REPLACE FUNCTION get_arch_gate_email()
-RETURNS TEXT AS $$
-BEGIN
-    RETURN (
-        SELECT email FROM arch_gate 
-        WHERE email = get_user_email()
+        WHERE id = auth.uid()
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -303,13 +291,7 @@ WITH CHECK (is_admin());
 CREATE POLICY "arch_gate_read_own" ON arch_gate
 FOR SELECT
 TO authenticated
-USING (email = get_user_email());
-
--- Allow authenticated users to check if they are arch gate (for status checking)
-CREATE POLICY "authenticated_read_arch_gate_status" ON arch_gate
-FOR SELECT
-TO authenticated
-USING (true);
+USING (id = auth.uid());
 
 -- =====================================================
 -- 8. STUDENT_INFO TABLE RLS POLICIES
@@ -408,22 +390,7 @@ WITH CHECK (email = get_user_email());
 CREATE POLICY "arch_gate_read_otp_outings" ON outing_requests
 FOR SELECT
 TO authenticated
-USING (is_arch_gate());
-
--- Allow all authenticated users to read outing requests for OTP verification
--- This is needed because arch gate users need to verify OTPs
-CREATE POLICY "authenticated_read_outings_for_otp" ON outing_requests
-FOR SELECT
-TO authenticated
 USING (true);
-
--- Allow authenticated users to update the otp_used field
--- This is needed for arch gate users to mark OTPs as used
-CREATE POLICY "authenticated_update_otp_used" ON outing_requests
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
 
 -- =====================================================
 -- 10. BAN_STUDENTS TABLE RLS POLICIES
@@ -563,10 +530,9 @@ CREATE TRIGGER update_ban_students_updated_at
 -- INSERT INTO wardens (email, hostels) VALUES 
 -- ('warden@srmist.edu.in', ARRAY['mblock', 'fblock']);
 
--- Insert sample arch gate users (uncomment for testing)
--- INSERT INTO arch_gate (email, display_name) VALUES 
--- ('archgate1@srmist.edu.in', 'Arch Gate User 1'),
--- ('archgate2@srmist.edu.in', 'Arch Gate User 2');
+-- Insert sample arch gate user (uncomment for testing)
+-- INSERT INTO arch_gate (username, password, email) VALUES 
+-- ('gatekeeper1', 'gate123', 'gatekeeper1@srmist.edu.in');
 
 -- Insert sample health check record
 INSERT INTO health_check (status) VALUES ('ok') ON CONFLICT DO NOTHING;
