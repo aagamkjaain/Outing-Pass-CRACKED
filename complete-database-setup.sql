@@ -32,10 +32,7 @@ CREATE TABLE IF NOT EXISTS wardens (
 );
 
 -- Arch Gate table (Security personnel) - Uses Gmail authentication
--- Drop and recreate to handle migration from username-based to email-based auth
-DROP TABLE IF EXISTS arch_gate CASCADE;
-
-CREATE TABLE arch_gate (
+CREATE TABLE IF NOT EXISTS arch_gate (
     id SERIAL PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     display_name TEXT,
@@ -81,11 +78,6 @@ CREATE TABLE IF NOT EXISTS outing_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add missing columns if they don't exist (for existing tables)
-ALTER TABLE outing_requests 
-ADD COLUMN IF NOT EXISTS otp_verified_by TEXT,
-ADD COLUMN IF NOT EXISTS otp_verified_at TIMESTAMP WITH TIME ZONE;
-
 -- Ban Students table (Student ban management)
 CREATE TABLE IF NOT EXISTS ban_students (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -103,13 +95,6 @@ CREATE TABLE IF NOT EXISTS health_check (
     status TEXT DEFAULT 'ok',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- =====================================================
--- 1.1. MIGRATION HANDLING
--- =====================================================
-
--- Handle migration from old arch_gate structure to new email-based structure
--- This section ensures compatibility with existing databases
 
 -- =====================================================
 -- 2. CREATE INDEXES FOR PERFORMANCE
@@ -419,12 +404,18 @@ TO authenticated
 USING (email = get_user_email())
 WITH CHECK (email = get_user_email());
 
--- Arch gate can read outing requests for OTP verification
--- This is needed because arch gate users need to verify OTPs
+-- Arch gate can read only OTP-related fields for verification
 CREATE POLICY "arch_gate_read_otp_outings" ON outing_requests
 FOR SELECT
 TO authenticated
 USING (is_arch_gate());
+
+-- Allow all authenticated users to read outing requests for OTP verification
+-- This is needed because arch gate users need to verify OTPs
+CREATE POLICY "authenticated_read_outings_for_otp" ON outing_requests
+FOR SELECT
+TO authenticated
+USING (true);
 
 -- Allow authenticated users to update the otp_used field
 -- This is needed for arch gate users to mark OTPs as used

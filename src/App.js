@@ -164,7 +164,7 @@ function App() {
               path="/pending-bookings" 
               element={
                 wardenLoggedIn
-                  ? <PendingBookings />
+                  ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} />
                   : user
                     ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />
@@ -183,7 +183,7 @@ function App() {
               path="/admin-student-info" 
               element={
                 wardenLoggedIn
-                  ? <AdminStudentInfo />
+                  ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} />
                   : user
                     ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
                     : <Login />

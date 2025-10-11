@@ -33,10 +33,21 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
 
-  // Warden session support
+  // Warden session support (for legacy session-based login)
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-  const wardenHostels = propWardenHostels || [];
   const wardenEmail = wardenLoggedIn ? sessionStorage.getItem('wardenEmail') : null;
+  
+  // Get warden hostels - prioritize session storage for legacy login, otherwise use props from Gmail login
+  const wardenHostels = wardenLoggedIn 
+    ? (() => {
+        try {
+          const stored = sessionStorage.getItem('wardenHostels');
+          return stored ? JSON.parse(stored) : [];
+        } catch {
+          return [];
+        }
+      })()
+    : (propWardenHostels || []);
 
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
