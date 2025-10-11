@@ -853,19 +853,62 @@ export const checkApiHealth = async () => {
 
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
-    // Only select minimal necessary fields for arch gate verification
-    // OTP can be used anytime, no date restrictions
-    const { data, error } = await supabase
+    console.log('=== OTP VALIDATION DEBUG ===');
+    console.log('Looking for OTP:', otp);
+    
+    // First, let's check if the OTP exists at all
+    const { data: allData, error: allError } = await supabase
       .from('outing_requests')
-      .select('id, otp, otp_used, status, out_date, in_date, name, hostel_name')
+      .select('*')
       .eq('otp', otp)
-      .eq('otp_used', false)
-      .eq('status', 'still_out')
       .single();
-      
-    if (error) throw error;
-    return data;
+    
+    console.log('Raw OTP data:', allData);
+    console.log('Raw error:', allError);
+    
+    if (allError && allError.code !== 'PGRST116') {
+      console.log('Database error:', allError);
+      throw allError;
+    }
+    
+    if (!allData) {
+      console.log('❌ OTP not found in database');
+      return null;
+    }
+    
+    console.log('✅ OTP found in database');
+    console.log('OTP used status:', allData.otp_used);
+    console.log('Status:', allData.status);
+    
+    // Check each condition individually
+    if (allData.otp_used === true) {
+      console.log('❌ OTP already used');
+      return null;
+    }
+    
+    if (allData.status !== 'still_out') {
+      console.log('❌ Status is not "still_out", actual status:', allData.status);
+      return null;
+    }
+    
+    console.log('✅ All conditions met, OTP is valid');
+    
+    // Return only the necessary fields
+    const result = {
+      id: allData.id,
+      otp: allData.otp,
+      otp_used: allData.otp_used,
+      status: allData.status,
+      out_date: allData.out_date,
+      in_date: allData.in_date,
+      name: allData.name,
+      hostel_name: allData.hostel_name
+    };
+    
+    console.log('Returning result:', result);
+    return result;
   } catch (error) {
+    console.error('❌ OTP validation failed:', error);
     throw handleError(error);
   }
 };
