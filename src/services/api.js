@@ -778,7 +778,7 @@ export const authenticateWarden = async (email, password) => {
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return null;
     
-    return { ...data, role: 'warden' }; // Add role for compatibility
+    return { ...data, role: 'warden' }; // 
   } catch (error) {
     return null;
   }
