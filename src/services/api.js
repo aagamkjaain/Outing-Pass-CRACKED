@@ -125,13 +125,14 @@ export const deleteBookedSlot = async (slotId) => {
  * @param {string[]} allowedHostels - Optional list of hostel names the user is allowed to see; if ['all'] or empty/undefined => no restriction
  * @returns {Promise<Array>} - Array of bookings
  */
-export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
-  try {
-    let query = supabase
-      .from('outing_requests')
-      .select('*')
-      .order('out_date', { ascending: false })
-      .order('created_at', { ascending: false });
+const allowedHostels = params.allowedHostels // e.g., ['A-Block', 'B-Block']
+
+let query = supabase
+  .from('outing_requests')
+  .select('*')
+  .in('hostel', allowedHostels)
+  .order('out_date', { ascending: false })
+  .order('created_at', { ascending: false });
 
     // Apply hostel restriction only if not 'all'
     if (
