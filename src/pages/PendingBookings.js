@@ -378,7 +378,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       (booking.status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
 
-    // For wardens, apply strict hostel permissions
+    // For wardens, apply hostel permissions
     if (wardenLoggedIn && wardenEmail) {
       const allowedHostelsList = Array.isArray(wardenHostels) ? wardenHostels.map(h => h.trim().toLowerCase()) : [];
       
@@ -394,23 +394,16 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       });
     }
 
-    // Then apply additional hostel filters for non-wardens
-    const filtered = statusFiltered.filter(booking => {
-      if (wardenLoggedIn && Array.isArray(wardenHostels) && wardenHostels.length > 0) {
-        const normalizedHostels = wardenHostels.map(h => h.trim().toLowerCase());
-        if (!normalizedHostels.includes('all')) {
-          const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
-          if (!normalizedHostels.includes(bookingHostel)) return false;
-        }
-      }
-      if (!wardenLoggedIn && adminRole === 'warden' && Array.isArray(adminHostels) && adminHostels.length > 0) {
-        const normalizedHostels = adminHostels.map(h => h.trim().toLowerCase());
+    // For non-warden admins with hostel restrictions
+    if (!wardenLoggedIn && adminRole === 'warden' && Array.isArray(adminHostels) && adminHostels.length > 0) {
+      const normalizedHostels = adminHostels.map(h => h.trim().toLowerCase());
+      statusFiltered = statusFiltered.filter(booking => {
         const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
-        if (!normalizedHostels.includes('all') && !normalizedHostels.includes(bookingHostel)) return false;
-      }
-      return true;
-    });
-    return filtered;
+        return normalizedHostels.includes('all') || normalizedHostels.includes(bookingHostel);
+      });
+    }
+    
+    return statusFiltered;
   }, [allBookings, selectedStatus, wardenLoggedIn, wardenHostels, wardenEmail, adminRole, adminHostels]);
 
   // Ensure tabCounts is only dependent on hostelFilteredBookings
