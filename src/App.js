@@ -160,6 +160,53 @@ function App() {
     }
   };
 
+  // Defensive fallback: if a session exists but sessionStorage lacks role flags,
+  // re-run role detection and persist values. This helps deployed clients that
+  // may have missed the initial checks (keeps behavior idempotent).
+  useEffect(() => {
+    if (!user || !user.email) return;
+
+    (async () => {
+      try {
+        // If sessionStorage already has role info, skip to avoid extra calls
+        const hasAdmin = !!sessionStorage.getItem('adminRole');
+        const hasWarden = !!sessionStorage.getItem('wardenHostels');
+        const hasArch = !!sessionStorage.getItem('archGateLoggedIn');
+
+        // If everything present, nothing to do
+        if (hasAdmin && hasWarden && hasArch) return;
+
+        const { fetchWardenInfoByEmail, checkArchGateStatus } = await import('./services/api');
+        // fetch admin via existing imported helper
+        const adminInfo = await fetchAdminInfoByEmail(user.email).catch(() => null);
+        if (adminInfo) {
+          try { sessionStorage.setItem('adminRole', adminInfo.role || ''); } catch (e) {}
+          try { sessionStorage.setItem('adminHostels', JSON.stringify(adminInfo.hostels || [])); } catch (e) {}
+          setIsAdmin(true);
+          setAdminRole(adminInfo.role);
+          setAdminHostels(adminInfo.hostels || []);
+        }
+
+        const wardenInfo = await fetchWardenInfoByEmail(user.email).catch(() => null);
+        if (wardenInfo) {
+          try { sessionStorage.setItem('wardenLoggedIn', 'true'); } catch (e) {}
+          try { sessionStorage.setItem('wardenHostels', JSON.stringify(wardenInfo.hostels || [])); } catch (e) {}
+          try { sessionStorage.setItem('wardenEmail', wardenInfo.email || ''); } catch (e) {}
+          setIsWarden(true);
+          setWardenHostels(wardenInfo.hostels || []);
+        }
+
+        const archGateInfo = await checkArchGateStatus(user.email).catch(() => null);
+        if (archGateInfo) {
+          try { sessionStorage.setItem('archGateLoggedIn', 'true'); } catch (e) {}
+          setIsArchGate(true);
+        }
+      } catch (e) {
+        // swallow - this is only a best-effort fallback
+      }
+    })();
+  }, [user]);
+
   const { wardenLoggedIn } = getWardenContext(wardenHostels);
 
   if (sessionLoading || (user && roleLoading)) {
