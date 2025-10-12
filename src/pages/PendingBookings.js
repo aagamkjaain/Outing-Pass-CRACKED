@@ -37,6 +37,18 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
   const wardenHostels = propWardenHostels || JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
   const wardenEmail = wardenLoggedIn ? sessionStorage.getItem('wardenEmail') : null;
+  
+  // Debug warden session info
+  useEffect(() => {
+    console.log('[DEBUG Session]', {
+      wardenLoggedIn,
+      wardenHostels,
+      wardenEmail,
+      sessionWardenLoggedIn: sessionStorage.getItem('wardenLoggedIn'),
+      sessionWardenHostels: sessionStorage.getItem('wardenHostels'),
+      sessionWardenEmail: sessionStorage.getItem('wardenEmail')
+    });
+  }, [wardenLoggedIn, wardenHostels, wardenEmail]);
 
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
@@ -61,8 +73,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           .filter(h => h && h.trim())
           .map(h => h.trim());
           
+        console.log('[DEBUG] Warden Hostels:', allowedHostels);
+        console.log('[DEBUG] Warden Email:', wardenEmail);
+        
         // If warden has no valid hostels, return empty results
         if (allowedHostels.length === 0) {
+          console.warn('[DEBUG] No allowed hostels for warden');
           setAllBookings([]);
           setTotal(0);
           setLoading(false);
@@ -75,6 +91,16 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
       const effectiveStatus = statusOverride || selectedStatus;
       const isStillOut = effectiveStatus === 'still_out';
+      console.log('[DEBUG] Fetching bookings with params:', {
+        status: effectiveStatus,
+        startDate: effectiveStatus === 'still_out' ? undefined : defaultStartForStillOut,
+        endDate: effectiveStatus === 'still_out' ? undefined : endDate,
+        allowedHostels,
+        searchRoom: searchActive ? searchQuery : undefined,
+        page: isStillOut ? 1 : page,
+        pageSize: isStillOut ? 1000 : pageSize
+      });
+      
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
         // For Still Out: ignore date filters and enforce late-only at server
@@ -87,6 +113,13 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         includeCount: false,
         minimal: true,
         lateOnly: effectiveStatus === 'still_out'
+      });
+      
+      console.log('[DEBUG] Received bookings:', {
+        totalRows: rows?.length,
+        firstHostel: rows?.[0]?.hostel_name,
+        allowedHostels,
+        distinctHostels: [...new Set(rows?.map(b => b.hostel_name) || [])]
       });
       
       if (!Array.isArray(rows)) {
