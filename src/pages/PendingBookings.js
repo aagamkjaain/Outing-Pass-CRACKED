@@ -86,19 +86,29 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       const isStillOut = effectiveStatus === 'still_out';
       
       // For non-Still Out tabs without date filters, default to last 30 days to prevent timeout
+      // For Still Out tab, default to last 1 month to avoid showing very old records
       let effectiveStartDate = startDate;
       let effectiveEndDate = endDate;
-      if (!isStillOut && !startDate && !endDate && !searchActive) {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        effectiveStartDate = thirtyDaysAgo.toISOString().split('T')[0];
-        effectiveEndDate = new Date().toISOString().split('T')[0];
+      if (!searchActive) {
+        if (isStillOut && !startDate && !endDate) {
+          // Still Out: Show only records from last 1 month on initial load
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          effectiveStartDate = oneMonthAgo.toISOString().split('T')[0];
+          effectiveEndDate = new Date().toISOString().split('T')[0];
+        } else if (!isStillOut && !startDate && !endDate) {
+          // Other tabs: Default to last 30 days
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          effectiveStartDate = thirtyDaysAgo.toISOString().split('T')[0];
+          effectiveEndDate = new Date().toISOString().split('T')[0];
+        }
       }
       
       console.log('[DEBUG] Fetching bookings with params:', {
         status: effectiveStatus,
-        startDate: effectiveStatus === 'still_out' ? undefined : effectiveStartDate,
-        endDate: effectiveStatus === 'still_out' ? undefined : effectiveEndDate,
+        startDate: effectiveStartDate,
+        endDate: effectiveEndDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page: isStillOut ? 1 : page,
@@ -107,9 +117,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
-        // For Still Out: ignore date filters to show all still_out records (not just late ones)
-        startDate: effectiveStatus === 'still_out' ? undefined : effectiveStartDate,
-        endDate: effectiveStatus === 'still_out' ? undefined : effectiveEndDate,
+        // For Still Out on initial load: filter to last 1 month. For searches: ignore date filters.
+        startDate: effectiveStartDate,
+        endDate: effectiveEndDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page: isStillOut ? 1 : page,
