@@ -125,8 +125,8 @@ export const deleteBookedSlot = async (slotId) => {
  * @param {string[]} allowedHostels - Optional list of hostel names the user is allowed to see; if ['all'] or empty/undefined => no restriction
  * @returns {Promise<Array>} - Array of bookings
  */
-const allowedHostels = params.allowedHostels // e.g., ['A-Block', 'B-Block']
-
+export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
+try {
 let query = supabase
   .from('outing_requests')
   .select('*')
