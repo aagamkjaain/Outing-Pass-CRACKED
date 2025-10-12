@@ -42,7 +42,7 @@ BEGIN
   END IF;
 
   -- Check arch_gate role
-  SELECT id, email, phone INTO arch_gate_record
+  SELECT id, email INTO arch_gate_record
   FROM arch_gate
   WHERE email = lower(user_email)
   LIMIT 1;
@@ -50,8 +50,7 @@ BEGIN
   IF FOUND THEN
     result := jsonb_set(result, '{arch_gate}', jsonb_build_object(
       'id', arch_gate_record.id,
-      'email', arch_gate_record.email,
-      'phone', arch_gate_record.phone
+      'email', arch_gate_record.email
     ));
   END IF;
 

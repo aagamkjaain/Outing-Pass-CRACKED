@@ -1,186 +1,148 @@
 # Database Schema Reference
-
-Based on the actual Supabase database structure (correct as of Oct 2025)
+**Source:** Screenshot taken October 12, 2025
+**Location:** c:\Users\91989\Pictures\Screenshots\Screenshot 2025-10-12 174400.png
 
 ## Tables Overview
 
-### 1. `student_info`
-Stores student information
-```
-- id: uuid (PK)
-- student_email: text
-- hostel_name: text
-- parent_email: text
-- created_at: timestamptz
-- updated_at: timestamptz
-- created_by: text
-- updated_by: text
-- parent_phone: text
-```
+### 1. student_info
+Stores student registration and contact information.
 
-### 2. `outing_requests`
-Stores student outing requests
-```
-- id: int4 (PK)
-- name: text (student name from request)
-- email: text
-- hostel_name: text
-- out_date: date
-- out_time: text
-- in_date: date
-- in_time: text
-- status: text
-- created_at: timestamptz
-- handled_by: text
-- handled_at: timestamptz
-- parent_phone: text
-- parent_email: text
-- otp: text
-- otp_used: bool
-- reason: text
-- rejection_reason: text
-- room_number: text
-- otp_verified_by: text
-- otp_verified_at: timestamptz
-```
+**Columns:**
+- `id` - serial (Primary Key)
+- `student_email` - text
+- `hostel_name` - text
+- `parent_email` - text
+- `created_at` - timestamptz
+- `updated_at` - timestamp tz
+- `updated_by` - text
+- `parent_phone` - text
 
-### 3. `ban_students`
-List of banned students
-```
-- id: uuid (PK)
-- student_email: text
-- from_date: date
-- till_date: date
-- reason: text
-- banned_by: text
-- created_at: timestamptz
-- updated_at: timestamptz
-- is_active: bool
-```
+---
 
-### 4. `health_check`
-Health monitoring table
-```
-- id: int4 (PK)
-- status: text
-- created_at: timestamptz
-```
+### 2. outing_requests
+Tracks all outing pass requests and their status.
 
-### 5. `wardens`
-Warden accounts (manages hostels)
-```
-- id: uuid (PK)
-- email: text
-- hostels: _text (array of hostel names, stored as JSON)
-```
-**Note:** NO `name` or `phone` columns
+**Columns:**
+- `id` - int8 (Primary Key)
+- `date` - text
+- `email` - text
+- `hostel_name` - text
+- `out_date` - date
+- `out_time` - time
+- `status` - text
+- `created_at` - timestamp tz
+- `handled_at` - timestamp tz
+- `handled_by` - text
+- `in_time` - time
+- `parent_phone` - text
+- `parent_email` - text
+- `otp` - text
+- `otp_used` - bool
+- `reason` - text
+- `rejection_reason` - text
+- `room_number` - text
+- `otp_verified_by` - text
+- `otp_verified_at` - timestamp tz
 
-### 6. `admins`
-Admin accounts (super admin or hostel admin)
-```
-- id: uuid (PK)
-- email: text
-- role: text (values: 'superadmin' or hostel-specific role)
-- hostels: _text (array of hostel names)
-- password: text
-- username: text
-```
-**Note:** NO `name` column
+---
 
-### 7. `arch_gate`
-Arch Gate security personnel accounts
-```
-- id: int4 (PK)
-- email: text
-- display_name: text (name of the arch gate person)
-- created_at: timestamptz
-- updated_at: timestamptz
-```
-**Note:** NO `phone` or `role` columns. Only `display_name` for their name.
+### 3. ban_students
+List of students who are banned from requesting outing passes.
 
-## Role Detection Logic
+**Columns:**
+- `id` - serial (Primary Key)
+- `student_email` - text
+- `from_date` - date
+- `till_date` - date
+- `reason` - text
+- `banned_by` - text
+- `created_at` - timestamp tz
 
-### Current Approach (NEW - JWT/RPC based)
-Instead of making 3 separate REST API calls, we now use:
-1. Single RPC function `get_user_roles(user_email)` that checks all 3 tables at once
-2. Returns JSON: `{ admin: {...}, warden: {...}, arch_gate: {...} }`
-3. Much faster and avoids REST API column errors
+---
 
-### RPC Function Return Format
-```javascript
-{
-  admin: {
-    id: "uuid",
-    email: "user@srmist.edu.in",
-    role: "superadmin",
-    hostels: ["A Block", "B Block"]
-  },
-  warden: {
-    id: "uuid", 
-    email: "user@srmist.edu.in",
-    hostels: ["C Block"]
-  },
-  arch_gate: {
-    id: 123,
-    email: "user@srmist.edu.in",
-    display_name: "John Doe"
-  }
-}
-```
+### 4. wardens
+Warden accounts with their assigned hostels.
 
-### User Role Possibilities
-A single user (email) can have multiple roles:
-- ✅ Can be both Admin AND Warden
-- ✅ Can be both Admin AND Arch Gate
-- ✅ Can be all three roles
-- Each role is checked independently
+**Columns:**
+- `id` - serial (Primary Key)
+- `email` - text
+- `hostels` - _text (array)
 
-## Common Mistakes to Avoid
+**Note:** No `name`, `phone`, or `password` columns visible in production.
 
-### ❌ DON'T DO THIS:
-```javascript
-// Wrong - trying to select non-existent columns
-.select('id,email,name,phone')  // 'name' doesn't exist in admins/wardens
-.select('id,email,name')        // 'name' doesn't exist in arch_gate (use display_name)
-.select('id,email,phone')       // 'phone' doesn't exist in arch_gate
+---
+
+### 5. admins
+Admin/superadmin accounts with role-based permissions.
+
+**Columns:**
+- `id` - serial (Primary Key)
+- `email` - text
+- `role` - text
+- `hostels` - _text (array)
+- `password` - text
+- `username` - text
+
+**Note:** No `name` column exists (contrary to old API calls).
+
+---
+
+### 6. arch_gate
+Arch gate security personnel accounts.
+
+**Columns:**
+- `id` - serial (Primary Key)
+- `email` - text
+
+**Note:** No `phone`, `name`, or `display_name` columns exist. Only `id` and `email`.
+
+---
+
+### 7. health_check
+System health monitoring table.
+
+**Columns:**
+- `id` - int4 (Primary Key)
+- `status` - text
+- `created_at` - timestamp tz
+
+---
+
+## Important Notes
+
+### Common Mistakes to Avoid:
+1. ❌ **Do NOT select `name` from `admins`, `wardens`, or `arch_gate`** - this column doesn't exist
+2. ❌ **Do NOT select `phone` from `arch_gate`** - this column doesn't exist
+3. ❌ **Do NOT select `display_name` from `arch_gate`** - this column doesn't exist
+4. ✅ **Always use `.maybeSingle()` instead of `.single()`** when a row might not exist
+
+### Correct SELECT Queries:
+```sql
+-- Admins
+SELECT id, email, role, hostels FROM admins WHERE email = $1;
+
+-- Wardens
+SELECT id, email, hostels FROM wardens WHERE email = $1;
+
+-- Arch Gate
+SELECT id, email FROM arch_gate WHERE email = $1;
+
+-- Student Info
+SELECT id, student_email, hostel_name, parent_email, parent_phone 
+FROM student_info WHERE student_email = $1;
 ```
 
-### ✅ DO THIS:
-```javascript
-// admins table
-.select('id,email,role,hostels')
+### Array Columns:
+- `admins.hostels` - text[] array
+- `wardens.hostels` - text[] array
 
-// wardens table  
-.select('id,email,hostels')
+Use PostgreSQL array operators:
+- `= ANY(hostels)` - check if value is in array
+- `hostels @> ARRAY['hostel_name']` - check if array contains value
+- `COALESCE(hostels, ARRAY[]::text[])` - handle NULL arrays
 
-// arch_gate table
-.select('id,email,display_name')
-```
+---
 
-## Migration Function
-
-See: `supabase/migrations/create_get_user_roles_function.sql`
-
-This SQL function is deployed to Supabase and called via:
-```javascript
-const { data, error } = await supabase.rpc('get_user_roles', {
-  user_email: 'user@srmist.edu.in'
-});
-```
-
-## SessionStorage Keys (for backward compatibility)
-
-These keys are set by the app after role detection:
-```javascript
-// Admin
-sessionStorage.setItem('adminRole', 'superadmin')
-sessionStorage.setItem('adminHostels', JSON.stringify(['A Block']))
-
-// Warden
-sessionStorage.setItem('wardenLoggedIn', 'true')
-sessionStorage.setItem('wardenHostels', JSON.stringify(['B Block']))
-sessionStorage.setItem('wardenRole', 'warden')
-
-// Arch Gate
-sessionStorage.setItem('archGateLoggedIn', 'true')
-```
+## Last Updated
+Generated: October 13, 2025
+Based on: Production database screenshot from October 12, 2025

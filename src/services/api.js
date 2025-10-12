@@ -786,8 +786,8 @@ export const fetchWardenInfoByEmail = async (email) => {
  */
 export const fetchArchGateInfoByEmail = async (email) => {
   try {
-    // arch_gate table has: id, email, display_name, created_at, updated_at (NO phone or role columns)
-    const cols = ['id','email','display_name'].join(',');
+    // arch_gate table only has id and email columns (no phone, no name)
+    const cols = ['id','email'].join(',');
     console.debug('[api] fetchArchGateInfoByEmail -> querying arch_gate for', email, 'with cols', cols);
       const { data, error } = await supabase
         .from('arch_gate')
@@ -795,10 +795,8 @@ export const fetchArchGateInfoByEmail = async (email) => {
         .eq('email', email.toLowerCase())
         .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
-    console.debug('[api] fetchArchGateInfoByEmail -> result:', data);
     return data || null;
   } catch (error) {
-    console.error('[api] fetchArchGateInfoByEmail -> error:', error);
     return null;
   }
 };
@@ -863,11 +861,11 @@ export const authenticateWarden = async (email, password) => {
  */
 export const checkArchGateStatus = async (email) => {
   try {
-    // Check if user exists in arch_gate table (columns: id, email, display_name)
+    // Check if user exists in arch_gate table (like warden check)
     console.debug('[api] checkArchGateStatus -> querying arch_gate for', email);
     const { data, error, status, statusText } = await supabase
       .from('arch_gate')
-      .select('id,email,display_name')
+      .select('id,email')
       .eq('email', email.toLowerCase())
       .maybeSingle();
     console.debug('[api] checkArchGateStatus -> result', { data, error, status, statusText });
