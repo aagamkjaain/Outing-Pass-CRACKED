@@ -180,7 +180,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         searchRoom: roomNumber,
         page: 1,
         pageSize: isStillOut ? 200 : 500, // Increased limit for searches
-        lateOnly: selectedStatus === 'still_out'
+        lateOnly: false  // When searching, show ALL still_out records (not just late ones)
       });
       console.log('[DEBUG Search Results]', { totalRows: rows?.length, sampleHostels: rows?.slice(0, 3).map(r => r.hostel_name) });
       setAllBookings(rows || []);
