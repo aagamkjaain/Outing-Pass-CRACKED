@@ -15,7 +15,11 @@ export function normalizeHostels(hostels) {
  * Returns an object with wardenLoggedIn, wardenHostels (array), wardenEmail.
  */
 export function getWardenContext(propWardenHostels) {
-  const wardenLoggedIn = (typeof window !== 'undefined') && sessionStorage.getItem('wardenLoggedIn') === 'true';
+  // Consider the warden logged in if either sessionStorage has the flag
+  // or App passed a non-empty propWardenHostels (App knows warden state).
+  const wardenLoggedIn = (typeof window !== 'undefined') && (
+    sessionStorage.getItem('wardenLoggedIn') === 'true' || (Array.isArray(propWardenHostels) && propWardenHostels.length > 0)
+  );
   const sessionHostelsRaw = (typeof window !== 'undefined') ? sessionStorage.getItem('wardenHostels') : null;
   let sessionHostels = [];
   try {

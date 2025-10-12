@@ -132,12 +132,15 @@ function App() {
         try { sessionStorage.setItem('wardenHostels', JSON.stringify(wardenInfo.hostels || [])); } catch (e) {}
         try { sessionStorage.setItem('wardenEmail', wardenInfo.email || ''); } catch (e) {}
         try { sessionStorage.setItem('wardenRole', 'warden'); } catch (e) {}
+        // Ensure wardenLoggedIn flag is explicitly set so legacy code reads it
+        try { sessionStorage.setItem('wardenLoggedIn', 'true'); } catch (e) {}
       } else {
         setIsWarden(false);
         setWardenHostels([]);
         try { sessionStorage.removeItem('wardenHostels'); } catch (e) {}
         try { sessionStorage.removeItem('wardenEmail'); } catch (e) {}
         try { sessionStorage.removeItem('wardenRole'); } catch (e) {}
+        try { sessionStorage.removeItem('wardenLoggedIn'); } catch (e) {}
       }
       
       // Check arch gate status
