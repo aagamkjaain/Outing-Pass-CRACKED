@@ -567,4 +567,279 @@ body.dark-mode ul li {
 
 body.dark-mode main img {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark Mode - Admin & Management Pages */
+body.dark-mode .admin-container,
+body.dark-mode .student-info-container,
+body.dark-mode .management-container {
+  background-color: #1a1a2e !important;
+  color: #e5e7eb !important;
+}
+
+body.dark-mode .info-box,
+body.dark-mode .data-box,
+body.dark-mode .content-box,
+body.dark-mode .white-box {
+  background-color: #252541 !important;
+  color: #e5e7eb !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode .search-box,
+body.dark-mode .filter-box {
+  background-color: #252541 !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode .empty-state,
+body.dark-mode .no-results,
+body.dark-mode .placeholder-text {
+  background-color: #252541 !important;
+  color: #9ca3af !important;
+  border: 2px dashed #3d3d5c !important;
+}
+
+/* Dark Mode - Tables Enhanced */
+body.dark-mode table {
+  background-color: #1a1a2e !important;
+  color: #e5e7eb !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode table thead {
+  background-color: #252541 !important;
+}
+
+body.dark-mode table th {
+  background-color: #252541 !important;
+  color: #667eea !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode table td {
+  border-color: #3d3d5c !important;
+  color: #d1d5db !important;
+  background-color: transparent !important;
+}
+
+body.dark-mode table tr:hover {
+  background-color: #2d2d44 !important;
+}
+
+body.dark-mode table tbody tr:nth-child(even) {
+  background-color: #1e1e34 !important;
+}
+
+body.dark-mode table tbody tr:nth-child(odd) {
+  background-color: #1a1a2e !important;
+}
+
+/* Dark Mode - File Upload Areas */
+body.dark-mode .file-upload,
+body.dark-mode .upload-area {
+  background-color: #252541 !important;
+  border-color: #3d3d5c !important;
+  color: #d1d5db !important;
+}
+
+body.dark-mode .file-upload:hover {
+  background-color: #2d2d44 !important;
+  border-color: #667eea !important;
+}
+
+/* Dark Mode - Info Sections */
+body.dark-mode .info-section,
+body.dark-mode .details-section {
+  background-color: #252541 !important;
+  border-color: #3d3d5c !important;
+  color: #e5e7eb !important;
+}
+
+body.dark-mode .section-title {
+  color: #667eea !important;
+  border-bottom-color: #3d3d5c !important;
+}
+
+/* Dark Mode - Action Buttons */
+body.dark-mode .action-button,
+body.dark-mode .btn-action {
+  background-color: #667eea !important;
+  color: white !important;
+  border-color: #667eea !important;
+}
+
+body.dark-mode .action-button:hover,
+body.dark-mode .btn-action:hover {
+  background-color: #5568d3 !important;
+}
+
+body.dark-mode .delete-action,
+body.dark-mode .remove-button {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+body.dark-mode .delete-action:hover,
+body.dark-mode .remove-button:hover {
+  background-color: #dc2626 !important;
+}
+
+/* Dark Mode - Grid & List Items */
+body.dark-mode .grid-item,
+body.dark-mode .list-item {
+  background-color: #252541 !important;
+  border-color: #3d3d5c !important;
+  color: #e5e7eb !important;
+}
+
+body.dark-mode .grid-item:hover,
+body.dark-mode .list-item:hover {
+  background-color: #2d2d44 !important;
+  border-color: #667eea !important;
+}
+
+/* Dark Mode - Headers & Panels */
+body.dark-mode .panel,
+body.dark-mode .panel-header,
+body.dark-mode .page-header {
+  background-color: #252541 !important;
+  color: #667eea !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode .panel-body {
+  background-color: #1a1a2e !important;
+  color: #e5e7eb !important;
+}
+
+/* Aggressive fix for any remaining white backgrounds */
+body.dark-mode div[style*="background-color: white"],
+body.dark-mode div[style*="background-color: #fff"],
+body.dark-mode div[style*="background: white"],
+body.dark-mode div[style*="background: #fff"] {
+  background-color: #252541 !important;
+}
+
+body.dark-mode span[style*="color: #333"],
+body.dark-mode span[style*="color: black"],
+body.dark-mode p[style*="color: #333"],
+body.dark-mode p[style*="color: black"] {
+  color: #e5e7eb !important;
+}
+
+/* Dark Mode - Status Indicators */
+body.dark-mode .status-indicator {
+  background-color: #2d2d44 !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode .status-active {
+  background-color: #1f2d1f !important;
+  color: #86efac !important;
+}
+
+body.dark-mode .status-inactive {
+  background-color: #2d1f1f !important;
+  color: #fca5a5 !important;
+}
+
+/* Dark Mode - Stats & Metrics */
+body.dark-mode .stat-card,
+body.dark-mode .metric-box {
+  background-color: #252541 !important;
+  border-color: #3d3d5c !important;
+  color: #e5e7eb !important;
+}
+
+body.dark-mode .stat-value {
+  color: #667eea !important;
+}
+
+body.dark-mode .stat-label {
+  color: #9ca3af !important;
+}
+
+/* Dark Mode - Filters & Search */
+body.dark-mode .filter-container,
+body.dark-mode .search-container {
+  background-color: #252541 !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode .filter-tag,
+body.dark-mode .chip {
+  background-color: #2d2d44 !important;
+  color: #e5e7eb !important;
+  border-color: #3d3d5c !important;
+}
+
+body.dark-mode .filter-tag:hover,
+body.dark-mode .chip:hover {
+  background-color: #353551 !important;
+  border-color: #667eea !important;
 } 
+
+/* Ban Modal Specific Styling */
+.ban-modal-content {
+  background: white;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .ban-modal-content {
+  background: #252541 !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  color: #e5e7eb;
+}
+
+body.dark-mode .ban-modal-content h3 {
+  color: #e5e7eb;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+}
+
+body.dark-mode .ban-modal-content label {
+  color: #d1d5db;
+}
+
+body.dark-mode .ban-modal-content input,
+body.dark-mode .ban-modal-content textarea {
+  background-color: #2d2d44 !important;
+  border: 1px solid #3d3d5c !important;
+  color: #e5e7eb !important;
+}
+
+body.dark-mode .ban-modal-content input::placeholder,
+body.dark-mode .ban-modal-content textarea::placeholder {
+  color: #9ca3af;
+}
+
+body.dark-mode .ban-modal-content input:focus,
+body.dark-mode .ban-modal-content textarea:focus {
+  border-color: #667eea !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+body.dark-mode .btn-ban {
+  background: #667eea !important;
+  transition: all 0.3s ease;
+}
+
+body.dark-mode .btn-ban:hover:not(:disabled) {
+  background: #5568d3 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+body.dark-mode .btn-cancel {
+  background: #3d3d5c !important;
+}
+
+body.dark-mode .btn-cancel:hover:not(:disabled) {
+  background: #4d4d6c !important;
+}
+
+body.dark-mode .modal-overlay {
+  background: rgba(0, 0, 0, 0.7) !important;
+}

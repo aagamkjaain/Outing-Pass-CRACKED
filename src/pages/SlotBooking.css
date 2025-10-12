@@ -1093,3 +1093,20 @@ body.dark-mode .help-section {
   border-color: #2563eb;
   color: #93c5fd;
 } 
+
+/* Current and Past Booking Cards */
+.current-booking-card,
+.past-booking-card {
+  background: white;
+}
+
+body.dark-mode .current-booking-card,
+body.dark-mode .past-booking-card {
+  background: #252541 !important;
+  color: #e5e7eb;
+}
+
+body.dark-mode .current-booking-card div,
+body.dark-mode .past-booking-card div {
+  color: #e5e7eb;
+}

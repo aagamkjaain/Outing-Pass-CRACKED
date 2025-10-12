@@ -597,16 +597,16 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       </table>
       </div>
       {banModal.open && (
-  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-    <div style={{ background: 'white', borderRadius: 10, padding: 32, minWidth: 320, boxShadow: '0 4px 24px #0002', position: 'relative' }}>
+  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }} className="modal-overlay">
+    <div className="ban-modal-content" style={{ borderRadius: 10, padding: 32, minWidth: 320, position: 'relative' }}>
       <h3 style={{ marginBottom: 18 }}>Ban Student</h3>
       <div style={{ marginBottom: 16 }}>
         <label style={{ fontWeight: 500 }}>From:</label><br />
-        <input type="date" value={banModal.from} onChange={e => dispatch({ type: 'SET_BAN_MODAL_FIELD', field: 'from', value: e.target.value })} style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc', width: '100%' }} />
+        <input type="date" value={banModal.from} onChange={e => dispatch({ type: 'SET_BAN_MODAL_FIELD', field: 'from', value: e.target.value })} style={{ padding: 8, borderRadius: 4, width: '100%' }} />
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={{ fontWeight: 500 }}>Till:</label><br />
-        <input type="date" value={banModal.till} onChange={e => dispatch({ type: 'SET_BAN_MODAL_FIELD', field: 'till', value: e.target.value })} style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc', width: '100%' }} />
+        <input type="date" value={banModal.till} onChange={e => dispatch({ type: 'SET_BAN_MODAL_FIELD', field: 'till', value: e.target.value })} style={{ padding: 8, borderRadius: 4, width: '100%' }} />
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={{ fontWeight: 500 }}>Reason (Optional):</label><br />
@@ -614,11 +614,12 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
           value={banModal.reason} 
           onChange={e => dispatch({ type: 'SET_BAN_MODAL_FIELD', field: 'reason', value: e.target.value })}
           placeholder="Enter reason for ban..."
-          style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc', width: '100%', minHeight: 60, resize: 'vertical' }}
+          style={{ padding: 8, borderRadius: 4, width: '100%', minHeight: 60, resize: 'vertical' }}
         />
       </div>
       <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
         <button 
+          className="btn-ban"
           style={{ background: '#ff9800', color: 'white', border: 'none', borderRadius: 4, padding: '8px 20px', fontWeight: 500, cursor: 'pointer' }} 
           onClick={handleBanSubmit}
           disabled={loading}
@@ -626,6 +627,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
           {loading ? 'Banning...' : 'Ban'}
         </button>
         <button 
+          className="btn-cancel"
           style={{ background: '#888', color: 'white', border: 'none', borderRadius: 4, padding: '8px 20px', fontWeight: 500, cursor: 'pointer' }} 
           onClick={() => dispatch({ type: 'CLOSE_BAN_MODAL' })}
           disabled={loading}

@@ -621,7 +621,7 @@ const SlotBooking = () => {
           {/* Left: Current Request */}
           <div style={{ flex: 1, minWidth: 340, display: 'flex', flexDirection: 'column', gap: 32 }}>
             {currentBooking ? (
-              <div style={{ background: '#fff', border: '2px solid #ffc107', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px #0001', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+              <div className="current-booking-card" style={{ border: '2px solid #ffc107', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px #0001', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                 <div style={{ position: 'absolute', top: 12, right: 12, background: '#ffe082', color: '#856404', borderRadius: 6, padding: '2px 12px', fontWeight: 700, fontSize: 14 }}>{currentBooking.status.toUpperCase()}</div>
                 <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>Current Request</div>
                 <div><b>Out Date:</b> {currentBooking.out_date}</div>
@@ -691,7 +691,7 @@ const SlotBooking = () => {
             <h2 style={{ textAlign: 'left', marginBottom: 12 }}>Past Outings</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
               {oldPastBookings.map(booking => (
-                <div key={booking.id} style={{ border: booking.status === 'confirmed' ? '2px solid #4caf50' : '2px solid #e57373', borderRadius: 12, padding: 20, background: '#fff', boxShadow: '0 2px 8px #0001', position: 'relative', marginBottom: 0, minWidth: 280 }}>
+                <div key={booking.id} className="past-booking-card" style={{ border: booking.status === 'confirmed' ? '2px solid #4caf50' : '2px solid #e57373', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px #0001', position: 'relative', marginBottom: 0, minWidth: 280 }}>
                   <div style={{ position: 'absolute', top: 12, right: 12, background: booking.status === 'confirmed' ? '#c8e6c9' : '#ffebee', color: booking.status === 'confirmed' ? '#256029' : '#c62828', borderRadius: 6, padding: '2px 12px', fontWeight: 700, fontSize: 14 }}>
                     {booking.status.toUpperCase()}
                   </div>
