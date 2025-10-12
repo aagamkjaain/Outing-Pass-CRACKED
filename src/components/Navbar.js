@@ -69,7 +69,8 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
   //   navigate('/login');
   // };
 
-  const handleWardenLogout = () => {
+  const handleWardenLogout = async () => {
+    await supabase.auth.signOut();
     sessionStorage.clear();
     window.location.href = '/login';
   };
