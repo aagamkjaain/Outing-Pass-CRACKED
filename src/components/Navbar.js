@@ -7,11 +7,12 @@ import { safeParseSessionItem } from '../utils/sessionStorage';
 import srmLogo from '../assets/Srmseal.png';
 import Toast from './Toast';
 
-const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
+const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGate }) => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'info' });
-  const isArchGate = safeParseSessionItem('archGateLoggedIn') === 'true';
+  // Prefer prop from App; fallback to sessionStorage for backwards compatibility
+  const isArchGateLocal = (typeof isArchGate !== 'undefined') ? isArchGate : (safeParseSessionItem('archGateLoggedIn') === 'true');
   const { wardenLoggedIn, wardenHostels: ctxWardenHostels, wardenEmail } = getWardenContext(wardenHostels);
   // Prefer session stored username, fallback to email localpart
   const wardenUsername = wardenLoggedIn ? (safeParseSessionItem('wardenUsername') || (wardenEmail ? wardenEmail.split('@')[0] : null)) : null;
@@ -90,18 +91,18 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
       </button>
 
       <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-        {!isArchGate && !wardenLoggedIn && (user ? (
+        {!isArchGateLocal && !wardenLoggedIn && (user ? (
           <Link to="/slot-booking" onClick={() => setIsMenuOpen(false)}>Request Outing</Link>
         ) : (
           <Link to="/login" onClick={() => { handleBookSlotClick(); setIsMenuOpen(false); }}>Request Outing</Link>
         ))}
-        {(isAdmin && !isArchGate && !wardenLoggedIn) && (
+        {(isAdmin && !isArchGateLocal && !wardenLoggedIn) && (
           <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>
         )}
-        {(isAdmin && !isArchGate && !wardenLoggedIn) && (
+        {(isAdmin && !isArchGateLocal && !wardenLoggedIn) && (
           <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
         )}
-        {(isAdmin && !isArchGate && !wardenLoggedIn && safeParseSessionItem('adminRole') === 'superadmin') && (
+        {(isAdmin && !isArchGateLocal && !wardenLoggedIn && safeParseSessionItem('adminRole') === 'superadmin') && (
           <Link to="/warden-management" onClick={() => setIsMenuOpen(false)}>Warden Management</Link>
         )}
         {wardenLoggedIn && (
@@ -110,7 +111,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
             <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
           </>
         )}
-        {!isArchGate && !wardenLoggedIn && !isAdmin && isWarden && user && (
+        {!isArchGateLocal && !wardenLoggedIn && !isAdmin && isWarden && user && (
           <>
             <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>
             <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>

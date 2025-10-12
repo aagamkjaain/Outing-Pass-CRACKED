@@ -111,10 +111,15 @@ function App() {
         setIsAdmin(true);
         setAdminRole(adminInfo.role);
         setAdminHostels(adminInfo.hostels || []);
+        // Persist for Navbar and older code paths
+        try { sessionStorage.setItem('adminRole', adminInfo.role || ''); } catch (e) {}
+        try { sessionStorage.setItem('adminHostels', JSON.stringify(adminInfo.hostels || [])); } catch (e) {}
       } else {
         setIsAdmin(false);
         setAdminRole(null);
         setAdminHostels([]);
+        try { sessionStorage.removeItem('adminRole'); } catch (e) {}
+        try { sessionStorage.removeItem('adminHostels'); } catch (e) {}
       }
       
       // Check warden status
@@ -123,9 +128,16 @@ function App() {
       if (wardenInfo) {
         setIsWarden(true);
         setWardenHostels(wardenInfo.hostels || []);
+        // Persist warden hostels/email for components that read sessionStorage
+        try { sessionStorage.setItem('wardenHostels', JSON.stringify(wardenInfo.hostels || [])); } catch (e) {}
+        try { sessionStorage.setItem('wardenEmail', wardenInfo.email || ''); } catch (e) {}
+        try { sessionStorage.setItem('wardenRole', 'warden'); } catch (e) {}
       } else {
         setIsWarden(false);
         setWardenHostels([]);
+        try { sessionStorage.removeItem('wardenHostels'); } catch (e) {}
+        try { sessionStorage.removeItem('wardenEmail'); } catch (e) {}
+        try { sessionStorage.removeItem('wardenRole'); } catch (e) {}
       }
       
       // Check arch gate status
@@ -133,8 +145,10 @@ function App() {
       const archGateInfo = await checkArchGateStatus(email);
       if (archGateInfo) {
         setIsArchGate(true);
+        try { sessionStorage.setItem('archGateLoggedIn', 'true'); } catch (e) {}
       } else {
         setIsArchGate(false);
+        try { sessionStorage.removeItem('archGateLoggedIn'); } catch (e) {}
       }
     } catch (err) {
       setIsAdmin(false);
@@ -156,7 +170,7 @@ function App() {
     <Router>  
       <div className="app">
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
-        <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} wardenHostels={wardenHostels} adminLoading={adminLoading} />
+  <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} isArchGate={isArchGate} wardenHostels={wardenHostels} adminLoading={adminLoading} />
         {/* Persist adminRole in sessionStorage for Navbar link control */}
         {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
         <main className="main-content">
