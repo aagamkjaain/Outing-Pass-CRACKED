@@ -290,4 +290,145 @@
     font-size: 1em;
     padding: 8px;
   }
+}
+
+/* ===== DARK MODE STYLES FOR PENDING BOOKINGS ===== */
+
+body.dark-mode .pending-bookings-page {
+  background-color: #0f0f1e;
+  color: #e5e7eb;
+}
+
+body.dark-mode .search-container {
+  background-color: #252541;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #3d3d5c;
+}
+
+body.dark-mode .search-input-group label {
+  color: #d1d5db;
+}
+
+body.dark-mode .search-input {
+  background-color: #2d2d44;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .search-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+  background-color: #353551;
+}
+
+body.dark-mode .search-button {
+  background-color: #667eea;
+}
+
+body.dark-mode .search-button:hover {
+  background-color: #5568d3;
+}
+
+body.dark-mode .status-tabs {
+  background-color: #252541;
+  border-color: #3d3d5c;
+}
+
+body.dark-mode .tab-button {
+  background-color: #2d2d44;
+  color: #d1d5db;
+  border-color: #3d3d5c;
+}
+
+body.dark-mode .tab-button:hover {
+  background-color: #353551;
+  border-color: #667eea;
+}
+
+body.dark-mode .tab-button.active {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+body.dark-mode .bookings-list {
+  background-color: transparent;
+}
+
+body.dark-mode .booking-card {
+  background-color: #252541;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .booking-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border-color: #667eea;
+}
+
+body.dark-mode .booking-card h3 {
+  color: #667eea;
+}
+
+body.dark-mode .booking-card p strong {
+  color: #d1d5db;
+}
+
+body.dark-mode .booking-actions button {
+  background-color: #667eea;
+  color: white;
+}
+
+body.dark-mode .booking-actions button:hover {
+  background-color: #5568d3;
+}
+
+body.dark-mode .booking-actions button.reject-btn {
+  background-color: #ef4444;
+}
+
+body.dark-mode .booking-actions button.reject-btn:hover {
+  background-color: #dc2626;
+}
+
+body.dark-mode .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+body.dark-mode .modal-content {
+  background-color: #252541;
+  color: #e5e7eb;
+  border: 1px solid #3d3d5c;
+}
+
+body.dark-mode .modal-content h2 {
+  color: #667eea;
+}
+
+body.dark-mode .modal-content input,
+body.dark-mode .modal-content textarea {
+  background-color: #2d2d44;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .modal-content input:focus,
+body.dark-mode .modal-content textarea:focus {
+  border-color: #667eea;
+  background-color: #353551;
+}
+
+body.dark-mode .loading-spinner {
+  border-color: #3d3d5c;
+  border-top-color: #667eea;
+}
+
+body.dark-mode .empty-state {
+  color: #9ca3af;
+  background-color: #252541;
+  border: 1px dashed #3d3d5c;
+  padding: 40px;
+  border-radius: 8px;
+  text-align: center;
 } 

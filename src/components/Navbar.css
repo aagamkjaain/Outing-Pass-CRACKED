@@ -217,4 +217,49 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+/* ===== DARK MODE STYLES FOR NAVBAR ===== */
+
+body.dark-mode .navbar {
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .nav-links a {
+  color: #e5e7eb;
+}
+
+body.dark-mode .nav-links a::after {
+  background: #fbbf24;
+}
+
+body.dark-mode .nav-links a:hover {
+  background: rgba(102, 126, 234, 0.2);
+  color: #fbbf24;
+}
+
+body.dark-mode .user-info {
+  color: #e5e7eb;
+}
+
+body.dark-mode .logout-button,
+body.dark-mode .login-button {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+body.dark-mode .logout-button:hover,
+body.dark-mode .login-button:hover {
+  background-color: #5568d3;
+  border-color: #5568d3;
+}
+
+body.dark-mode .menu-toggle {
+  color: #e5e7eb;
+}
+
+body.dark-mode .menu-toggle:hover {
+  color: #fbbf24;
 } 

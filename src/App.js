@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import { fetchAdminInfoByEmail } from './services/api';
 import Navbar from './components/Navbar';
+import DarkModeToggle from './components/DarkModeToggle';
 import { getWardenContext } from './utils/wardenHostels';
 import SlotBooking from './pages/SlotBooking';
 import PendingBookings from './pages/PendingBookings';
@@ -315,6 +316,8 @@ function App() {
           </Routes>
         </main>
       </div>
+      {/* Global Draggable Dark Mode Toggle */}
+      <DarkModeToggle />
     </Router>
   );
 }

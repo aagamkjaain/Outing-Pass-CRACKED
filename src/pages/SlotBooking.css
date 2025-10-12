@@ -964,4 +964,132 @@ input[type="date"].success {
     font-size: 1.1em;
     padding: 12px;
   }
+}
+
+/* ===== DARK MODE STYLES FOR SLOT BOOKING ===== */
+
+body.dark-mode #lab-booking,
+body.dark-mode #delete-booking,
+body.dark-mode #user-bookings {
+  background-color: #252541;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .booking-container {
+  background-color: #1a1a2e;
+}
+
+body.dark-mode .booking-form,
+body.dark-mode .booking-card {
+  background-color: #252541;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .form-group label {
+  color: #d1d5db;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode input[type="email"],
+body.dark-mode input[type="date"],
+body.dark-mode input[type="time"],
+body.dark-mode input[type="tel"],
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #2d2d44;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+  border-color: #667eea;
+  background-color: #353551;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+body.dark-mode .time-slot,
+body.dark-mode .slot-card {
+  background-color: #2d2d44;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .time-slot:hover {
+  background-color: #353551;
+  border-color: #667eea;
+}
+
+body.dark-mode .time-slot.selected {
+  background-color: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+body.dark-mode .booked-slot-card {
+  background-color: #252541;
+  border-color: #3d3d5c;
+  color: #e5e7eb;
+}
+
+body.dark-mode .booked-slot-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .booking-button {
+  background-color: #667eea;
+  color: white;
+}
+
+body.dark-mode .booking-button:hover {
+  background-color: #5568d3;
+}
+
+body.dark-mode .booking-button:disabled {
+  background-color: #3d3d5c;
+  color: #9ca3af;
+}
+
+body.dark-mode .delete-button,
+body.dark-mode .cancel-button {
+  background-color: #ef4444;
+}
+
+body.dark-mode .delete-button:hover,
+body.dark-mode .cancel-button:hover {
+  background-color: #dc2626;
+}
+
+body.dark-mode .status-badge {
+  background-color: #2d2d44;
+  color: #e5e7eb;
+  border: 1px solid #3d3d5c;
+}
+
+body.dark-mode .status-approved {
+  background-color: #1f2d1f;
+  color: #86efac;
+  border-color: #16a34a;
+}
+
+body.dark-mode .status-pending {
+  background-color: #3d2f1f;
+  color: #fcd34d;
+  border-color: #f59e0b;
+}
+
+body.dark-mode .status-rejected {
+  background-color: #2d1f1f;
+  color: #fca5a5;
+  border-color: #dc2626;
+}
+
+body.dark-mode .info-card,
+body.dark-mode .help-section {
+  background-color: #1e3a5f;
+  border-color: #2563eb;
+  color: #93c5fd;
 } 
