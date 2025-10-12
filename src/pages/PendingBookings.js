@@ -52,7 +52,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const fetchAllBookings = useCallback(async (adminEmail, statusOverride) => {
     try {
       setLoading(true);
-      const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      // Always apply hostel restrictions for wardens
+      const allowedHostels = wardenLoggedIn ? wardenHostels.filter(h => h.trim() !== '') : undefined;
       // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
       const defaultStartForStillOut = startDate;
 
@@ -321,17 +322,27 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       (booking.status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
 
-    // Restrict wardens to only see their own requests
+    // For wardens, apply both hostel restrictions and handled_by restrictions
     if (wardenLoggedIn && wardenEmail) {
+      const allowedHostelsList = Array.isArray(wardenHostels) ? wardenHostels.map(h => h.trim().toLowerCase()) : [];
+      
       statusFiltered = statusFiltered.filter(booking => {
-        // For waiting requests, rely on hostel permissions (handled below)
-        if (booking.status === 'waiting') return true;
-        // For handled requests (confirmed/rejected/still_out), check handled_by
-        return booking.handled_by === wardenEmail;
+        // Always check hostel permissions
+        const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
+        const hasHostelPermission = allowedHostelsList.includes(bookingHostel);
+        
+        if (!hasHostelPermission) return false;
+        
+        // For handled requests, also check handled_by
+        if (booking.status !== 'waiting') {
+          return booking.handled_by === wardenEmail;
+        }
+        
+        return true;
       });
     }
 
-    // Then filter by hostel permissions
+    // Then apply additional hostel filters for non-wardens
     const filtered = statusFiltered.filter(booking => {
       if (wardenLoggedIn && Array.isArray(wardenHostels) && wardenHostels.length > 0) {
         const normalizedHostels = wardenHostels.map(h => h.trim().toLowerCase());
