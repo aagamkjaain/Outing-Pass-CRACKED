@@ -380,6 +380,7 @@
   .login-wrapper {
     flex-direction: column;
     max-width: 500px;
+    min-height: auto;
   }
 
   .login-brand-section {
@@ -406,40 +407,120 @@
 @media (max-width: 640px) {
   .login-wrapper {
     width: 95%;
-    margin: 20px;
+    margin: 10px;
+    min-height: auto;
   }
 
   .login-brand-section {
-    padding: 30px 20px;
+    padding: 24px 20px 20px 20px;
+  }
+
+  .logo-container {
+    margin-bottom: 16px;
   }
 
   .srm-logo {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
   }
 
   .brand-title {
-    font-size: 22px;
+    font-size: 20px;
+    margin-bottom: 8px;
   }
 
   .brand-subtitle {
-    font-size: 16px;
+    font-size: 14px;
+    margin-bottom: 20px;
   }
 
-  .feature-text {
+  .features-list {
+    margin-bottom: 20px;
+  }
+
+  .feature-item {
+    margin-bottom: 10px;
+  }
+
+  .feature-icon {
+    width: 26px;
+    height: 26px;
+    margin-right: 10px;
     font-size: 14px;
   }
 
+  .feature-text {
+    font-size: 13px;
+  }
+
+  .info-banner {
+    padding: 10px 12px;
+  }
+
+  .info-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+  }
+
+  .info-banner span {
+    font-size: 12px;
+  }
+
   .login-form-section {
-    padding: 30px 20px;
+    padding: 20px;
   }
 
   .login-card {
-    padding: 24px;
+    padding: 20px;
+  }
+
+  .card-header {
+    margin-bottom: 20px;
   }
 
   .login-title {
-    font-size: 24px;
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .login-subtitle {
+    font-size: 14px;
+  }
+
+  .auth-container {
+    margin-bottom: 18px;
+  }
+
+  .login-footer {
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+
+  .security-badge {
+    padding: 12px;
+  }
+
+  .lock-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+  }
+
+  .security-title {
+    font-size: 13px;
+  }
+
+  .security-desc {
+    font-size: 11px;
+  }
+
+  .help-section {
+    margin-top: 16px;
+  }
+
+  .help-text {
+    font-size: 12px;
   }
 }
 

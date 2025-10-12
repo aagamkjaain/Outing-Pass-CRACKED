@@ -108,7 +108,7 @@ const Login = () => {
           <div className="help-section">
             <p className="help-text">
               Need help? Contact your hostel warden or 
-              <a href="mailto:support@srmist.edu.in" className="help-link"> IT Support</a>
+              <a href="mailto:support@srmist.edu.in" className="help-link"> Hostel Office</a>
             </p>
           </div>
         </div>

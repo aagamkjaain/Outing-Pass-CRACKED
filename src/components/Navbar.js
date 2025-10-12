@@ -153,7 +153,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
           </div>
         ) : (
           <button onClick={() => navigate('/login')} className="login-button">
-            Login
+            Login Page
           </button>
         )}
       </div>
