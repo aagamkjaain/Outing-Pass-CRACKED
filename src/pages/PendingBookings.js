@@ -35,7 +35,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
   // Warden session support
   const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-  const wardenHostels = propWardenHostels || [];
+  const wardenHostels = propWardenHostels || JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
   const wardenEmail = wardenLoggedIn ? sessionStorage.getItem('wardenEmail') : null;
 
   const fetchBans = useCallback(async () => {
