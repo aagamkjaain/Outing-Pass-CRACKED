@@ -620,4 +620,185 @@
   .subtitle, .note {
     font-size: 0.95em;
   }
+}
+
+/* ===== DARK MODE STYLES ===== */
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-icon {
+  width: 24px;
+  height: 24px;
+  color: #667eea;
+  transition: color 0.3s ease;
+}
+
+/* Dark Mode Toggle Button Styles */
+.dark-mode .theme-toggle {
+  background: rgba(30, 30, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .theme-icon {
+  color: #fbbf24;
+}
+
+/* Dark Mode Theme */
+.dark-mode.login-page {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+}
+
+.dark-mode .bg-shapes .shape {
+  background: rgba(102, 126, 234, 0.06);
+}
+
+/* Dark Mode - Brand Section */
+.dark-mode .login-brand-section {
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+}
+
+.dark-mode .brand-title {
+  color: #ffffff;
+}
+
+.dark-mode .brand-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark-mode .feature-icon {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .feature-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark-mode .info-banner {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: rgba(255, 255, 255, 0.4);
+}
+
+.dark-mode .info-banner span {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Dark Mode - Login Form Section */
+.dark-mode .login-form-section {
+  background: #1a1a2e;
+}
+
+.dark-mode .login-card {
+  background: #252541;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.dark-mode .login-title {
+  color: #ffffff;
+}
+
+.dark-mode .login-subtitle {
+  color: #a0aec0;
+}
+
+/* Dark Mode - Auth Button */
+.dark-mode :global(.custom-auth-button) {
+  background: #2d2d44 !important;
+  border-color: #3d3d5c !important;
+  color: #ffffff !important;
+}
+
+.dark-mode :global(.custom-auth-button:hover) {
+  background: #353551 !important;
+  border-color: #667eea !important;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Dark Mode - Security Badge */
+.dark-mode .login-footer {
+  border-top-color: #3d3d5c;
+}
+
+.dark-mode .security-badge {
+  background: #2d2d44;
+  border-color: #3d3d5c;
+}
+
+.dark-mode .security-title {
+  color: #ffffff;
+}
+
+.dark-mode .security-desc {
+  color: #a0aec0;
+}
+
+.dark-mode .lock-icon {
+  color: #48bb78;
+}
+
+/* Dark Mode - Help Section */
+.dark-mode .help-text {
+  color: #a0aec0;
+}
+
+.dark-mode .help-link {
+  color: #667eea;
+}
+
+.dark-mode .help-link:hover {
+  color: #7c8cf5;
+}
+
+/* Dark Mode - Error/Success Messages */
+.dark-mode .error-message {
+  background-color: #2d1f1f;
+  color: #f87171;
+  border: 1px solid #3d2828;
+}
+
+.dark-mode .success-message {
+  background-color: #1f2d1f;
+  color: #4ade80;
+  border: 1px solid #283d28;
+}
+
+/* Mobile Dark Mode Adjustments */
+@media (max-width: 640px) {
+  .theme-toggle {
+    width: 44px;
+    height: 44px;
+    top: 16px;
+    right: 16px;
+  }
+  
+  .theme-icon {
+    width: 22px;
+    height: 22px;
+  }
 } 
