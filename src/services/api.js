@@ -737,14 +737,17 @@ export const fetchStudentInfoByEmail = async (email) => {
 export const fetchAdminInfoByEmail = async (email) => {
   try {
     const cols = ['id','email','name','role'].join(',');
-    const { data, error } = await supabase
+    console.debug('[api] fetchAdminInfoByEmail -> querying admins for', email);
+    const { data, error, status, statusText } = await supabase
       .from('admins')
       .select(cols)
       .eq('email', email.toLowerCase())
       .single();
+    console.debug('[api] fetchAdminInfoByEmail -> result', { data, error, status, statusText });
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   } catch (error) {
+    console.error('[api] fetchAdminInfoByEmail error', { message: error.message, details: error.details, hint: error.hint, code: error.code });
     return null;
   }
 };
@@ -758,14 +761,17 @@ export const fetchWardenInfoByEmail = async (email) => {
   try {
   // Include hostels (array) as some code stores/reads this field on login
   const cols = ['id','email','name','hostels'].join(',');
-    const { data, error } = await supabase
+    console.debug('[api] fetchWardenInfoByEmail -> querying wardens for', email);
+    const { data, error, status, statusText } = await supabase
       .from('wardens')
       .select(cols)
       .eq('email', email.toLowerCase())
       .single();
+    console.debug('[api] fetchWardenInfoByEmail -> result', { data, error, status, statusText });
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   } catch (error) {
+    console.error('[api] fetchWardenInfoByEmail error', { message: error.message, details: error.details, hint: error.hint, code: error.code });
     return null;
   }
 };
@@ -850,21 +856,22 @@ export const authenticateWarden = async (email, password) => {
 export const checkArchGateStatus = async (email) => {
   try {
     // Check if user exists in arch_gate table (like warden check)
-    const { data, error } = await supabase
+    console.debug('[api] checkArchGateStatus -> querying arch_gate for', email);
+    const { data, error, status, statusText } = await supabase
       .from('arch_gate')
       .select('id,email,name,phone')
       .eq('email', email.toLowerCase())
       .single();
-      
+    console.debug('[api] checkArchGateStatus -> result', { data, error, status, statusText });
     if (error && error.code !== 'PGRST116') {
       throw error;
     }
     if (!data) {
       return null;
     }
-    
     return { ...data, role: 'arch_gate' }; // Add role for compatibility
   } catch (error) {
+    console.error('[api] checkArchGateStatus error', { message: error.message, details: error.details, hint: error.hint, code: error.code });
     return null;
   }
 };

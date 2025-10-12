@@ -28,10 +28,44 @@ function App() {
   const [toast, setToast] = useState({ message: '', type: 'info' });
 
   useEffect(() => {
-    setSessionLoading(true);
+    // Fast client-only fallback: read previously persisted role flags from
+    // sessionStorage immediately so the UI can reflect roles when network
+    // calls to Supabase fail or are blocked (deployed env missing keys).
+    try {
+      const storedWarden = sessionStorage.getItem('wardenLoggedIn') === 'true';
+      if (storedWarden) {
+        setIsWarden(true);
+        try {
+          const sh = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
+          setWardenHostels(Array.isArray(sh) ? sh : []);
+        } catch (e) {
+          setWardenHostels([]);
+        }
+      }
+      const storedAdminRole = sessionStorage.getItem('adminRole');
+      if (storedAdminRole) {
+        setIsAdmin(true);
+        setAdminRole(storedAdminRole);
+        try {
+          const ah = JSON.parse(sessionStorage.getItem('adminHostels') || '[]');
+          setAdminHostels(Array.isArray(ah) ? ah : []);
+        } catch (e) {
+          setAdminHostels([]);
+        }
+      }
+      const storedArch = sessionStorage.getItem('archGateLoggedIn') === 'true';
+      if (storedArch) setIsArchGate(true);
+
+    } catch (e) {
+      // swallow - best-effort fallback
+    }
+
+  console.debug('[App] initializing session and role checks');
+  setSessionLoading(true);
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       try {
         if (session?.user) {
+          console.debug('[App] session found for user', session.user.email);
           if (!session.user.email.endsWith('@srmist.edu.in')) {
             setToast({ message: 'Please use your SRM email to log in.', type: 'error' });
             await supabase.auth.signOut();
@@ -44,12 +78,14 @@ function App() {
             setSessionLoading(false);
             return;
           }
+        console.debug('[App] calling checkAdminStatus for', session.user.email);
         setUser(session.user);
-          setAdminLoading(true);
-          checkAdminStatus(session.user.email).finally(() => {
-            setAdminLoading(false);
-            setRoleLoading(false);
-          });
+        setAdminLoading(true);
+        checkAdminStatus(session.user.email).finally(() => {
+          console.debug('[App] checkAdminStatus completed for', session.user.email);
+          setAdminLoading(false);
+          setRoleLoading(false);
+        });
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -68,6 +104,7 @@ function App() {
       try {
         setSessionLoading(true);
         if (session?.user) {
+          console.debug('[App] onAuthStateChange: session for', session.user?.email);
           if (!session.user.email.endsWith('@srmist.edu.in')) {
             setToast({ message: 'Please use your SRM email to log in.', type: 'error' });
             await supabase.auth.signOut();
@@ -80,12 +117,14 @@ function App() {
             setSessionLoading(false);
             return;
           }
+        console.debug('[App] onAuthStateChange calling checkAdminStatus for', session.user.email);
         setUser(session.user);
-          setAdminLoading(true);
-          checkAdminStatus(session.user.email).finally(() => {
-            setAdminLoading(false);
-            setRoleLoading(false);
-          });
+        setAdminLoading(true);
+        checkAdminStatus(session.user.email).finally(() => {
+          console.debug('[App] onAuthStateChange checkAdminStatus completed for', session.user.email);
+          setAdminLoading(false);
+          setRoleLoading(false);
+        });
       } else {
         setUser(null);
         setIsAdmin(false);
@@ -106,7 +145,12 @@ function App() {
       // Check all roles independently - user can have multiple roles
       
       // Check admin status
-      const adminInfo = await fetchAdminInfoByEmail(email);
+      console.debug('[App.checkAdminStatus] querying admin for', email);
+      const adminInfo = await fetchAdminInfoByEmail(email).catch((e) => {
+        console.error('[App.checkAdminStatus] fetchAdminInfoByEmail failed', e);
+        return null;
+      });
+      console.debug('[App.checkAdminStatus] adminInfo:', adminInfo);
       if (adminInfo) {
         setIsAdmin(true);
         setAdminRole(adminInfo.role);
@@ -124,7 +168,12 @@ function App() {
       
       // Check warden status
       const { fetchWardenInfoByEmail } = await import('./services/api');
-      const wardenInfo = await fetchWardenInfoByEmail(email);
+      console.debug('[App.checkAdminStatus] querying warden for', email);
+      const wardenInfo = await fetchWardenInfoByEmail(email).catch((e) => {
+        console.error('[App.checkAdminStatus] fetchWardenInfoByEmail failed', e);
+        return null;
+      });
+      console.debug('[App.checkAdminStatus] wardenInfo:', wardenInfo);
       if (wardenInfo) {
         setIsWarden(true);
         setWardenHostels(wardenInfo.hostels || []);
@@ -145,7 +194,12 @@ function App() {
       
       // Check arch gate status
       const { checkArchGateStatus } = await import('./services/api');
-      const archGateInfo = await checkArchGateStatus(email);
+      console.debug('[App.checkAdminStatus] querying arch_gate for', email);
+      const archGateInfo = await checkArchGateStatus(email).catch((e) => {
+        console.error('[App.checkAdminStatus] checkArchGateStatus failed', e);
+        return null;
+      });
+      console.debug('[App.checkAdminStatus] archGateInfo:', archGateInfo);
       if (archGateInfo) {
         setIsArchGate(true);
         try { sessionStorage.setItem('archGateLoggedIn', 'true'); } catch (e) {}
