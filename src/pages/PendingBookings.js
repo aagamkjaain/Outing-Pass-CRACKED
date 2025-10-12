@@ -79,30 +79,41 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         }
       }
       
-      // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
+      // Apply a default date range to prevent timeout on large datasets
+      // For Still Out: only look at last 30 days to avoid scanning entire table
       const defaultStartForStillOut = startDate;
-
+      let effectiveStartDate = defaultStartForStillOut;
+      let effectiveEndDate = endDate;
+      
       const effectiveStatus = statusOverride || selectedStatus;
       const isStillOut = effectiveStatus === 'still_out';
+      
+      if (isStillOut && !startDate) {
+        // For "Still Out", default to last 30 days if no filter specified
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        effectiveStartDate = thirtyDaysAgo.toISOString().split('T')[0];
+      }
+      
       console.log('[DEBUG] Fetching bookings with params:', {
         status: effectiveStatus,
-        startDate: effectiveStatus === 'still_out' ? undefined : defaultStartForStillOut,
-        endDate: effectiveStatus === 'still_out' ? undefined : endDate,
+        startDate: effectiveStatus === 'still_out' ? effectiveStartDate : defaultStartForStillOut,
+        endDate: effectiveStatus === 'still_out' ? effectiveEndDate : endDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page: isStillOut ? 1 : page,
-        pageSize: isStillOut ? 1000 : pageSize
+        pageSize: isStillOut ? 500 : pageSize  // Reduced from 1000 to 500
       });
       
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
-        // For Still Out: ignore date filters and enforce late-only at server
-        startDate: effectiveStatus === 'still_out' ? undefined : defaultStartForStillOut,
-        endDate: effectiveStatus === 'still_out' ? undefined : endDate,
+        // For Still Out: apply date range to prevent full table scan
+        startDate: effectiveStatus === 'still_out' ? effectiveStartDate : defaultStartForStillOut,
+        endDate: effectiveStatus === 'still_out' ? effectiveEndDate : endDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page: isStillOut ? 1 : page,
-        pageSize: isStillOut ? 1000 : pageSize,
+        pageSize: isStillOut ? 500 : pageSize,  // Reduced from 1000 to 500
         includeCount: false,
         minimal: true,
         lateOnly: effectiveStatus === 'still_out'
