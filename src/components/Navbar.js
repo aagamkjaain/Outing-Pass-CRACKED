@@ -14,8 +14,8 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
   // Prefer prop from App; fallback to sessionStorage for backwards compatibility
   const isArchGateLocal = (typeof isArchGate !== 'undefined') ? isArchGate : (safeParseSessionItem('archGateLoggedIn') === 'true');
   const { wardenLoggedIn, wardenHostels: ctxWardenHostels, wardenEmail } = getWardenContext(wardenHostels);
-  // Prefer session stored username, fallback to email localpart
-  const wardenUsername = wardenLoggedIn ? (safeParseSessionItem('wardenUsername') || (wardenEmail ? wardenEmail.split('@')[0] : null)) : null;
+  // Show full email for wardens (don't split)
+  const wardenUsername = wardenLoggedIn ? (wardenEmail || 'Warden') : null;
 
   // Auto-close navbar on scroll (mobile only)
   useEffect(() => {
@@ -43,9 +43,9 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
-      await supabase.auth.signOut();
+    await supabase.auth.signOut();
     sessionStorage.clear();
-    window.location.reload();
+    navigate('/login');
   };
 
   const handleBookSlotClick = () => {
@@ -107,6 +107,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
         )}
         {wardenLoggedIn && (
           <>
+            <Link to="/slot-booking" onClick={() => setIsMenuOpen(false)}>Request Outing</Link>
             <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>
             <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
           </>
