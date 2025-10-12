@@ -736,8 +736,10 @@ export const fetchStudentInfoByEmail = async (email) => {
  */
 export const fetchAdminInfoByEmail = async (email) => {
   try {
-    const cols = ['id','email','name','role'].join(',');
-    console.debug('[api] fetchAdminInfoByEmail -> querying admins for', email);
+    // Select only columns that are known to exist in the admins table.
+    // Previous queries that selected `name` caused 42703 errors in production.
+    const cols = ['id','email','role'].join(',');
+    console.debug('[api] fetchAdminInfoByEmail -> querying admins for', email, 'with cols', cols);
     const { data, error, status, statusText } = await supabase
       .from('admins')
       .select(cols)
@@ -760,8 +762,9 @@ export const fetchAdminInfoByEmail = async (email) => {
 export const fetchWardenInfoByEmail = async (email) => {
   try {
   // Include hostels (array) as some code stores/reads this field on login
-  const cols = ['id','email','name','hostels'].join(',');
-    console.debug('[api] fetchWardenInfoByEmail -> querying wardens for', email);
+  // Wardens currently don't expose a `name` column in the REST API; select safe fields only.
+  const cols = ['id','email','hostels'].join(',');
+    console.debug('[api] fetchWardenInfoByEmail -> querying wardens for', email, 'with cols', cols);
     const { data, error, status, statusText } = await supabase
       .from('wardens')
       .select(cols)
@@ -783,7 +786,9 @@ export const fetchWardenInfoByEmail = async (email) => {
  */
 export const fetchArchGateInfoByEmail = async (email) => {
   try {
-    const cols = ['id','email','name','phone'].join(',');
+    // arch_gate table doesn't appear to have `name` column in this schema; select safe fields.
+    const cols = ['id','email','phone'].join(',');
+    console.debug('[api] fetchArchGateInfoByEmail -> querying arch_gate for', email, 'with cols', cols);
     const { data, error } = await supabase
       .from('arch_gate')
       .select(cols)
