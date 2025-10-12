@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { handleBookingAction, fetchBookingsFiltered, updateBookingInTime, fetchAllBans } from '../services/api';
 import { supabase } from '../supabaseClient';
+import { getWardenContext } from '../utils/wardenHostels';
+import { safeParseSessionItem } from '../utils/sessionStorage';
 import './PendingBookings.css';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
@@ -33,21 +35,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
 
-  // Warden session support
-  const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-  const wardenHostels = propWardenHostels || JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
-  const wardenEmail = wardenLoggedIn ? sessionStorage.getItem('wardenEmail') : null;
+  // Warden session support (centralized)
+  const { wardenLoggedIn, wardenHostels, wardenEmail } = getWardenContext(propWardenHostels);
   
   // Debug warden session info
   useEffect(() => {
-    console.log('[DEBUG Session]', {
-      wardenLoggedIn,
-      wardenHostels,
-      wardenEmail,
-      sessionWardenLoggedIn: sessionStorage.getItem('wardenLoggedIn'),
-      sessionWardenHostels: sessionStorage.getItem('wardenHostels'),
-      sessionWardenEmail: sessionStorage.getItem('wardenEmail')
-    });
+    console.log('[DEBUG Session]', { wardenLoggedIn, wardenHostels, wardenEmail });
   }, [wardenLoggedIn, wardenHostels, wardenEmail]);
 
   const fetchBans = useCallback(async () => {
@@ -296,8 +289,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(true);
       let emailToUse = null;
       if (wardenLoggedIn) {
-        // For wardens, use the provided warden name
-        emailToUse = wardenName || sessionStorage.getItem('wardenUsername');
+        // For wardens, use the provided warden name or the session-resolved username
+  const sessionWardenUser = safeParseSessionItem('wardenUsername') || null; // fallback for legacy
+  emailToUse = wardenName || sessionWardenUser || (wardenEmail ? wardenEmail.split('@')[0] : null);
       } else {
         // For super admins, use their email
         const { data: { user } } = await supabase.auth.getUser();

@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { normalizeHostels as normalizeHostelsList, getWardenContext } from '../utils/wardenHostels';
 import { getStatusUpdateEmail, getNowOutEmail, getReturnedEmail } from './mailTemplates';
 import * as XLSX from 'xlsx';
 
@@ -126,21 +127,24 @@ export const deleteBookedSlot = async (slotId) => {
  * @returns {Promise<Array>} - Array of bookings
  */
 export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
-try {
-let query = supabase
-  .from('outing_requests')
-  .select('*')
-  .in('hostel', allowedHostels)
-  .order('out_date', { ascending: false })
-  .order('created_at', { ascending: false });
+  try {
+    // Select only columns needed by the admin UI to reduce payload
+    const pendingCols = [
+      'id', 'name', 'email', 'hostel_name', 'room_number', 'parent_email', 'parent_phone',
+      'status', 'out_date', 'out_time', 'in_date', 'in_time', 'reason', 'handled_by', 'handled_at', 'created_at'
+    ].join(',');
 
-    // Apply hostel restriction only if not 'all'
-    if (
-      Array.isArray(allowedHostels) &&
-      allowedHostels.length > 0 &&
-      !allowedHostels.map(h => h.toLowerCase()).includes('all')
-    ) {
-      query = query.in('hostel_name', allowedHostels);
+    let query = supabase
+      .from('outing_requests')
+      .select(pendingCols)
+      .order('out_date', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    // Normalize allowedHostels (trim, remove empties). Treat 'all' case-insensitively.
+    const normalizedHostels = normalizeHostelsList(allowedHostels);
+    const hasAll = normalizedHostels.map(h => typeof h === 'string' ? h.toLowerCase() : '').includes('all');
+    if (Array.isArray(normalizedHostels) && normalizedHostels.length > 0 && !hasAll) {
+      query = query.in('hostel_name', normalizedHostels);
     }
 
     const { data, error } = await query;
@@ -149,13 +153,14 @@ let query = supabase
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
 
+    // If no rows found, return empty array (don't throw) — callers expect [] in many UI flows
     if (!data || data.length === 0) {
-      throw new Error('No outing request data available');
+      return [];
     }
 
     return data;
   } catch (error) {
-    console.error('Error fetching pending bookings:', error.message);
+    console.error('Error fetching pending bookings:', error.message || error);
     throw error; // or handleError(error) if you have it
   }
 };
@@ -237,8 +242,11 @@ export const fetchBookingsFiltered = async (opts = {}) => {
       query = query.or(`in_date.lt.${today},and(in_date.eq.${today},in_time.lte.${nowTime})`);
     }
 
-    if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
-      query = query.in('hostel_name', allowedHostels);
+    // Normalize allowedHostels before applying .in()
+    const normalizedHostels = normalizeHostelsList(allowedHostels);
+    const hasAll = normalizedHostels.map(h => h.toLowerCase()).includes('all');
+    if (Array.isArray(normalizedHostels) && normalizedHostels.length > 0 && !hasAll) {
+      query = query.in('hostel_name', normalizedHostels);
     }
 
     if (searchRoom && searchRoom.trim().length >= 3) {
@@ -431,13 +439,17 @@ export const updateBookingInTime = async (bookingId, newInTime) => {
  * @returns {Promise<Object>} - inserted/updated row
  */
 export async function addOrUpdateStudentInfo(info) {
-  // Convert all string fields to lowercase
-  const lowerInfo = Object.fromEntries(
-    Object.entries(info).map(([k, v]) => [k, typeof v === 'string' ? v.toLowerCase() : v])
-  );
+  // Normalize only the fields we must canonicalize:
+  // - lowercase student_email and parent_email for consistent equality
+  // - trim other string fields but preserve case for display fields like hostel_name
+  const normalized = Object.fromEntries(Object.entries(info).map(([k, v]) => {
+    if (typeof v !== 'string') return [k, v];
+    if (k === 'student_email' || k === 'parent_email') return [k, v.trim().toLowerCase()];
+    return [k, v.trim()];
+  }));
   const { data, error } = await supabase
     .from('student_info')
-    .upsert([lowerInfo], { onConflict: ['student_email'] });
+    .upsert([normalized], { onConflict: ['student_email'] });
   if (error) throw error;
   return data;
 }
@@ -449,14 +461,19 @@ export async function addOrUpdateStudentInfo(info) {
  */
 export const fetchAllStudentInfo = async (allowedHostels) => {
   try {
+    // Select only commonly used columns to reduce payload
+    const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
     const query = supabase
       .from('student_info')
-      .select('*')
+      .select(columns)
       .order('student_email', { ascending: true });
     
     // Apply server-side hostel restriction when provided
-    if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-      query.in('hostel_name', allowedHostels);
+    // Normalize allowedHostels before applying .in()
+    const normalizedHostels = normalizeHostelsList(allowedHostels);
+    const hasAll = normalizedHostels.map(h => h.toLowerCase()).includes('all');
+    if (Array.isArray(normalizedHostels) && normalizedHostels.length > 0 && !hasAll) {
+      query.in('hostel_name', normalizedHostels);
     }
     
     const { data, error } = await query;
@@ -503,8 +520,11 @@ export const searchStudentInfoWithHostels = async (
         .ilike('student_email', pattern)
         .limit(5);
 
-      if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-        fastQuery = fastQuery.in('hostel_name', allowedHostels);
+      // Normalize allowedHostels before applying .in()
+      const fastHostels = normalizeHostelsList(allowedHostels);
+      const fastHasAll = fastHostels.map(h => h.toLowerCase()).includes('all');
+      if (Array.isArray(fastHostels) && fastHostels.length > 0 && !fastHasAll) {
+        fastQuery = fastQuery.in('hostel_name', fastHostels);
       }
 
       const { data, error } = await fastQuery;
@@ -521,13 +541,18 @@ export const searchStudentInfoWithHostels = async (
         .maybeSingle();
 
       if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-        // When using maybeSingle, apply hostel filter via eq/in before maybeSingle by reconstructing query
-        exactQuery = supabase
-          .from('student_info')
-          .select(columns)
-          .eq('student_email', term.toLowerCase())
-          .in('hostel_name', allowedHostels)
-          .maybeSingle();
+        // Normalize allowedHostels before applying .in()
+        const exactHostels = normalizeHostelsList(allowedHostels);
+        const exactHasAll = exactHostels.map(h => h.toLowerCase()).includes('all');
+        if (Array.isArray(exactHostels) && exactHostels.length > 0 && !exactHasAll) {
+          // When using maybeSingle, apply hostel filter via eq/in before maybeSingle by reconstructing query
+          exactQuery = supabase
+            .from('student_info')
+            .select(columns)
+            .eq('student_email', term.toLowerCase())
+            .in('hostel_name', exactHostels)
+            .maybeSingle();
+        }
       }
 
       const { data, error } = await exactQuery;
@@ -547,8 +572,10 @@ export const searchStudentInfoWithHostels = async (
       query = query.ilike('student_email', `%${term}%`);
     }
 
-    if (Array.isArray(allowedHostels) && allowedHostels.length > 0) {
-      query = query.in('hostel_name', allowedHostels);
+    const normalizedHostels2 = normalizeHostelsList(allowedHostels);
+    const hasAll2 = normalizedHostels2.map(h => h.toLowerCase()).includes('all');
+    if (Array.isArray(normalizedHostels2) && normalizedHostels2.length > 0 && !hasAll2) {
+      query = query.in('hostel_name', normalizedHostels2);
     }
     
     const { data, error, count } = await query;
@@ -570,9 +597,10 @@ export const searchStudentInfoWithHostels = async (
  */
 export const fetchLimitedStudentInfo = async (limit = 20) => {
   try {
+    const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
     const { data, error } = await supabase
       .from('student_info')
-      .select('*')
+      .select(columns)
       .order('student_email', { ascending: true })
       .limit(limit);
     if (error) throw error;
@@ -595,9 +623,10 @@ export const searchStudentInfo = async (searchQuery, limit = 50) => {
     }
     
     const query = searchQuery.trim().toLowerCase();
+    const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
     const { data, error } = await supabase
       .from('student_info')
-      .select('*')
+      .select(columns)
       .or(`student_email.ilike.%${query}%,hostel_name.ilike.%${query}%`)
       .order('student_email', { ascending: true })
       .limit(limit);
@@ -686,9 +715,10 @@ export const downloadStudentInfoTemplate = async () => {
  */
 export const fetchStudentInfoByEmail = async (email) => {
   try {
+    const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
     const { data, error } = await supabase
       .from('student_info')
-      .select('*')
+      .select(columns)
       .eq('student_email', email.toLowerCase())
       .single();
     if (error && error.code === 'PGRST116') return null; // No row found is not an error
@@ -706,9 +736,10 @@ export const fetchStudentInfoByEmail = async (email) => {
  */
 export const fetchAdminInfoByEmail = async (email) => {
   try {
+    const cols = ['id','email','name','role'].join(',');
     const { data, error } = await supabase
       .from('admins')
-      .select('*')
+      .select(cols)
       .eq('email', email.toLowerCase())
       .single();
     if (error && error.code !== 'PGRST116') throw error;
@@ -725,9 +756,11 @@ export const fetchAdminInfoByEmail = async (email) => {
  */
 export const fetchWardenInfoByEmail = async (email) => {
   try {
+  // Include hostels (array) as some code stores/reads this field on login
+  const cols = ['id','email','name','hostels'].join(',');
     const { data, error } = await supabase
       .from('wardens')
-      .select('*')
+      .select(cols)
       .eq('email', email.toLowerCase())
       .single();
     if (error && error.code !== 'PGRST116') throw error;
@@ -744,9 +777,10 @@ export const fetchWardenInfoByEmail = async (email) => {
  */
 export const fetchArchGateInfoByEmail = async (email) => {
   try {
+    const cols = ['id','email','name','phone'].join(',');
     const { data, error } = await supabase
       .from('arch_gate')
-      .select('*')
+      .select(cols)
       .eq('email', email.toLowerCase())
       .single();
     if (error && error.code !== 'PGRST116') throw error;
@@ -795,7 +829,7 @@ export const authenticateWarden = async (email, password) => {
     // Check if user exists in wardens table (like super admin check)
     const { data, error } = await supabase
       .from('wardens')
-      .select('*')
+      .select('id,email,name,hostels')
       .eq('email', email.toLowerCase())
       .single();
       
@@ -818,7 +852,7 @@ export const checkArchGateStatus = async (email) => {
     // Check if user exists in arch_gate table (like warden check)
     const { data, error } = await supabase
       .from('arch_gate')
-      .select('*')
+      .select('id,email,name,phone')
       .eq('email', email.toLowerCase())
       .single();
       
@@ -861,10 +895,11 @@ export const fetchOutingDetailsByOTP = async (otp) => {
     console.log('=== OTP VALIDATION DEBUG ===');
     console.log('Looking for OTP:', otp);
     
-    // First, let's check if the OTP exists at all
+    // First, let's check if the OTP exists at all. Select only needed fields.
+    const otpCols = ['id','otp','otp_used','otp_verified_by','otp_verified_at','status','out_date','in_date','in_time','name','hostel_name'].join(',');
     const { data: allData, error: allError } = await supabase
       .from('outing_requests')
-      .select('*')
+      .select(otpCols)
       .eq('otp', otp)
       .single();
     
@@ -984,11 +1019,12 @@ export const banStudent = async (banData) => {
       throw new Error('Missing required fields: student_email, from_date, till_date, and banned_by are required.');
     }
 
-    // Application-level security: Check if user is authorized to ban
-    const isWardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
-    
-    // Get current user from Supabase auth
-    const { data: { user } } = await supabase.auth.getUser();
+  // Application-level security: Check if user is authorized to ban
+  // Prefer centralized warden context (sessionStorage fallback kept for older clients)
+  const { wardenLoggedIn: ctxWardenLoggedIn } = getWardenContext();
+
+  // Get current user from Supabase auth
+  const { data: { user } } = await supabase.auth.getUser();
     let adminRole = '';
     let isWarden = false;
     
@@ -1002,7 +1038,7 @@ export const banStudent = async (banData) => {
     }
     
     // Check if user is a warden (like super admin check)
-    if (isWardenLoggedIn) {
+    if (ctxWardenLoggedIn) {
       isWarden = true;
     } else if (user && user.email) {
       try {
@@ -1021,7 +1057,7 @@ export const banStudent = async (banData) => {
     // Check if student is already banned for overlapping dates
     const { data: existingBans, error: checkError } = await supabase
       .from('ban_students')
-      .select('*')
+      .select('id,student_email,from_date,till_date,reason,banned_by,is_active')
       .eq('student_email', banData.student_email)
       .eq('is_active', true)
       .or(`from_date.lte.${banData.till_date},till_date.gte.${banData.from_date}`);
@@ -1067,7 +1103,7 @@ export const fetchAllBans = async () => {
   try {
     const { data, error } = await supabase
       .from('ban_students')
-      .select('*')
+      .select('id,student_email,from_date,till_date,reason,banned_by,is_active,created_at,updated_at')
       .eq('is_active', true);
     if (error) throw error;
     return data;
@@ -1085,7 +1121,7 @@ export const fetchStudentBans = async (studentEmail) => {
   try {
     const { data, error } = await supabase
       .from('ban_students')
-      .select('*')
+      .select('id,student_email,from_date,till_date,reason,banned_by,is_active,created_at')
       .eq('student_email', studentEmail.toLowerCase()) // ensure case-insensitive match
       .eq('is_active', true)
       .order('created_at', { ascending: false });
@@ -1164,8 +1200,8 @@ export const checkStudentBanStatus = async (studentEmail) => {
     
     const { data, error } = await supabase
       .from('ban_students')
-      .select('*')
-      .eq('student_email', studentEmail)
+      .select('id,student_email,from_date,till_date,reason,banned_by,is_active')
+      .eq('student_email', studentEmail.toLowerCase())
       .eq('is_active', true)
       .lte('from_date', today)
       .gte('till_date', today)
@@ -1184,7 +1220,7 @@ export const checkAndAutoUnban = async (studentEmail) => {
     const today = new Date().toISOString().split('T')[0];
     const { data: bans, error } = await supabase
       .from('ban_students')
-      .select('*')
+      .select('id,student_email,from_date,till_date,reason,banned_by,is_active')
       .eq('student_email', studentEmail.toLowerCase())
       .eq('is_active', true);
     if (error) throw error;

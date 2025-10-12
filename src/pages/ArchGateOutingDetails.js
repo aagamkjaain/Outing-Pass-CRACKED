@@ -1,12 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { safeParseSessionItem } from '../utils/sessionStorage';
 
 export default function ArchGateOutingDetails() {
   const navigate = useNavigate();
-  let details = null;
-  try {
-    details = JSON.parse(sessionStorage.getItem('archGateOutingDetails'));
-  } catch (e) {}
+  const details = safeParseSessionItem('archGateOutingDetails');
 
   const handleEnterMoreOTP = () => {
     navigate('/arch-otp');

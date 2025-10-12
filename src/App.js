@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import { fetchAdminInfoByEmail } from './services/api';
 import Navbar from './components/Navbar';
+import { getWardenContext } from './utils/wardenHostels';
 import SlotBooking from './pages/SlotBooking';
 import PendingBookings from './pages/PendingBookings';
 import Login from './pages/Login';
@@ -145,7 +146,7 @@ function App() {
     }
   };
 
-  const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+  const { wardenLoggedIn } = getWardenContext(wardenHostels);
 
   if (sessionLoading || (user && roleLoading)) {
     return <div style={{textAlign:'center',marginTop:'100px',fontSize:'1.2em'}}>Loading...</div>;

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 import { supabase } from '../supabaseClient';
+import { getWardenContext } from '../utils/wardenHostels';
+import { safeParseSessionItem } from '../utils/sessionStorage';
 import srmLogo from '../assets/Srmseal.png';
 import Toast from './Toast';
 
@@ -9,9 +11,10 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'info' });
-  const isArchGate = sessionStorage.getItem('archGateLoggedIn') === 'true';
-  const wardenLoggedIn = sessionStorage.getItem('wardenLoggedIn') === 'true';
-  const wardenUsername = wardenLoggedIn ? sessionStorage.getItem('wardenUsername') : null;
+  const isArchGate = safeParseSessionItem('archGateLoggedIn') === 'true';
+  const { wardenLoggedIn, wardenHostels: ctxWardenHostels, wardenEmail } = getWardenContext(wardenHostels);
+  // Prefer session stored username, fallback to email localpart
+  const wardenUsername = wardenLoggedIn ? (safeParseSessionItem('wardenUsername') || (wardenEmail ? wardenEmail.split('@')[0] : null)) : null;
 
   // Auto-close navbar on scroll (mobile only)
   useEffect(() => {
@@ -98,7 +101,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
         {(isAdmin && !isArchGate && !wardenLoggedIn) && (
           <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
         )}
-        {(isAdmin && !isArchGate && !wardenLoggedIn && sessionStorage.getItem('adminRole') === 'superadmin') && (
+        {(isAdmin && !isArchGate && !wardenLoggedIn && safeParseSessionItem('adminRole') === 'superadmin') && (
           <Link to="/warden-management" onClick={() => setIsMenuOpen(false)}>Warden Management</Link>
         )}
         {wardenLoggedIn && (
@@ -124,7 +127,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading }) => {
       <div className="auth-section">
         {/* {isArchGate ? (
           <div className="user-info">
-            <span>{sessionStorage.getItem('archGateId')}</span>
+            <span>{safeParseSessionItem('archGateId')}</span>
             <button onClick={handleArchGateLogout} className="logout-button">
               Logout
             </button>

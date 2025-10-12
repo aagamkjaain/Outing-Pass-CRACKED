@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback, useReducer } from 'react';
 import { addOrUpdateStudentInfo, fetchAllStudentInfo, searchStudentInfoWithHostels, deleteStudentInfo, banStudent, fetchAdminInfoByEmail, fetchAllBans, deleteBan, downloadStudentInfoTemplate } from '../services/api';
 import { supabase } from '../supabaseClient';
+import { getWardenContext } from '../utils/wardenHostels';
 import * as XLSX from 'xlsx';
 
 const initialState = {
@@ -104,7 +105,8 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     adminRole, uploadMessage, uploadError, banModal, banStatuses, unbanLoading
   } = state;
   
-  const wardenHostels = propWardenHostels || [];
+  // Resolve warden context (props take priority over sessionStorage)
+  const { wardenLoggedIn, wardenHostels } = getWardenContext(propWardenHostels);
 
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
@@ -140,8 +142,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_FIELD', field: 'error', value: '' });
     try {
-      // Determine allowed hostels for server-side filtering
-      const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+      // Determine allowed hostels for server-side filtering (use resolved wardenLoggedIn)
       const allowedHostels = ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) 
         ? wardenHostels 
         : undefined;
@@ -377,7 +378,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
   }, []);
 
-  const wardenLoggedIn = typeof window !== 'undefined' && sessionStorage.getItem('wardenLoggedIn') === 'true';
+  // wardenLoggedIn is resolved via getWardenContext earlier
 
   const filteredInfo = useMemo(() => {
     // No client-side filtering needed - server handles everything

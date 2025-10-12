@@ -1,10 +1,22 @@
-// @ts-ignore
-const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
-// @ts-ignore
-const BREVO_SENDER_EMAIL = Deno.env.get('BREVO_SENDER_EMAIL');
+// Access Deno runtime safely via globalThis so TypeScript doesn't error in non-Deno environments
+const denoRuntime: any = (globalThis as any).Deno;
+const _envGet: ((k: string) => string | undefined) | undefined = denoRuntime?.env?.get?.bind(denoRuntime?.env);
+const BREVO_API_KEY = _envGet ? _envGet('BREVO_API_KEY') : undefined;
+const BREVO_SENDER_EMAIL = _envGet ? _envGet('BREVO_SENDER_EMAIL') : undefined;
 
 // Email template functions (inline, matching src/services/mailTemplates.js)
-function getStatusUpdateEmail(booking, statusMsg) {
+type Booking = {
+  name?: string;
+  email?: string;
+  hostel_name?: string;
+  out_date?: string;
+  out_time?: string;
+  in_date?: string;
+  in_time?: string;
+  reason?: string;
+};
+
+function getStatusUpdateEmail(booking: Booking, statusMsg = 'updated') {
   return {
     subject: `Outing Request ${statusMsg}`,
     html: `
@@ -28,7 +40,7 @@ function getStatusUpdateEmail(booking, statusMsg) {
   };
 }
 
-function getStillOutAlertEmail(booking) {
+function getStillOutAlertEmail(booking: Booking) {
   return {
     subject: 'Alert: Your ward is still out',
     html: `
@@ -44,7 +56,7 @@ function getStillOutAlertEmail(booking) {
   };
 }
 
-function getNowOutEmail(booking, wardenEmail) {
+function getNowOutEmail(booking: Booking, wardenEmail?: string) {
   return {
     subject: 'Outing Update: Student is now out',
     html: `
@@ -67,7 +79,7 @@ function getNowOutEmail(booking, wardenEmail) {
   };
 }
 
-function getReturnedEmail(booking) {
+function getReturnedEmail(booking: Booking) {
   return {
     subject: 'Outing Update: Student has returned',
     html: `
@@ -89,7 +101,7 @@ function getReturnedEmail(booking) {
   };
 }
 
-const handler = async (request: Request): Promise<Response> => {
+export const handler = async (request: Request): Promise<Response> => {
   const urlPath = new URL(request.url).pathname;
   if (urlPath.endsWith("/health")) {
     return new Response(JSON.stringify({ status: "ok" }), {
@@ -213,13 +225,16 @@ const handler = async (request: Request): Promise<Response> => {
         "Access-Control-Allow-Origin": "*",
       },
     });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message || "Unknown error" }), {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message || "Unknown error" }), {
       status: 500,
       headers: { "Access-Control-Allow-Origin": "*" },
     });
   }
 };
 
-// @ts-ignore
-Deno.serve(handler);
+// If running under Deno (Supabase Edge), start the server. Otherwise export the handler for compatibility/tests.
+if (denoRuntime && typeof denoRuntime.serve === 'function') {
+  denoRuntime.serve(handler);
+}
