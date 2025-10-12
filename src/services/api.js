@@ -127,31 +127,35 @@ export const deleteBookedSlot = async (slotId) => {
  */
 export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
   try {
-    const query = supabase
+    let query = supabase
       .from('outing_requests')
       .select('*')
       .order('out_date', { ascending: false })
       .order('created_at', { ascending: false });
 
-    // Apply server-side hostel restriction when provided and not 'all'
-    if (Array.isArray(allowedHostels) && allowedHostels.length > 0 && !allowedHostels.map(h => h.toLowerCase()).includes('all')) {
-      // Supabase supports in() for filtering
-      query.in('hostel_name', allowedHostels);
+    // Apply hostel restriction only if not 'all'
+    if (
+      Array.isArray(allowedHostels) &&
+      allowedHostels.length > 0 &&
+      !allowedHostels.map(h => h.toLowerCase()).includes('all')
+    ) {
+      query = query.in('hostel_name', allowedHostels);
     }
 
     const { data, error } = await query;
-    
+
     if (error) {
       throw new Error(`Failed to fetch outing requests: ${error.message}`);
     }
-    
-    if (!data) {
+
+    if (!data || data.length === 0) {
       throw new Error('No outing request data available');
     }
-    
+
     return data;
   } catch (error) {
-    throw handleError(error);
+    console.error('Error fetching pending bookings:', error.message);
+    throw error; // or handleError(error) if you have it
   }
 };
 
