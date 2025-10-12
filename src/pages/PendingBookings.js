@@ -323,7 +323,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
     // Restrict wardens to only see their own requests
     if (wardenLoggedIn && wardenEmail) {
-      statusFiltered = statusFiltered.filter(booking => booking.warden_email === wardenEmail);
+      statusFiltered = statusFiltered.filter(booking => {
+        // For waiting requests, rely on hostel permissions (handled below)
+        if (booking.status === 'waiting') return true;
+        // For handled requests (confirmed/rejected/still_out), check handled_by
+        return booking.handled_by === wardenEmail;
+      });
     }
 
     // Then filter by hostel permissions
