@@ -84,25 +84,36 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
 
       const effectiveStatus = statusOverride || selectedStatus;
       const isStillOut = effectiveStatus === 'still_out';
+      
+      // For non-Still Out tabs without date filters, default to last 30 days to prevent timeout
+      let effectiveStartDate = startDate;
+      let effectiveEndDate = endDate;
+      if (!isStillOut && !startDate && !endDate && !searchActive) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        effectiveStartDate = thirtyDaysAgo.toISOString().split('T')[0];
+        effectiveEndDate = new Date().toISOString().split('T')[0];
+      }
+      
       console.log('[DEBUG] Fetching bookings with params:', {
         status: effectiveStatus,
-        startDate: effectiveStatus === 'still_out' ? undefined : defaultStartForStillOut,
-        endDate: effectiveStatus === 'still_out' ? undefined : endDate,
+        startDate: effectiveStatus === 'still_out' ? undefined : effectiveStartDate,
+        endDate: effectiveStatus === 'still_out' ? undefined : effectiveEndDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page: isStillOut ? 1 : page,
-        pageSize: isStillOut ? 1000 : pageSize
+        pageSize: isStillOut ? 200 : pageSize // Reduced from 1000 to 200 for Still Out
       });
       
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
         // For Still Out: ignore date filters and enforce late-only at server
-        startDate: effectiveStatus === 'still_out' ? undefined : defaultStartForStillOut,
-        endDate: effectiveStatus === 'still_out' ? undefined : endDate,
+        startDate: effectiveStatus === 'still_out' ? undefined : effectiveStartDate,
+        endDate: effectiveStatus === 'still_out' ? undefined : effectiveEndDate,
         allowedHostels,
         searchRoom: searchActive ? searchQuery : undefined,
         page: isStillOut ? 1 : page,
-        pageSize: isStillOut ? 1000 : pageSize,
+        pageSize: isStillOut ? 200 : pageSize, // Reduced from 1000 to 200
         includeCount: false,
         minimal: true,
         lateOnly: effectiveStatus === 'still_out'
@@ -161,13 +172,13 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       const isStillOut = selectedStatus === 'still_out';
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
-        // For Still Out searches: ignore date filters and enforce late-only
-        startDate: selectedStatus === 'still_out' ? undefined : startDate,
-        endDate: selectedStatus === 'still_out' ? undefined : endDate,
+        // When searching by room, ignore date filters to search across all history
+        startDate: undefined,
+        endDate: undefined,
         allowedHostels,
         searchRoom: roomNumber,
         page: 1,
-        pageSize: isStillOut ? 1000 : pageSize,
+        pageSize: isStillOut ? 200 : 500, // Increased limit for searches
         lateOnly: selectedStatus === 'still_out'
       });
       setAllBookings(rows || []);
@@ -707,7 +718,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       
       {!searchActive && selectedStatus === 'still_out' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f8d7da', borderRadius: 4, textAlign: 'center' }}>
-          <p><strong>Still Out - Late Students:</strong> Showing students whose expected return time has passed (last 30 days). Use room number search to find specific students quickly.</p>
+          <p><strong>Still Out - Late Students:</strong> Showing students whose expected return time has passed (last 7 days). Use room number search or date filters to find older records.</p>
         </div>
       )}
       

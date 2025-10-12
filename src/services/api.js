@@ -236,10 +236,10 @@ export const fetchBookingsFiltered = async (opts = {}) => {
 
     if (lateOnly) {
       // Optimize: For "still_out" late students, enforce recent date range to avoid full scan
-      // Show only out_date within last 30 days (configurable)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const minDate = thirtyDaysAgo.toISOString().split('T')[0];
+      // Show only out_date within last 7 days (aggressive optimization)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const minDate = sevenDaysAgo.toISOString().split('T')[0];
       query = query.gte('out_date', minDate);
       
       // Late if expected return time (in_date + in_time) has passed current time
