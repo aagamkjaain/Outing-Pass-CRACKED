@@ -169,6 +169,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(true);
       setPage(1);
       const allowedHostels = wardenLoggedIn ? wardenHostels : undefined;
+      console.log('[DEBUG Search]', { wardenLoggedIn, wardenHostels, allowedHostels, roomNumber });
       const isStillOut = selectedStatus === 'still_out';
       const { rows, count } = await fetchBookingsFiltered({
         status: selectedStatus,
@@ -181,6 +182,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         pageSize: isStillOut ? 200 : 500, // Increased limit for searches
         lateOnly: selectedStatus === 'still_out'
       });
+      console.log('[DEBUG Search Results]', { totalRows: rows?.length, sampleHostels: rows?.slice(0, 3).map(r => r.hostel_name) });
       setAllBookings(rows || []);
       setTotal(isStillOut ? (rows?.length || 0) : (count || 0));
       setSearchActive(true);
