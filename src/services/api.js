@@ -160,8 +160,7 @@ export const fetchPendingBookings = async (adminEmail, allowedHostels) => {
 
     return data;
   } catch (error) {
-    console.error('Error fetching pending bookings:', error.message || error);
-    throw error; // or handleError(error) if you have it
+    throw error;
   }
 };
 
@@ -602,56 +601,6 @@ export const searchStudentInfoWithHostels = async (
 };
 
 /**
- * Fetch limited student info for initial load (performance optimization)
- * @param {number} limit - Number of records to fetch (default: 20)
- * @returns {Promise<Array>} - Array of limited student info
- */
-export const fetchLimitedStudentInfo = async (limit = 20) => {
-  try {
-    const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
-    const { data, error } = await supabase
-      .from('student_info')
-      .select(columns)
-      .order('student_email', { ascending: true })
-      .limit(limit);
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    throw handleError(error);
-  }
-};
-
-/**
- * Search student info by email or name
- * @param {string} searchQuery - Search term
- * @param {number} limit - Maximum results to return (default: 50)
- * @returns {Promise<Array>} - Array of matching student info
- */
-export const searchStudentInfo = async (searchQuery, limit = 50) => {
-  try {
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      return [];
-    }
-    
-    const query = searchQuery.trim().toLowerCase();
-    const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
-    const { data, error } = await supabase
-      .from('student_info')
-      .select(columns)
-      .or(`student_email.ilike.%${query}%,hostel_name.ilike.%${query}%`)
-      .order('student_email', { ascending: true })
-      .limit(limit);
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    throw handleError(error);
-  }
-};
-
-
-
-/**
  * Generate and download Excel template for student info upload
  * @returns {Promise<void>}
  */
@@ -770,26 +719,6 @@ export const fetchWardenInfoByEmail = async (email) => {
     const cols = ['id','email','hostels'].join(',');
     const { data, error } = await supabase
       .from('wardens')
-      .select(cols)
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
-    if (error && error.code !== 'PGRST116') throw error;
-    return data || null;
-  } catch (error) {
-    return null;
-  }
-};
-
-/**
- * Fetch arch gate info by email
- * @param {string} email
- * @returns {Promise<Object|null>} - Arch gate info or null if not found
- */
-export const fetchArchGateInfoByEmail = async (email) => {
-  try {
-    const cols = ['id','email'].join(',');
-    const { data, error } = await supabase
-      .from('arch_gate')
       .select(cols)
       .eq('email', email.toLowerCase())
       .maybeSingle();
@@ -1050,55 +979,6 @@ export const fetchAllBans = async () => {
       .eq('is_active', true);
     if (error) throw error;
     return data;
-  } catch (error) {
-    throw handleError(error);
-  }
-};
-
-/**
- * Fetch active bans for a student
- * @param {string} studentEmail - The student's email
- * @returns {Promise<Array>} - Array of active bans for the student
- */
-export const fetchStudentBans = async (studentEmail) => {
-  try {
-    const { data, error } = await supabase
-      .from('ban_students')
-      .select('id,student_email,from_date,till_date,reason,banned_by,is_active,created_at')
-      .eq('student_email', studentEmail.toLowerCase()) // ensure case-insensitive match
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    throw handleError(error);
-  }
-};
-
-/**
- * Update a ban
- * @param {string} banId - The ban ID to update
- * @param {Object} updateData - The data to update
- * @returns {Promise<Object>} - Update confirmation
- */
-export const updateBan = async (banId, updateData) => {
-  try {
-    const { data, error } = await supabase
-      .from('ban_students')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', banId)
-      .select();
-
-    if (error) throw error;
-
-    return {
-      success: true,
-      message: 'Ban updated successfully!',
-      ban: data[0]
-    };
   } catch (error) {
     throw handleError(error);
   }
