@@ -716,11 +716,11 @@ export const downloadStudentInfoTemplate = async () => {
 export const fetchStudentInfoByEmail = async (email) => {
   try {
     const columns = ['id','student_email','hostel_name','parent_email','parent_phone','updated_by'].join(',');
-    const { data, error } = await supabase
-      .from('student_info')
-      .select(columns)
-      .eq('student_email', email.toLowerCase())
-      .single();
+      const { data, error } = await supabase
+        .from('student_info')
+        .select(columns)
+        .eq('student_email', email.toLowerCase())
+        .maybeSingle();
     if (error && error.code === 'PGRST116') return null; // No row found is not an error
     if (error) throw error;
     return data;
@@ -740,11 +740,11 @@ export const fetchAdminInfoByEmail = async (email) => {
     // Previous queries that selected `name` caused 42703 errors in production.
     const cols = ['id','email','role'].join(',');
     console.debug('[api] fetchAdminInfoByEmail -> querying admins for', email, 'with cols', cols);
-    const { data, error, status, statusText } = await supabase
-      .from('admins')
-      .select(cols)
-      .eq('email', email.toLowerCase())
-      .single();
+      const { data, error, status, statusText } = await supabase
+        .from('admins')
+        .select(cols)
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
     console.debug('[api] fetchAdminInfoByEmail -> result', { data, error, status, statusText });
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
@@ -769,7 +769,7 @@ export const fetchWardenInfoByEmail = async (email) => {
       .from('wardens')
       .select(cols)
       .eq('email', email.toLowerCase())
-      .single();
+      .maybeSingle();
     console.debug('[api] fetchWardenInfoByEmail -> result', { data, error, status, statusText });
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
@@ -789,11 +789,11 @@ export const fetchArchGateInfoByEmail = async (email) => {
     // arch_gate table doesn't appear to have `name` column in this schema; select safe fields.
     const cols = ['id','email','phone'].join(',');
     console.debug('[api] fetchArchGateInfoByEmail -> querying arch_gate for', email, 'with cols', cols);
-    const { data, error } = await supabase
-      .from('arch_gate')
-      .select(cols)
-      .eq('email', email.toLowerCase())
-      .single();
+      const { data, error } = await supabase
+        .from('arch_gate')
+        .select(cols)
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   } catch (error) {
@@ -838,9 +838,10 @@ export const authenticateWarden = async (email, password) => {
     }
     
     // Check if user exists in wardens table (like super admin check)
+    // Wardens table does not expose `name` in the public REST schema; select safe fields.
     const { data, error } = await supabase
       .from('wardens')
-      .select('id,email,name,hostels')
+      .select('id,email,hostels')
       .eq('email', email.toLowerCase())
       .single();
       
@@ -864,7 +865,7 @@ export const checkArchGateStatus = async (email) => {
     console.debug('[api] checkArchGateStatus -> querying arch_gate for', email);
     const { data, error, status, statusText } = await supabase
       .from('arch_gate')
-      .select('id,email,name,phone')
+      .select('id,email,phone')
       .eq('email', email.toLowerCase())
       .single();
     console.debug('[api] checkArchGateStatus -> result', { data, error, status, statusText });
