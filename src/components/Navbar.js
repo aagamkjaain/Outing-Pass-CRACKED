@@ -71,7 +71,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
 
   const handleWardenLogout = () => {
     sessionStorage.clear();
-    navigate('/warden-login');
+    window.location.href = '/warden-login';
   };
 
   const toggleMenu = () => {
