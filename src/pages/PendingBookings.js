@@ -107,7 +107,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
-        // For Still Out: ignore date filters and enforce late-only at server
+        // For Still Out: ignore date filters to show all still_out records (not just late ones)
         startDate: effectiveStatus === 'still_out' ? undefined : effectiveStartDate,
         endDate: effectiveStatus === 'still_out' ? undefined : effectiveEndDate,
         allowedHostels,
@@ -116,7 +116,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         pageSize: isStillOut ? 200 : pageSize, // Reduced from 1000 to 200
         includeCount: false,
         minimal: true,
-        lateOnly: effectiveStatus === 'still_out'
+        lateOnly: false // Show ALL records, not just late ones (LATE badge will still display on cards)
       });
       
       console.log('[DEBUG] Received bookings:', {
@@ -459,10 +459,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   // Bookings filtered by hostel/warden/admin AND search (no date filter for Still Out)
   const filteredBookings = useMemo(() => {
     let base = hostelFilteredBookings;
-    // For Still Out, always show only late students
-    if (selectedStatus === 'still_out') {
-      base = base.filter(b => isStudentLate(b));
-    }
+    // Note: When searching room numbers on Still Out tab, show ALL still_out records (not just late ones)
+    // The "LATE" badge will still appear on cards where applicable
 
     let filtered = base.filter(booking => {
       // Do not apply date range to Still Out
