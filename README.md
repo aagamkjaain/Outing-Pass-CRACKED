@@ -1,4 +1,5 @@
-# Outing Pass Management System (Supabase Edition)
+# Outing Pass System
+<!-- Force Vercel rebuild -->
 
 A comprehensive outing pass management system for hostels, built with React and Supabase. Features role-based access control, secure authentication, and automated parent notifications.
 
