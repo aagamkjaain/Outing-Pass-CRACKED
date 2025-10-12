@@ -11,25 +11,15 @@ export default function ArchGateOTP() {
     e.preventDefault();
     setError('');
     try {
-      console.log('=== FRONTEND OTP SUBMISSION ===');
-      console.log('Submitting OTP:', otp);
-      
       const details = await fetchOutingDetailsByOTP(otp);
-      console.log('Frontend received details:', details);
-      console.log('Details type:', typeof details);
-      console.log('Details is truthy:', !!details);
-      
       if (details) {
-        console.log('✅ Details received, proceeding to mark as used');
         await markOTPAsUsed(otp);
         sessionStorage.setItem('archGateOutingDetails', JSON.stringify(details));
         navigate('/arch-outing-details');
       } else {
-        console.log('❌ No details received, setting error');
         setError('Invalid OTP');
       }
     } catch (err) {
-      console.log('❌ Error caught in frontend:', err);
       setError('Invalid OTP');
     }
   };

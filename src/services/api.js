@@ -747,20 +747,15 @@ export const fetchStudentInfoByEmail = async (email) => {
  */
 export const fetchAdminInfoByEmail = async (email) => {
   try {
-    // Select only columns that are known to exist in the admins table.
-    // Previous queries that selected `name` caused 42703 errors in production.
     const cols = ['id','email','role'].join(',');
-    console.debug('[api] fetchAdminInfoByEmail -> querying admins for', email, 'with cols', cols);
-      const { data, error, status, statusText } = await supabase
-        .from('admins')
-        .select(cols)
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
-    console.debug('[api] fetchAdminInfoByEmail -> result', { data, error, status, statusText });
+    const { data, error } = await supabase
+      .from('admins')
+      .select(cols)
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   } catch (error) {
-    console.error('[api] fetchAdminInfoByEmail error', { message: error.message, details: error.details, hint: error.hint, code: error.code });
     return null;
   }
 };
@@ -772,20 +767,15 @@ export const fetchAdminInfoByEmail = async (email) => {
  */
 export const fetchWardenInfoByEmail = async (email) => {
   try {
-  // Include hostels (array) as some code stores/reads this field on login
-  // Wardens currently don't expose a `name` column in the REST API; select safe fields only.
-  const cols = ['id','email','hostels'].join(',');
-    console.debug('[api] fetchWardenInfoByEmail -> querying wardens for', email, 'with cols', cols);
-    const { data, error, status, statusText } = await supabase
+    const cols = ['id','email','hostels'].join(',');
+    const { data, error } = await supabase
       .from('wardens')
       .select(cols)
       .eq('email', email.toLowerCase())
       .maybeSingle();
-    console.debug('[api] fetchWardenInfoByEmail -> result', { data, error, status, statusText });
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   } catch (error) {
-    console.error('[api] fetchWardenInfoByEmail error', { message: error.message, details: error.details, hint: error.hint, code: error.code });
     return null;
   }
 };
@@ -797,14 +787,12 @@ export const fetchWardenInfoByEmail = async (email) => {
  */
 export const fetchArchGateInfoByEmail = async (email) => {
   try {
-    // arch_gate table only has id and email columns (no phone, no name)
     const cols = ['id','email'].join(',');
-    console.debug('[api] fetchArchGateInfoByEmail -> querying arch_gate for', email, 'with cols', cols);
-      const { data, error } = await supabase
-        .from('arch_gate')
-        .select(cols)
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('arch_gate')
+      .select(cols)
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   } catch (error) {
@@ -872,23 +860,15 @@ export const authenticateWarden = async (email, password) => {
  */
 export const checkArchGateStatus = async (email) => {
   try {
-    // Check if user exists in arch_gate table (like warden check)
-    console.debug('[api] checkArchGateStatus -> querying arch_gate for', email);
-    const { data, error, status, statusText } = await supabase
+    const { data, error } = await supabase
       .from('arch_gate')
       .select('id,email')
       .eq('email', email.toLowerCase())
       .maybeSingle();
-    console.debug('[api] checkArchGateStatus -> result', { data, error, status, statusText });
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
-    if (!data) {
-      return null;
-    }
-    return { ...data, role: 'arch_gate' }; // Add role for compatibility
+    if (error && error.code !== 'PGRST116') throw error;
+    if (!data) return null;
+    return { ...data, role: 'arch_gate' };
   } catch (error) {
-    console.error('[api] checkArchGateStatus error', { message: error.message, details: error.details, hint: error.hint, code: error.code });
     return null;
   }
 };
@@ -916,10 +896,6 @@ export const checkApiHealth = async () => {
 
 export const fetchOutingDetailsByOTP = async (otp) => {
   try {
-    console.log('=== OTP VALIDATION DEBUG ===');
-    console.log('Looking for OTP:', otp);
-    
-    // First, let's check if the OTP exists at all. Select only needed fields.
     const otpCols = ['id','otp','otp_used','otp_verified_by','otp_verified_at','status','out_date','in_date','in_time','name','hostel_name'].join(',');
     const { data: allData, error: allError } = await supabase
       .from('outing_requests')
@@ -927,38 +903,12 @@ export const fetchOutingDetailsByOTP = async (otp) => {
       .eq('otp', otp)
       .single();
     
-    console.log('Raw OTP data:', allData);
-    console.log('Raw error:', allError);
+    if (allError && allError.code !== 'PGRST116') throw allError;
+    if (!allData) return null;
+    if (allData.otp_used === true) return null;
+    if (allData.status !== 'still_out') return null;
     
-    if (allError && allError.code !== 'PGRST116') {
-      console.log('Database error:', allError);
-      throw allError;
-    }
-    
-    if (!allData) {
-      console.log('❌ OTP not found in database');
-      return null;
-    }
-    
-    console.log('✅ OTP found in database');
-    console.log('OTP used status:', allData.otp_used);
-    console.log('Status:', allData.status);
-    
-    // Check each condition individually
-    if (allData.otp_used === true) {
-      console.log('❌ OTP already used');
-      return null;
-    }
-    
-    if (allData.status !== 'still_out') {
-      console.log('❌ Status is not "still_out", actual status:', allData.status);
-      return null;
-    }
-    
-    console.log('✅ All conditions met, OTP is valid');
-    
-    // Return only the necessary fields
-    const result = {
+    return {
       id: allData.id,
       otp: allData.otp,
       otp_used: allData.otp_used,
@@ -971,27 +921,16 @@ export const fetchOutingDetailsByOTP = async (otp) => {
       name: allData.name,
       hostel_name: allData.hostel_name
     };
-    
-    console.log('Returning result:', result);
-    return result;
   } catch (error) {
-    console.error('❌ OTP validation failed:', error);
     throw handleError(error);
   }
 };
 
 export const markOTPAsUsed = async (otp) => {
   try {
-    console.log('=== MARKING OTP AS USED ===');
-    console.log('Marking OTP as used:', otp);
-    
-    // Get current user email for tracking
     const { data: { user } } = await supabase.auth.getUser();
     const archGateEmail = user?.email || 'unknown';
     
-    console.log('Arch gate user email:', archGateEmail);
-    
-    // Update otp_used, otp_verified_by, and otp_verified_at fields
     const { data, error } = await supabase
       .from('outing_requests')
       .update({ 
@@ -1002,31 +941,11 @@ export const markOTPAsUsed = async (otp) => {
       .eq('otp', otp)
       .select('id, otp, otp_used, otp_verified_by, otp_verified_at, status');
 
-    console.log('Mark OTP result:', { data, error });
+    if (error) throw error;
+    if (!data || data.length === 0) throw new Error('No rows were updated');
     
-    if (error) {
-      console.error('❌ Mark OTP error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      throw error;
-    }
-    
-    if (!data || data.length === 0) {
-      console.error('❌ No data returned from update');
-      throw new Error('No rows were updated');
-    }
-    
-    console.log('✅ OTP marked as used successfully');
-    console.log('Updated record:', data[0]);
     return data[0];
   } catch (error) {
-    console.error('❌ Mark OTP failed:', error);
-    // This is critical - we need to mark OTP as used
-    // Don't continue without marking, throw the error
     throw new Error(`Failed to mark OTP as used: ${error.message}`);
   }
 };
