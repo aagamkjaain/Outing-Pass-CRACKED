@@ -262,12 +262,8 @@ const SlotBooking = () => {
         throw new Error('In date and time must be after out date and time.');
       }
       
-      // Check if the outing duration is reasonable (not more than 7 days)
-      const durationMs = inDateTime - outDateTime;
-      const durationDays = durationMs / (1000 * 60 * 60 * 24);
-      if (durationDays > 7) {
-        throw new Error('Outing duration cannot exceed 7 days.');
-      }
+      // No duration limit - students can request outing for any duration
+      
       const bookingData = {
         name: bookingForm.name,
         email: bookingForm.email,

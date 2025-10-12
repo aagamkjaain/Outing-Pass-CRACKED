@@ -235,11 +235,20 @@ export const fetchBookingsFiltered = async (opts = {}) => {
     }
 
     if (lateOnly) {
+      // Optimize: For "still_out" late students, enforce recent date range to avoid full scan
+      // Show only out_date within last 30 days (configurable)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const minDate = thirtyDaysAgo.toISOString().split('T')[0];
+      query = query.gte('out_date', minDate);
+      
+      // Late if expected return time (in_date + in_time) has passed current time
       const now = new Date();
       const today = now.toISOString().split('T')[0];
       const nowTime = now.toTimeString().slice(0, 8); // HH:MM:SS
-      // Late if in_date < today OR (in_date == today AND in_time <= now)
-      query = query.or(`in_date.lt.${today},and(in_date.eq.${today},in_time.lte.${nowTime})`);
+      
+      // Late condition: in_date < today OR (in_date == today AND in_time < nowTime)
+      query = query.or(`in_date.lt.${today},and(in_date.eq.${today},in_time.lt.${nowTime})`);
     }
 
     // Normalize allowedHostels before applying .in()
