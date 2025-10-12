@@ -52,8 +52,24 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const fetchAllBookings = useCallback(async (adminEmail, statusOverride) => {
     try {
       setLoading(true);
+      
       // Always apply hostel restrictions for wardens
-      const allowedHostels = wardenLoggedIn ? wardenHostels.filter(h => h.trim() !== '') : undefined;
+      let allowedHostels;
+      if (wardenLoggedIn) {
+        // Clean up the hostels list - remove empty entries and normalize
+        allowedHostels = wardenHostels
+          .filter(h => h && h.trim())
+          .map(h => h.trim());
+          
+        // If warden has no valid hostels, return empty results
+        if (allowedHostels.length === 0) {
+          setAllBookings([]);
+          setTotal(0);
+          setLoading(false);
+          return;
+        }
+      }
+      
       // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
       const defaultStartForStillOut = startDate;
 
@@ -322,22 +338,30 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       (booking.status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
 
-    // For wardens, apply both hostel restrictions and handled_by restrictions
+    // For wardens, apply strict hostel permissions
     if (wardenLoggedIn && wardenEmail) {
       const allowedHostelsList = Array.isArray(wardenHostels) ? wardenHostels.map(h => h.trim().toLowerCase()) : [];
       
+      // If warden has no hostels assigned or empty hostels list, show nothing
+      if (allowedHostelsList.length === 0) {
+        return [];
+      }
+      
       statusFiltered = statusFiltered.filter(booking => {
-        // Always check hostel permissions
+        // Always check hostel permissions first
         const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
-        const hasHostelPermission = allowedHostelsList.includes(bookingHostel);
         
-        if (!hasHostelPermission) return false;
+        // If hostel is not in allowed list, reject
+        if (!allowedHostelsList.includes(bookingHostel)) {
+          return false;
+        }
         
-        // For handled requests, also check handled_by
+        // For non-waiting requests, verify it was handled by this warden
         if (booking.status !== 'waiting') {
           return booking.handled_by === wardenEmail;
         }
         
+        // For waiting requests, allow if hostel matches
         return true;
       });
     }
