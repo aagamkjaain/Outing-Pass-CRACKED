@@ -378,7 +378,9 @@ export const handleBookingAction = async (bookingId, action, adminEmail, rejecti
  */
 export const generateOtpForBooking = async (bookingId) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    // Use local date to avoid timezone issues
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const { data: booking, error: fetchErr } = await supabase
       .from('outing_requests')
       .select('id, out_date, status, otp, otp_used')
@@ -386,7 +388,7 @@ export const generateOtpForBooking = async (bookingId) => {
       .single();
     if (fetchErr) throw fetchErr;
     if (!booking) throw new Error('Booking not found');
-    if (booking.out_date !== today) throw new Error('OTP will be available on your out date only');
+    if (booking.out_date !== today) throw new Error(`OTP will be available on your out date only (Today: ${today}, Out Date: ${booking.out_date})`);
     // Ensure the student has been let out (approved)
     if ((booking.status || '').toLowerCase() !== 'still_out') {
       throw new Error('OTP can be generated after you are marked as Out by the warden');
