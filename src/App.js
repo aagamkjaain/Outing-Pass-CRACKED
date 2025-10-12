@@ -4,7 +4,6 @@ import { supabase } from './supabaseClient';
 import { fetchAdminInfoByEmail } from './services/api';
 import Navbar from './components/Navbar';
 import { getWardenContext } from './utils/wardenHostels';
-import { getRolesFromUser, persistRolesToSessionStorage } from './utils/roleDetection';
 import SlotBooking from './pages/SlotBooking';
 import PendingBookings from './pages/PendingBookings';
 import Login from './pages/Login';
@@ -143,56 +142,72 @@ function App() {
 
   const checkAdminStatus = async (email) => {
     try {
-      // NEW APPROACH: Get current user and extract roles from JWT/metadata or single RPC call
-      console.debug('[App.checkAdminStatus] fetching roles via JWT/RPC for', email);
+      // Check all roles independently - user can have multiple roles
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.warn('[App.checkAdminStatus] No user found in session');
-        setIsAdmin(false);
-        setAdminRole(null);
-        setAdminHostels([]);
-        setIsWarden(false);
-        setWardenHostels([]);
-        setIsArchGate(false);
-        return;
-      }
-
-      // Get all roles in one efficient call (reads from JWT metadata or makes single RPC)
-      const roles = await getRolesFromUser(user);
-      console.debug('[App.checkAdminStatus] roles extracted:', roles);
-
-      // Update state based on roles
-      if (roles.isAdmin) {
+      // Check admin status
+      console.debug('[App.checkAdminStatus] querying admin for', email);
+      const adminInfo = await fetchAdminInfoByEmail(email).catch((e) => {
+        console.error('[App.checkAdminStatus] fetchAdminInfoByEmail failed', e);
+        return null;
+      });
+      console.debug('[App.checkAdminStatus] adminInfo:', adminInfo);
+      if (adminInfo) {
         setIsAdmin(true);
-        setAdminRole(roles.adminRole);
-        setAdminHostels(roles.adminHostels || []);
+        setAdminRole(adminInfo.role);
+        setAdminHostels(adminInfo.hostels || []);
+        // Persist for Navbar and older code paths
+        try { sessionStorage.setItem('adminRole', adminInfo.role || ''); } catch (e) {}
+        try { sessionStorage.setItem('adminHostels', JSON.stringify(adminInfo.hostels || [])); } catch (e) {}
       } else {
         setIsAdmin(false);
         setAdminRole(null);
         setAdminHostels([]);
+        try { sessionStorage.removeItem('adminRole'); } catch (e) {}
+        try { sessionStorage.removeItem('adminHostels'); } catch (e) {}
       }
-
-      if (roles.isWarden) {
+      
+      // Check warden status
+      const { fetchWardenInfoByEmail } = await import('./services/api');
+      console.debug('[App.checkAdminStatus] querying warden for', email);
+      const wardenInfo = await fetchWardenInfoByEmail(email).catch((e) => {
+        console.error('[App.checkAdminStatus] fetchWardenInfoByEmail failed', e);
+        return null;
+      });
+      console.debug('[App.checkAdminStatus] wardenInfo:', wardenInfo);
+      if (wardenInfo) {
         setIsWarden(true);
-        setWardenHostels(roles.wardenHostels || []);
+        setWardenHostels(wardenInfo.hostels || []);
+        // Persist warden hostels/email for components that read sessionStorage
+        try { sessionStorage.setItem('wardenHostels', JSON.stringify(wardenInfo.hostels || [])); } catch (e) {}
+        try { sessionStorage.setItem('wardenEmail', wardenInfo.email || ''); } catch (e) {}
+        try { sessionStorage.setItem('wardenRole', 'warden'); } catch (e) {}
+        // Ensure wardenLoggedIn flag is explicitly set so legacy code reads it
+        try { sessionStorage.setItem('wardenLoggedIn', 'true'); } catch (e) {}
       } else {
         setIsWarden(false);
         setWardenHostels([]);
+        try { sessionStorage.removeItem('wardenHostels'); } catch (e) {}
+        try { sessionStorage.removeItem('wardenEmail'); } catch (e) {}
+        try { sessionStorage.removeItem('wardenRole'); } catch (e) {}
+        try { sessionStorage.removeItem('wardenLoggedIn'); } catch (e) {}
       }
-
-      if (roles.isArchGate) {
+      
+      // Check arch gate status
+      const { checkArchGateStatus } = await import('./services/api');
+      console.debug('[App.checkAdminStatus] querying arch_gate for', email);
+      const archGateInfo = await checkArchGateStatus(email).catch((e) => {
+        console.error('[App.checkAdminStatus] checkArchGateStatus failed', e);
+        return null;
+      });
+      console.debug('[App.checkAdminStatus] archGateInfo:', archGateInfo);
+      if (archGateInfo) {
         setIsArchGate(true);
+        try { sessionStorage.setItem('archGateLoggedIn', 'true'); } catch (e) {}
       } else {
         setIsArchGate(false);
+        try { sessionStorage.removeItem('archGateLoggedIn'); } catch (e) {}
       }
-
-      // Persist to sessionStorage for backward compatibility with components
-      persistRolesToSessionStorage(roles);
-      console.debug('[App.checkAdminStatus] roles persisted to sessionStorage');
-      
     } catch (err) {
-      console.error('[App.checkAdminStatus] Failed to fetch roles:', err);
       setIsAdmin(false);
       setAdminRole(null);
       setAdminHostels([]);
@@ -259,7 +274,7 @@ function App() {
     <Router>  
       <div className="app">
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'info' })} />
-  <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} isArchGate={isArchGate} wardenHostels={wardenHostels} adminLoading={adminLoading} />
+  <Navbar user={user} isAdmin={isAdmin} isWarden={isWarden} isArchGate={isArchGate} wardenHostels={wardenHostels} adminLoading={adminLoading} adminRole={adminRole} />
         {/* Persist adminRole in sessionStorage for Navbar link control */}
         {isAdmin && adminRole && sessionStorage.setItem('adminRole', adminRole)}
         <main className="main-content">

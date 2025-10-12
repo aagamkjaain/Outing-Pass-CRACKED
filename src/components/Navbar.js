@@ -7,7 +7,7 @@ import { safeParseSessionItem } from '../utils/sessionStorage';
 import srmLogo from '../assets/Srmseal.png';
 import Toast from './Toast';
 
-const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGate }) => {
+const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGate, adminRole }) => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'info' });
@@ -16,6 +16,8 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
   const { wardenLoggedIn, wardenHostels: ctxWardenHostels, wardenEmail } = getWardenContext(wardenHostels);
   // Show full email for wardens (don't split)
   const wardenUsername = wardenLoggedIn ? (wardenEmail || 'Warden') : null;
+  // Prefer adminRole prop, fallback to sessionStorage
+  const effectiveAdminRole = adminRole || safeParseSessionItem('adminRole');
 
   // Auto-close navbar on scroll (mobile only)
   useEffect(() => {
@@ -103,7 +105,7 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
         {(isAdmin && !isArchGateLocal && !wardenLoggedIn) && (
           <Link to="/admin-student-info" onClick={() => setIsMenuOpen(false)}>Student Info</Link>
         )}
-        {(isAdmin && !isArchGateLocal && !wardenLoggedIn && safeParseSessionItem('adminRole') === 'superadmin') && (
+        {(isAdmin && !isArchGateLocal && !wardenLoggedIn && effectiveAdminRole === 'superadmin') && (
           <Link to="/warden-management" onClick={() => setIsMenuOpen(false)}>Warden Management</Link>
         )}
         {wardenLoggedIn && (
