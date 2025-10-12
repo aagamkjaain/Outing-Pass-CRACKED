@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx';
 
 // Minimal API calls colocated to avoid large diffs in services
 async function listWardens() {
-    const { data, error } = await supabase.from('wardens').select('id,email,name,hostels').order('email');
+    const { data, error } = await supabase.from('wardens').select('id,email,hostels').order('email');
 	if (error) throw new Error(error.message || 'Failed to list wardens');
 	return data || [];
 }
