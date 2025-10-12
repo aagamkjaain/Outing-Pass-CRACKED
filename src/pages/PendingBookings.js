@@ -317,10 +317,15 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   // Bookings filtered by status, hostel/warden/admin, but NOT by date
   const hostelFilteredBookings = useMemo(() => {
     // First filter by status
-    const statusFiltered = allBookings.filter(booking => 
+    let statusFiltered = allBookings.filter(booking => 
       (booking.status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
-    
+
+    // Restrict wardens to only see their own requests
+    if (wardenLoggedIn && wardenEmail) {
+      statusFiltered = statusFiltered.filter(booking => booking.warden_email === wardenEmail);
+    }
+
     // Then filter by hostel permissions
     const filtered = statusFiltered.filter(booking => {
       if (wardenLoggedIn && Array.isArray(wardenHostels) && wardenHostels.length > 0) {
@@ -338,7 +343,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       return true;
     });
     return filtered;
-  }, [allBookings, selectedStatus, wardenLoggedIn, wardenHostels, adminRole, adminHostels]);
+  }, [allBookings, selectedStatus, wardenLoggedIn, wardenHostels, wardenEmail, adminRole, adminHostels]);
 
   // Ensure tabCounts is only dependent on hostelFilteredBookings
   const tabCounts = useMemo(() => {
