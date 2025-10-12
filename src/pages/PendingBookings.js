@@ -388,21 +388,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       }
       
       statusFiltered = statusFiltered.filter(booking => {
-        // Always check hostel permissions first
+        // Check if booking belongs to warden's assigned hostel
         const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
-        
-        // If hostel is not in allowed list, reject
-        if (!allowedHostelsList.includes(bookingHostel)) {
-          return false;
-        }
-        
-        // For non-waiting requests, verify it was handled by this warden
-        if (booking.status !== 'waiting') {
-          return booking.handled_by === wardenEmail;
-        }
-        
-        // For waiting requests, allow if hostel matches
-        return true;
+        return allowedHostelsList.includes(bookingHostel);
       });
     }
 
