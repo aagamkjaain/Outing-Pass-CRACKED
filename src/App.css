@@ -122,6 +122,62 @@ h1, h2, h3, h4, h5, h6 {
   border-left: 4px solid #2F855A;
 }
 
+/* Handled Section Styling */
+.handled-section {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+/* Reason Text Styling */
+.reason-text {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Delete Button Styling */
+.btn-delete {
+  background-color: #da3633 !important;
+  color: white !important;
+  border: 1px solid transparent !important;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background-color: #f85149 !important;
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-delete:disabled {
+  background-color: #6e6e6e !important;
+  color: #a0a0a0 !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Info Notice Styling */
+.info-notice {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  text-align: center;
+  border: 1px solid #90caf9;
+}
+
+.info-notice p {
+  margin: 0;
+  color: #1976d2;
+  font-weight: 500;
+}
+
 .loading {
   display: flex;
   justify-content: center;
@@ -619,6 +675,44 @@ body.dark-mode::-webkit-scrollbar-track {
   background-color: var(--bg-secondary);
 }
 
+/* Dark Mode - Custom Component Classes */
+body.dark-mode .handled-section {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .reason-text {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .btn-delete {
+  background-color: #da3633 !important;
+  color: white !important;
+  border: 1px solid transparent !important;
+}
+
+body.dark-mode .btn-delete:hover:not(:disabled) {
+  background-color: #f85149 !important;
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
+}
+
+body.dark-mode .btn-delete:disabled {
+  background-color: #484f58 !important;
+  color: #6e7681 !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+body.dark-mode .info-notice {
+  background-color: rgba(56, 139, 253, 0.15) !important;
+  border: 1px solid rgba(56, 139, 253, 0.4) !important;
+}
+
+body.dark-mode .info-notice p {
+  color: var(--srm-light-blue) !important;
+}
+
 /* Dark Mode - List Items */
 body.dark-mode ul li {
   color: var(--text-secondary);
@@ -776,22 +870,12 @@ body.dark-mode .panel-body {
   color: var(--text-primary) !important;
 }
 
-/* Aggressive fix for any remaining white backgrounds */
-body.dark-mode div[style*="background-color: white"],
-body.dark-mode div[style*="background-color: #fff"],
-body.dark-mode div[style*="background: white"],
-body.dark-mode div[style*="background: #fff"] {
-  background-color: var(--bg-secondary) !important;
-}
-
-body.dark-mode span[style*="color: #333"],
-body.dark-mode span[style*="color: black"],
-body.dark-mode p[style*="color: #333"],
-body.dark-mode p[style*="color: black"],
-body.dark-mode div[style*="color: #333"],
-body.dark-mode div[style*="color: black"] {
-  color: var(--text-primary) !important;
-}
+/* ========================================
+   NOTE: Removed ineffective CSS attribute selectors
+   CSS attribute selectors like [style*="..."] don't work with React inline styles.
+   Instead, we use semantic classNames (.handled-section, .reason-text, .btn-delete)
+   defined earlier in this file and applied in the component JS files.
+   ======================================== */
 
 /* Dark Mode - Status Indicators */
 body.dark-mode .status-indicator {
@@ -914,164 +998,6 @@ body.dark-mode .modal-overlay {
   background: rgba(1, 4, 9, 0.8) !important;
 }
 
-/* Dark Mode - Fix inline styled elements with light backgrounds */
-
-/* Info notice boxes (like "Enter at least 6 characters...") */
-body.dark-mode div[style*="backgroundColor: '#e3f2fd'"],
-body.dark-mode div[style*="background: '#e3f2fd'"],
-body.dark-mode div[style*="backgroundColor: #e3f2fd"],
-body.dark-mode div[style*="background: #e3f2fd"] {
-  background-color: rgba(56, 139, 253, 0.15) !important;
-  border: 1px solid rgba(56, 139, 253, 0.4) !important;
-  color: var(--srm-light-blue) !important;
-}
-
-body.dark-mode div[style*="backgroundColor: '#e3f2fd'"] p,
-body.dark-mode div[style*="background: '#e3f2fd'"] p {
-  color: var(--text-primary) !important;
-}
-
-/* Handled by section with light gray background */
-body.dark-mode div[style*="background: '#f8f9fa'"],
-body.dark-mode div[style*="backgroundColor: '#f8f9fa'"],
-body.dark-mode div[style*="background: #f8f9fa"],
-body.dark-mode div[style*="backgroundColor: #f8f9fa"] {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-default) !important;
-  color: var(--text-primary) !important;
-}
-
-body.dark-mode div[style*="background: '#f8f9fa'"] div,
-body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] div,
-body.dark-mode div[style*="background: '#f8f9fa'"] b,
-body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] b {
-  color: var(--text-primary) !important;
-}
-
-/* More aggressive targeting for ALL elements with this background */
-body.dark-mode *[style*="f8f9fa"] {
-  background: var(--bg-tertiary) !important;
-  border-color: var(--border-default) !important;
-}
-
-body.dark-mode *[style*="f8f9fa"] * {
-  color: var(--text-primary) !important;
-}
-
-body.dark-mode *[style*="dee2e6"] {
-  border-color: var(--border-default) !important;
-}
-
-/* Reason text with dark color */
-body.dark-mode span[style*="color: '#333'"],
-body.dark-mode span[style*="color: #333"],
-body.dark-mode *[style*="color: '#333'"],
-body.dark-mode *[style*="color: #333"] {
-  color: var(--text-primary) !important;
-}
-
-/* Warning/orange colored text */
-body.dark-mode div[style*="color: 'orange'"],
-body.dark-mode div[style*="color: orange"] {
-  color: #d29922 !important;
-}
-
-/* Success messages with green */
-body.dark-mode div[style*="color: 'green'"],
-body.dark-mode div[style*="color: green"] {
-  color: #3fb950 !important;
-}
-
-/* Error messages with red */
-body.dark-mode div[style*="color: 'red'"],
-body.dark-mode div[style*="color: red"] {
-  color: #ff7b72 !important;
-}
-
-/* Light borders */
-body.dark-mode div[style*="border: '1px solid #dee2e6'"],
-body.dark-mode div[style*="border: 1px solid #dee2e6"] {
-  border: 1px solid var(--border-default) !important;
-}
-
-/* Handled time section in pending bookings */
-body.dark-mode .handled-time {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-default) !important;
-  color: var(--text-primary) !important;
-  padding: 8px;
-  border-radius: 4px;
-  margin-top: 8px;
-}
-
-body.dark-mode .handled-time strong {
-  color: var(--text-primary) !important;
-}
-
-/* More specific targeting for handled sections in booking cards */
-body.dark-mode div[style*="background: '#f8f9fa'"] div,
-body.dark-mode div[style*="background: '#f8f9fa'"] div b,
-body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] div,
-body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] div b {
-  color: var(--text-primary) !important;
-}
-
-/* SlotBooking.css specific - Past outings handled section */
-body.dark-mode .past-outings div[style*="background: '#f8f9fa'"],
-body.dark-mode .booking-card div[style*="background: '#f8f9fa'"],
-body.dark-mode .booking-details div[style*="background: '#f8f9fa'"] {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-default) !important;
-}
-
-/* Force text visibility in all handled sections */
-body.dark-mode div[style*="padding: 8"] div b,
-body.dark-mode div[style*="marginTop: 8"] div b {
-  color: var(--text-primary) !important;
-}
-
-/* Warden Management - Delete buttons (both light and dark mode) */
-button[style*="color: '#b71c1c'"],
-button[style*="color: #b71c1c"],
-button[style*="b71c1c"] {
-  background-color: #da3633 !important;
-  color: white !important;
-  border: 1px solid transparent !important;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-button[style*="color: '#b71c1c'"]:hover:not(:disabled),
-button[style*="color: #b71c1c"]:hover:not(:disabled),
-button[style*="b71c1c"]:hover:not(:disabled) {
-  background-color: #f85149 !important;
-  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
-  transform: translateY(-1px);
-}
-
-button[style*="color: '#b71c1c'"]:disabled,
-button[style*="color: #b71c1c"]:disabled,
-button[style*="b71c1c"]:disabled {
-  background-color: #6e6e6e !important;
-  color: #a0a0a0 !important;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Dark mode specific for delete buttons */
-body.dark-mode button[style*="color: '#b71c1c'"],
-body.dark-mode button[style*="color: #b71c1c"],
-body.dark-mode button[style*="b71c1c"] {
-  background-color: #da3633 !important;
-  color: white !important;
-  border: 1px solid transparent !important;
-}
-
-body.dark-mode button[style*="color: '#b71c1c'"]:hover:not(:disabled),
-body.dark-mode button[style*="color: #b71c1c"]:hover:not(:disabled),
-body.dark-mode button[style*="b71c1c"]:hover:not(:disabled) {
-  background-color: #f85149 !important;
-  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.2);
-}
+/* ======================================== 
+   END OF DARK MODE STYLES
+   ======================================== */

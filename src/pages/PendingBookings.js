@@ -758,7 +758,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
                     return 'N/A';
                   })()}</p>
                   {/* Reason with improved styling */}
-                  <p><strong>Reason:</strong> <span style={{ fontWeight: 600, color: '#333' }}>{booking.reason ? booking.reason : 'No reason provided'}</span></p>
+                  <p><strong>Reason:</strong> <span className="reason-text">{booking.reason ? booking.reason : 'No reason provided'}</span></p>
                   {booking.handled_by && booking.status !== 'waiting' && (
                     <p className="handled-time">
                       <strong>Handled on:</strong> {booking.handled_at ? new Date(booking.handled_at).toLocaleString() : ''}

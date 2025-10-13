@@ -631,7 +631,7 @@ const SlotBooking = () => {
                 <div><b>Reason:</b> {currentBooking.reason}</div>
                 <div><b>Status:</b> {currentBooking.status}</div>
                 {currentBooking.handled_by && currentBooking.status !== 'waiting' && (
-                  <div style={{ marginTop: 8, padding: 8, background: '#f8f9fa', borderRadius: 4, border: '1px solid #dee2e6' }}>
+                  <div className="handled-section">
                     <div><b>Handled on:</b> {currentBooking.handled_at ? new Date(currentBooking.handled_at).toLocaleString() : ''}</div>
                     <div><b>Handled by:</b> {currentBooking.handled_by}</div>
                   </div>
@@ -703,7 +703,7 @@ const SlotBooking = () => {
                   <div><b>Reason:</b> {booking.reason}</div>
                   <div><b>Status:</b> {booking.status}</div>
                   {booking.handled_by && booking.status !== 'waiting' && (
-                    <div style={{ marginTop: 8, padding: 8, background: '#f8f9fa', borderRadius: 4, border: '1px solid #dee2e6' }}>
+                    <div className="handled-section">
                       <div><b>Handled on:</b> {booking.handled_at ? new Date(booking.handled_at).toLocaleString() : ''}</div>
                       <div><b>Handled by:</b> {booking.handled_by}</div>
                     </div>

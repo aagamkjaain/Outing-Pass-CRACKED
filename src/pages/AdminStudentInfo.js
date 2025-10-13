@@ -437,7 +437,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       )}
       
       {!searchActive && (
-        <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#e3f2fd', borderRadius: 4, textAlign: 'center' }}>
+        <div className="info-notice">
           <p>Enter at least 6 characters in the search box to find student information.</p>
         </div>
       )}

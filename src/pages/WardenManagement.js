@@ -239,7 +239,7 @@ const WardenManagement = () => {
                 <button onClick={handleDownloadTemplate} type="button">Download Template</button>
                 <div style={{ width: '100%' }} />
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={handleBulkUpload} />
-                <button onClick={handleDeleteAll} type="button" style={{ color: '#b71c1c' }}>Delete All</button>
+                <button onClick={handleDeleteAll} type="button" className="btn-delete">Delete All</button>
             </div>
 
             {state.upload.inProgress && (
@@ -282,7 +282,7 @@ const WardenManagement = () => {
                             </td>
 							<td style={{ padding: 8, display: 'flex', gap: 8 }}>
 								<button onClick={() => handleUpdate(row.email)} disabled={loading || !isSuperAdmin}>Save</button>
-								<button onClick={() => handleDelete(row.email)} disabled={loading || !isSuperAdmin} style={{ color: '#b71c1c' }}>Delete</button>
+								<button onClick={() => handleDelete(row.email)} disabled={loading || !isSuperAdmin} className="btn-delete">Delete</button>
 							</td>
 						</tr>
                     ))}
