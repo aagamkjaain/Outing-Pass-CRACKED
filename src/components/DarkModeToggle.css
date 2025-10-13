@@ -1,114 +1,80 @@
-/* Draggable Dark Mode Toggle */
+/* Fixed Dark Mode Toggle */
 .dark-mode-toggle {
   position: fixed;
+  bottom: 20px;
+  right: 20px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.95);
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  cursor: grab;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   z-index: 9999;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
 }
 
 .dark-mode-toggle:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
-.dark-mode-toggle:active,
-.dark-mode-toggle.dragging {
-  cursor: grabbing;
-  transform: scale(1.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+.dark-mode-toggle:active {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .dark-mode-toggle .theme-icon {
   width: 28px;
   height: 28px;
-  color: #667eea;
+  color: #003366;
   transition: all 0.3s ease;
   pointer-events: none;
 }
 
 .dark-mode-toggle:hover .theme-icon {
   transform: rotate(15deg);
-}
-
-/* Drag Hint */
-.drag-hint {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 18px;
-  height: 18px;
-  background: #667eea;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.dark-mode-toggle:hover .drag-hint {
-  opacity: 1;
-}
-
-.drag-icon {
-  width: 10px;
-  height: 10px;
-  color: white;
+  color: #0066CC;
 }
 
 /* Dark Mode Styles for Toggle */
 body.dark-mode .dark-mode-toggle {
-  background: rgba(30, 30, 40, 0.95);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #21262d;
+  border: 1px solid #30363d;
+  box-shadow: 0 8px 24px rgba(1, 4, 9, 0.6);
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+  box-shadow: 0 8px 32px rgba(1, 4, 9, 0.8);
+  border-color: #58a6ff;
 }
 
 body.dark-mode .dark-mode-toggle .theme-icon {
   color: #fbbf24;
 }
 
-body.dark-mode .drag-hint {
-  background: #fbbf24;
-}
-
-/* Dragging State */
-.dark-mode-toggle.dragging {
-  transition: none;
+body.dark-mode .dark-mode-toggle:hover .theme-icon {
+  color: #fcd34d;
 }
 
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .dark-mode-toggle {
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
+    bottom: 16px;
+    right: 16px;
   }
 
   .dark-mode-toggle .theme-icon {
-    width: 26px;
-    height: 26px;
-  }
-
-  .drag-hint {
-    width: 16px;
-    height: 16px;
-  }
-
-  .drag-icon {
-    width: 9px;
-    height: 9px;
+    width: 24px;
+    height: 24px;
   }
 }
 
@@ -128,7 +94,6 @@ body.dark-mode .drag-hint {
 .dark-mode-toggle.switching .theme-icon {
   animation: themeSwitch 0.5s ease;
 }
-
 /* Prevent text selection while dragging */
 .dark-mode-toggle.dragging * {
   user-select: none;

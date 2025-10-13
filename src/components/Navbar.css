@@ -222,44 +222,66 @@
 /* ===== DARK MODE STYLES FOR NAVBAR ===== */
 
 body.dark-mode .navbar {
-  background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  box-shadow: 0 1px 0 rgba(1, 4, 9, 0.15);
+}
+
+body.dark-mode .nav-links {
+  background: #161b22;
 }
 
 body.dark-mode .nav-links a {
-  color: #e5e7eb;
+  color: #c9d1d9;
 }
 
 body.dark-mode .nav-links a::after {
-  background: #fbbf24;
+  background: #58a6ff;
 }
 
 body.dark-mode .nav-links a:hover {
-  background: rgba(102, 126, 234, 0.2);
-  color: #fbbf24;
+  background: rgba(88, 166, 255, 0.1);
+  color: #58a6ff;
+}
+
+body.dark-mode .navbar-title {
+  color: #c9d1d9;
 }
 
 body.dark-mode .user-info {
-  color: #e5e7eb;
+  color: #c9d1d9;
 }
 
-body.dark-mode .logout-button,
+body.dark-mode .user-info span {
+  color: #8b949e;
+}
+
+body.dark-mode .logout-button {
+  background-color: transparent;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+}
+
+body.dark-mode .logout-button:hover {
+  background-color: #30363d;
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
 body.dark-mode .login-button {
-  background-color: #667eea;
+  background-color: #238636;
   color: white;
-  border-color: #667eea;
+  border: 1px solid transparent;
 }
 
-body.dark-mode .logout-button:hover,
 body.dark-mode .login-button:hover {
-  background-color: #5568d3;
-  border-color: #5568d3;
+  background-color: #2ea043;
 }
 
-body.dark-mode .menu-toggle {
-  color: #e5e7eb;
+body.dark-mode .mobile-menu-button {
+  color: #c9d1d9;
 }
 
-body.dark-mode .menu-toggle:hover {
-  color: #fbbf24;
+body.dark-mode .mobile-menu-button:hover {
+  color: #58a6ff;
 } 
