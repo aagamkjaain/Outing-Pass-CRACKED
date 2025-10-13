@@ -1110,3 +1110,21 @@ body.dark-mode .current-booking-card div,
 body.dark-mode .past-booking-card div {
   color: #e5e7eb;
 }
+/* Fix for 'Handled by' section with inline styles */
+body.dark-mode .booking-card div[style*="background: '#f8f9fa'"],
+body.dark-mode .booking-card div[style*="background: #f8f9fa"],
+body.dark-mode .current-booking-card div[style*="background: '#f8f9fa'"],
+body.dark-mode .past-booking-card div[style*="background: '#f8f9fa'"] {
+  background: #21262d !important;
+  border: 1px solid #30363d !important;
+  color: #c9d1d9 !important;
+}
+
+body.dark-mode .booking-card div[style*="background: '#f8f9fa'"] div,
+body.dark-mode .booking-card div[style*="background: '#f8f9fa'"] b,
+body.dark-mode .current-booking-card div[style*="background: '#f8f9fa'"] div,
+body.dark-mode .current-booking-card div[style*="background: '#f8f9fa'"] b,
+body.dark-mode .past-booking-card div[style*="background: '#f8f9fa'"] div,
+body.dark-mode .past-booking-card div[style*="background: '#f8f9fa'"] b {
+  color: #c9d1d9 !important;
+}

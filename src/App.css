@@ -991,3 +991,66 @@ body.dark-mode .handled-time {
 body.dark-mode .handled-time strong {
   color: var(--text-primary) !important;
 }
+
+/* More specific targeting for handled sections in booking cards */
+body.dark-mode div[style*="background: '#f8f9fa'"] div,
+body.dark-mode div[style*="background: '#f8f9fa'"] div b,
+body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] div,
+body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] div b {
+  color: var(--text-primary) !important;
+}
+
+/* SlotBooking.css specific - Past outings handled section */
+body.dark-mode .past-outings div[style*="background: '#f8f9fa'"],
+body.dark-mode .booking-card div[style*="background: '#f8f9fa'"],
+body.dark-mode .booking-details div[style*="background: '#f8f9fa'"] {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-default) !important;
+}
+
+/* Force text visibility in all handled sections */
+body.dark-mode div[style*="padding: 8"] div b,
+body.dark-mode div[style*="marginTop: 8"] div b {
+  color: var(--text-primary) !important;
+}
+
+/* Warden Management - Delete buttons (both light and dark mode) */
+button[style*="color: '#b71c1c'"],
+button[style*="color: #b71c1c"] {
+  background-color: #da3633 !important;
+  color: white !important;
+  border: 1px solid transparent !important;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+button[style*="color: '#b71c1c'"]:hover:not(:disabled),
+button[style*="color: #b71c1c"]:hover:not(:disabled) {
+  background-color: #f85149 !important;
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
+  transform: translateY(-1px);
+}
+
+button[style*="color: '#b71c1c'"]:disabled,
+button[style*="color: #b71c1c"]:disabled {
+  background-color: #6e6e6e !important;
+  color: #a0a0a0 !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Dark mode specific for delete buttons */
+body.dark-mode button[style*="color: '#b71c1c'"],
+body.dark-mode button[style*="color: #b71c1c"] {
+  background-color: #da3633 !important;
+  color: white !important;
+  border: 1px solid transparent !important;
+}
+
+body.dark-mode button[style*="color: '#b71c1c'"]:hover:not(:disabled),
+body.dark-mode button[style*="color: #b71c1c"]:hover:not(:disabled) {
+  background-color: #f85149 !important;
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.2);
+}
