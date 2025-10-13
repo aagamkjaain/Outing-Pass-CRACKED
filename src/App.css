@@ -913,3 +913,81 @@ body.dark-mode .btn-cancel:hover:not(:disabled) {
 body.dark-mode .modal-overlay {
   background: rgba(1, 4, 9, 0.8) !important;
 }
+
+/* Dark Mode - Fix inline styled elements with light backgrounds */
+
+/* Info notice boxes (like "Enter at least 6 characters...") */
+body.dark-mode div[style*="backgroundColor: '#e3f2fd'"],
+body.dark-mode div[style*="background: '#e3f2fd'"],
+body.dark-mode div[style*="backgroundColor: #e3f2fd"],
+body.dark-mode div[style*="background: #e3f2fd"] {
+  background-color: rgba(56, 139, 253, 0.15) !important;
+  border: 1px solid rgba(56, 139, 253, 0.4) !important;
+  color: var(--srm-light-blue) !important;
+}
+
+body.dark-mode div[style*="backgroundColor: '#e3f2fd'"] p,
+body.dark-mode div[style*="background: '#e3f2fd'"] p {
+  color: var(--text-primary) !important;
+}
+
+/* Handled by section with light gray background */
+body.dark-mode div[style*="background: '#f8f9fa'"],
+body.dark-mode div[style*="backgroundColor: '#f8f9fa'"],
+body.dark-mode div[style*="background: #f8f9fa"],
+body.dark-mode div[style*="backgroundColor: #f8f9fa"] {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode div[style*="background: '#f8f9fa'"] div,
+body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] div,
+body.dark-mode div[style*="background: '#f8f9fa'"] b,
+body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] b {
+  color: var(--text-primary) !important;
+}
+
+/* Reason text with dark color */
+body.dark-mode span[style*="color: '#333'"],
+body.dark-mode span[style*="color: #333"] {
+  color: var(--text-primary) !important;
+}
+
+/* Warning/orange colored text */
+body.dark-mode div[style*="color: 'orange'"],
+body.dark-mode div[style*="color: orange"] {
+  color: #d29922 !important;
+}
+
+/* Success messages with green */
+body.dark-mode div[style*="color: 'green'"],
+body.dark-mode div[style*="color: green"] {
+  color: #3fb950 !important;
+}
+
+/* Error messages with red */
+body.dark-mode div[style*="color: 'red'"],
+body.dark-mode div[style*="color: red"] {
+  color: #ff7b72 !important;
+}
+
+/* Light borders */
+body.dark-mode div[style*="border: '1px solid #dee2e6'"],
+body.dark-mode div[style*="border: 1px solid #dee2e6"] {
+  border: 1px solid var(--border-default) !important;
+}
+
+/* Handled time section in pending bookings */
+body.dark-mode .handled-time {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+body.dark-mode .handled-time strong {
+  color: var(--text-primary) !important;
+}
