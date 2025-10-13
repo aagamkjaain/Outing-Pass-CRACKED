@@ -948,9 +948,25 @@ body.dark-mode div[style*="backgroundColor: '#f8f9fa'"] b {
   color: var(--text-primary) !important;
 }
 
+/* More aggressive targeting for ALL elements with this background */
+body.dark-mode *[style*="f8f9fa"] {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-default) !important;
+}
+
+body.dark-mode *[style*="f8f9fa"] * {
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode *[style*="dee2e6"] {
+  border-color: var(--border-default) !important;
+}
+
 /* Reason text with dark color */
 body.dark-mode span[style*="color: '#333'"],
-body.dark-mode span[style*="color: #333"] {
+body.dark-mode span[style*="color: #333"],
+body.dark-mode *[style*="color: '#333'"],
+body.dark-mode *[style*="color: #333"] {
   color: var(--text-primary) !important;
 }
 
@@ -1016,7 +1032,8 @@ body.dark-mode div[style*="marginTop: 8"] div b {
 
 /* Warden Management - Delete buttons (both light and dark mode) */
 button[style*="color: '#b71c1c'"],
-button[style*="color: #b71c1c"] {
+button[style*="color: #b71c1c"],
+button[style*="b71c1c"] {
   background-color: #da3633 !important;
   color: white !important;
   border: 1px solid transparent !important;
@@ -1027,14 +1044,16 @@ button[style*="color: #b71c1c"] {
 }
 
 button[style*="color: '#b71c1c'"]:hover:not(:disabled),
-button[style*="color: #b71c1c"]:hover:not(:disabled) {
+button[style*="color: #b71c1c"]:hover:not(:disabled),
+button[style*="b71c1c"]:hover:not(:disabled) {
   background-color: #f85149 !important;
   box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15);
   transform: translateY(-1px);
 }
 
 button[style*="color: '#b71c1c'"]:disabled,
-button[style*="color: #b71c1c"]:disabled {
+button[style*="color: #b71c1c"]:disabled,
+button[style*="b71c1c"]:disabled {
   background-color: #6e6e6e !important;
   color: #a0a0a0 !important;
   cursor: not-allowed;
@@ -1043,14 +1062,16 @@ button[style*="color: #b71c1c"]:disabled {
 
 /* Dark mode specific for delete buttons */
 body.dark-mode button[style*="color: '#b71c1c'"],
-body.dark-mode button[style*="color: #b71c1c"] {
+body.dark-mode button[style*="color: #b71c1c"],
+body.dark-mode button[style*="b71c1c"] {
   background-color: #da3633 !important;
   color: white !important;
   border: 1px solid transparent !important;
 }
 
 body.dark-mode button[style*="color: '#b71c1c'"]:hover:not(:disabled),
-body.dark-mode button[style*="color: #b71c1c"]:hover:not(:disabled) {
+body.dark-mode button[style*="color: #b71c1c"]:hover:not(:disabled),
+body.dark-mode button[style*="b71c1c"]:hover:not(:disabled) {
   background-color: #f85149 !important;
   box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.2);
 }
