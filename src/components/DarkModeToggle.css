@@ -1,4 +1,3 @@
-/* Fixed Dark Mode Toggle */
 .dark-mode-toggle {
   position: fixed;
   bottom: 20px;
@@ -19,17 +18,14 @@
   user-select: none;
   -webkit-user-select: none;
 }
-
 .dark-mode-toggle:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
-
 .dark-mode-toggle:active {
   transform: scale(1.05);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
-
 .dark-mode-toggle .theme-icon {
   width: 28px;
   height: 28px;
@@ -37,33 +33,25 @@
   transition: all 0.3s ease;
   pointer-events: none;
 }
-
 .dark-mode-toggle:hover .theme-icon {
   transform: rotate(15deg);
   color: #0066CC;
 }
-
-/* Dark Mode Styles for Toggle */
 body.dark-mode .dark-mode-toggle {
   background: #21262d;
   border: 1px solid #30363d;
   box-shadow: 0 8px 24px rgba(1, 4, 9, 0.6);
 }
-
 body.dark-mode .dark-mode-toggle:hover {
   box-shadow: 0 8px 32px rgba(1, 4, 9, 0.8);
   border-color: #58a6ff;
 }
-
 body.dark-mode .dark-mode-toggle .theme-icon {
   color: #fbbf24;
 }
-
 body.dark-mode .dark-mode-toggle:hover .theme-icon {
   color: #fcd34d;
 }
-
-/* Mobile Optimizations */
 @media (max-width: 768px) {
   .dark-mode-toggle {
     width: 50px;
@@ -71,14 +59,11 @@ body.dark-mode .dark-mode-toggle:hover .theme-icon {
     bottom: 16px;
     right: 16px;
   }
-
   .dark-mode-toggle .theme-icon {
     width: 24px;
     height: 24px;
   }
 }
-
-/* Animation for theme switching */
 @keyframes themeSwitch {
   0% {
     transform: scale(1) rotate(0deg);
@@ -90,11 +75,9 @@ body.dark-mode .dark-mode-toggle:hover .theme-icon {
     transform: scale(1) rotate(360deg);
   }
 }
-
 .dark-mode-toggle.switching .theme-icon {
   animation: themeSwitch 0.5s ease;
 }
-/* Prevent text selection while dragging */
 .dark-mode-toggle.dragging * {
   user-select: none;
   -webkit-user-select: none;

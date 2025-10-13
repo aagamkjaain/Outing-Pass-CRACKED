@@ -6,94 +6,6 @@
   background-color: #f9f9f9;
 }
 
-.error-message {
-  position: sticky;
-  top: 20px;
-  background-color: #ffebee;
-  color: #c62828;
-  padding: 15px;
-  border-radius: 5px;
-  margin: 20px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 1000;
-  white-space: pre-line;
-  border-left: 4px solid #c62828;
-  font-size: 14px;
-  line-height: 1.5;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.error-message::before {
-  content: '⚠️ ';
-  margin-right: 8px;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.success-message {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  padding: 15px;
-  border-radius: 5px;
-  margin: 20px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border-left: 4px solid #2e7d32;
-  font-size: 14px;
-  line-height: 1.5;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.success-message::before {
-  content: '✅ ';
-  margin-right: 8px;
-}
-
-.message-container {
-  position: relative;
-  z-index: 1000;
-  margin-bottom: 20px;
-}
-
-.api-error {
-  background-color: #fff3cd;
-  color: #856404;
-  padding: 15px;
-  margin-bottom: 20px;
-  border: 1px solid #ffeeba;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.api-error button {
-  background-color: #ffc107;
-  color: #212529;
-  border: none;
-  padding: 8px 16px;
-  margin-top: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.api-error button:hover {
-  background-color: #e0a800;
-}
-
 form {
   display: flex;
   flex-direction: column;
@@ -130,34 +42,7 @@ select option:disabled {
   justify-content: center;
 }
 
-button {
-  background-color: #003366;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-}
-
-button:hover {
-  background-color: #00264d;
-}
-
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.booking-button {
-  background-color: #0056b3;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1.1rem;
+label {
   font-weight: 600;
   transition: all 0.3s ease;
   width: 100%;
@@ -165,26 +50,6 @@ button:disabled {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.booking-button:hover {
-  background-color: #003d7a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.booking-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.booking-button:disabled {
-  background-color: #cccccc;
-  color: #666666;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Input validation styles */
 input:invalid,
 select:invalid {
   border-color: #dc3545;
@@ -196,7 +61,6 @@ select:valid {
   border-color: #28a745;
   background-color: #f8fff8;
 }
-
 input:focus:invalid,
 select:focus:invalid {
   box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
@@ -207,7 +71,6 @@ select:focus:valid {
   box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
 }
 
-/* Add some responsive adjustments */
 @media (max-width: 768px) {
   .booking-button {
     font-size: 1rem;
@@ -272,35 +135,6 @@ select:focus:valid {
 
 .action-button:active {
   transform: translateY(0);
-}
-
-.action-button:disabled {
-  background-color: #cccccc;
-  color: #666666;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.delete-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-}
-
-.delete-button:hover {
-  background-color: #c82333;
-}
-
-.delete-button:disabled {
-  background-color: #cccccc;
-  color: #666666;
-  cursor: not-allowed;
 }
 
 .readonly-input {
@@ -377,7 +211,6 @@ select:focus:valid {
   text-align: center;
 }
 
-/* Admin Section Styles */
 .admin-section {
   background: #f8f9fa;
   border-radius: 8px;
@@ -411,7 +244,6 @@ select:focus:valid {
   margin: 0;
 }
 
-/* Form Styles */
 .booking-form {
   background: white;
   padding: 25px;
@@ -445,8 +277,6 @@ input, select {
   background-color: #f5f5f5;
   cursor: not-allowed;
 }
-
-/* User Bookings Section */
 #user-bookings {
   max-width: 800px;
   margin: 0 auto;
@@ -469,7 +299,6 @@ input, select {
   gap: 10px;
 }
 
-/* Button Styles */
 .action-buttons {
   display: flex;
   gap: 10px;
@@ -505,8 +334,6 @@ button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
-
-/* Status Styles */
 .status-waiting,
 .status-confirmed,
 .status-rejected,
@@ -543,35 +370,6 @@ button:disabled {
   border: 1px solid #bdbdbd;
 }
 
-/* Message Styles */
-.error-message, .success-message, .api-error {
-  padding: 12px;
-  border-radius: 4px;
-  margin: 10px 0;
-  text-align: center;
-  max-width: 600px;
-  margin: 10px auto;
-}
-
-.error-message {
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid #ffcdd2;
-}
-
-.success-message {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-}
-
-.api-error {
-  background: #fff3e0;
-  color: #ef6c00;
-  border: 1px solid #ffe0b2;
-}
-
-/* Responsive Design */
 @media (max-width: 768px) {
   .slot-booking-container {
     padding: 15px;
@@ -590,7 +388,6 @@ button:disabled {
   }
 }
 
-/* Time Slot Select Styles */
 .time-slot-select option:disabled {
   color: #999;
   font-style: italic;
@@ -601,7 +398,6 @@ button:disabled {
   font-style: italic;
 }
 
-/* Time Slots Grid */
 .time-slots-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -666,7 +462,6 @@ button:disabled {
   font-weight: 500;
 }
 
-/* Selected Slots Section */
 .selected-slots {
   margin: 20px 0;
   padding: 20px;
@@ -717,7 +512,6 @@ button:disabled {
   background: #d2e3fc;
 }
 
-/* Update Booking Button for Multiple Slots */
 .booking-button {
   min-width: 200px;
 }
@@ -753,7 +547,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-right: -4px;
 }
 
-/* Style for disabled dates */
 input[type="date"]::-webkit-datetime-edit {
   color: #333;
 }
@@ -763,25 +556,21 @@ input[type="date"]:disabled {
   cursor: not-allowed;
 }
 
-/* Add a subtle hover effect */
 input[type="date"]:not(:disabled):hover {
   border-color: #0056b3;
 }
 
-/* Focus state */
 input[type="date"]:focus {
   outline: none;
   border-color: #0056b3;
   box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
 }
 
-/* Error state */
 input[type="date"].error {
   border-color: #dc3545;
   background-color: #fff8f8;
 }
 
-/* Success state */
 input[type="date"].success {
   border-color: #28a745;
   background-color: #f8fff8;
@@ -966,8 +755,6 @@ input[type="date"].success {
   }
 }
 
-/* ===== DARK MODE STYLES FOR SLOT BOOKING ===== */
-
 body.dark-mode #lab-booking,
 body.dark-mode #delete-booking,
 body.dark-mode #user-bookings {
@@ -1094,7 +881,6 @@ body.dark-mode .help-section {
   color: #93c5fd;
 } 
 
-/* Current and Past Booking Cards */
 .current-booking-card,
 .past-booking-card {
   background: white;
@@ -1109,22 +895,4 @@ body.dark-mode .past-booking-card {
 body.dark-mode .current-booking-card div,
 body.dark-mode .past-booking-card div {
   color: #e5e7eb;
-}
-/* Fix for 'Handled by' section with inline styles */
-body.dark-mode .booking-card div[style*="background: '#f8f9fa'"],
-body.dark-mode .booking-card div[style*="background: #f8f9fa"],
-body.dark-mode .current-booking-card div[style*="background: '#f8f9fa'"],
-body.dark-mode .past-booking-card div[style*="background: '#f8f9fa'"] {
-  background: #21262d !important;
-  border: 1px solid #30363d !important;
-  color: #c9d1d9 !important;
-}
-
-body.dark-mode .booking-card div[style*="background: '#f8f9fa'"] div,
-body.dark-mode .booking-card div[style*="background: '#f8f9fa'"] b,
-body.dark-mode .current-booking-card div[style*="background: '#f8f9fa'"] div,
-body.dark-mode .current-booking-card div[style*="background: '#f8f9fa'"] b,
-body.dark-mode .past-booking-card div[style*="background: '#f8f9fa'"] div,
-body.dark-mode .past-booking-card div[style*="background: '#f8f9fa'"] b {
-  color: #c9d1d9 !important;
 }

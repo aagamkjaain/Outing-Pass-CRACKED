@@ -4,7 +4,6 @@
   margin: 0 auto;
 }
 
-/* Search functionality styles */
 .search-container {
   display: flex;
   gap: 8px;
@@ -38,29 +37,7 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-.search-button {
-  padding: 8px 16px;
-  font-size: 14px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  font-weight: 500;
-}
-
-.search-button:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-.search-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.clear-button {
+.search-active-indicator {
   padding: 8px 16px;
   font-size: 14px;
   background-color: #6c757d;
@@ -76,28 +53,52 @@
   background-color: #545b62;
 }
 
-.search-active-indicator {
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background-color: #e7f3ff;
-  border: 1px solid #b3d9ff;
-  border-radius: 6px;
+.download-button {
+  padding: 8px 16px;
   font-size: 14px;
-  color: #0056b3;
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.search-active-indicator strong {
-  color: #004085;
+.download-button:hover:not(:disabled) {
+  background-color: #138496;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
 }
 
+.download-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 
+.report-button {
+  background-color: #28a745 !important;
+  font-weight: 600;
+}
+
+.report-button:hover:not(:disabled) {
+  background-color: #218838 !important;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+}
+
+.report-button:disabled {
+  background-color: #6c757d !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 
 .status-tabs {
   display: flex;
-  gap: 16px; /* Add horizontal spacing between tab buttons */
+  gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -137,41 +138,14 @@
 
 .action-buttons {
   display: flex;
-  gap: 16px; /* Increased from 10px for more spacing */
+  gap: 16px;
   justify-content: flex-end;
 }
 
 .still-out-actions {
   display: flex;
-  gap: 16px; /* Add spacing between In and Alert buttons */
+  gap: 16px;
   margin-top: 10px;
-}
-
-.confirm-button, .reject-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-.confirm-button {
-  background-color: #28a745;
-  color: white;
-}
-
-.confirm-button:hover {
-  background-color: #218838;
-}
-
-.reject-button {
-  background-color: #dc3545;
-  color: white;
-}
-
-.reject-button:hover {
-  background-color: #c82333;
 }
 
 .loading {
@@ -181,21 +155,6 @@
   color: #666;
 }
 
-.error-message {
-  color: #dc3545;
-  text-align: center;
-  padding: 20px;
-  font-size: 16px;
-}
-
-.success-message {
-  color: #28a745;
-  text-align: center;
-  padding: 10px;
-  margin-bottom: 20px;
-  background-color: #d4edda;
-  border-radius: 4px;
-}
 
 .no-bookings {
   text-align: center;
@@ -205,9 +164,6 @@
   background-color: #f8f9fa;
   border-radius: 8px;
 }
-
-
-
 .admin-handler {
   margin-top: 15px;
   padding-top: 15px;
@@ -254,9 +210,6 @@
   background-color: #dc3545;
 }
 
-
-
-/* Pulse animation for late banner */
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -286,13 +239,7 @@
     padding: 12px;
     font-size: 0.97em;
   }
-  .success-message, .error-message {
-    font-size: 1em;
-    padding: 8px;
-  }
 }
-
-/* ===== DARK MODE STYLES FOR PENDING BOOKINGS ===== */
 
 body.dark-mode .pending-bookings-page {
   background-color: #0f0f1e;
@@ -375,7 +322,6 @@ body.dark-mode .booking-card p strong {
   color: #d1d5db;
 }
 
-/* Fix Reason text visibility - override inline style */
 body.dark-mode .booking-card p span[style*="color: '#333'"],
 body.dark-mode .booking-card p span[style*="color: #333"] {
   color: #c9d1d9 !important;
@@ -390,35 +336,7 @@ body.dark-mode .booking-actions button:hover {
   background-color: #5568d3;
 }
 
-/* Confirm button - GREEN in dark mode */
-body.dark-mode .confirm-button {
-  background-color: #238636 !important;
-  color: white !important;
-}
-
-body.dark-mode .confirm-button:hover {
-  background-color: #2ea043 !important;
-}
-
-/* Reject button - RED in dark mode */
-body.dark-mode .reject-button {
-  background-color: #da3633 !important;
-  color: white !important;
-}
-
-body.dark-mode .reject-button:hover {
-  background-color: #f85149 !important;
-}
-
-body.dark-mode .booking-actions button.reject-btn {
-  background-color: #ef4444;
-}
-
-body.dark-mode .booking-actions button.reject-btn:hover {
-  background-color: #dc2626;
-}
-
-body.dark-mode .modal-overlay {
+body.dark-mode .no-bookings {
   background-color: rgba(0, 0, 0, 0.85);
 }
 

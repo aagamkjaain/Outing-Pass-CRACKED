@@ -7,7 +7,6 @@ import { safeParseSessionItem } from '../utils/sessionStorage';
 import './PendingBookings.css';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
-
 const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: propWardenHostels }) => {
   const [allBookings, setAllBookings] = useState([]); // Store all bookings (unfiltered)
   const [selectedStatus, setSelectedStatus] = useState('waiting');
@@ -34,10 +33,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   // Search functionality
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
-
   // Warden session support (centralized)
   const { wardenLoggedIn, wardenHostels, wardenEmail } = getWardenContext(propWardenHostels);
-  
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
     const statuses = {};
@@ -48,17 +45,14 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     }
     setBanStatuses(statuses);
   }, []); // `fetchAllBans` is from API (stable), `setBanStatuses` is a setState dispatch (stable)
-
   const fetchAllBookings = useCallback(async (adminEmail, statusOverride) => {
     try {
       setLoading(true);
-      
       let allowedHostels;
       if (wardenLoggedIn) {
         allowedHostels = wardenHostels
           .filter(h => h && h.trim())
           .map(h => h.trim());
-          
         if (allowedHostels.length === 0) {
           setAllBookings([]);
           setTotal(0);
@@ -66,13 +60,10 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           return;
         }
       }
-      
       // Apply a default 7-day window for Still Out to avoid huge scans unless user filters/searches
       const defaultStartForStillOut = startDate;
-
       const effectiveStatus = statusOverride || selectedStatus;
       const isStillOut = effectiveStatus === 'still_out';
-      
       // For non-Still Out tabs without date filters, default to last 30 days to prevent timeout
       // For Still Out tab, default to last 1 month to avoid showing very old records
       let effectiveStartDate = startDate;
@@ -92,7 +83,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           effectiveEndDate = new Date().toISOString().split('T')[0];
         }
       }
-      
       const { rows, count } = await fetchBookingsFiltered({
         status: effectiveStatus,
         // For Still Out on initial load: filter to last 1 month. For searches: ignore date filters.
@@ -106,13 +96,11 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         minimal: true,
         lateOnly: false // Show ALL records, not just late ones (LATE badge will still display on cards)
       });
-      
       if (!Array.isArray(rows)) {
         setError('Supabase returned non-array data: ' + JSON.stringify(rows));
         setLoading(false);
         return;
       }
-      
       setAllBookings(rows);
       // For Still Out, show all (no pagination). Otherwise approximate total.
       if (isStillOut) {
@@ -120,14 +108,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       } else {
         setTotal(count || (rows?.length || 0) + ((page - 1) * pageSize));
       }
-      
       // Calculate counts from current page (approximate)
       const waiting = rows.filter(booking => booking.status === 'waiting').length;
       const still_out = rows.filter(booking => booking.status === 'still_out').length;
       const confirmed = rows.filter(booking => booking.status === 'confirmed').length;
       const rejected = rows.filter(booking => booking.status === 'rejected').length;
       setCounts({ waiting, still_out, confirmed, rejected });
-      
       setError(null);
       await fetchBans();
     } catch (error) {
@@ -138,14 +124,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(false);
     }
   }, [fetchBans, wardenLoggedIn, isWarden, wardenHostels, selectedStatus, startDate, endDate, searchQuery, searchActive, page, pageSize]);
-
   const searchBookings = useCallback(async (roomNumber) => {
     if (!roomNumber || roomNumber.trim().length < 3) {
       setAllBookings([]);
       setSearchActive(false);
       return;
     }
-    
     try {
       setLoading(true);
       setPage(1);
@@ -174,7 +158,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(false);
     }
   }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn, selectedStatus, startDate, endDate, pageSize]);
-
   const checkAdminAndFetchBookings = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -192,7 +175,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setError('Failed to authenticate');
     }
   }, [navigate, adminRole, isWarden, fetchAllBookings]);
-
   useEffect(() => {
     // Initialize user authentication only once
     if (wardenLoggedIn) {
@@ -209,7 +191,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       }
     }
   }, [wardenLoggedIn]); // Removed selectedStatus from dependencies to prevent auto-reloading
-
   const loadWaitingData = useCallback(async () => {
     try {
       setLoading(true);
@@ -233,14 +214,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(false);
     }
   }, [wardenEmail, user?.email, wardenHostels, wardenLoggedIn, pageSize]);
-
   const handleStatusChange = useCallback((status) => {
     setSelectedStatus(status);
     setSearchQuery('');
     setSearchActive(false);
     setPage(1);
     // No late-only toggle; Still Out always shows late students
-    
     // Auto-load data for "still_out" tab as it needs real-time updates for late comers
     // Manual refresh for other tabs to prevent unnecessary API calls
     if (status === 'still_out') {
@@ -254,7 +233,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setAllBookings([]);
     }
   }, [wardenLoggedIn, wardenEmail, user?.email, fetchAllBookings]);
-
   const handleWardenAction = useCallback((bookingId, action) => {
     if (wardenLoggedIn) {
       // For wardens, show name input popup
@@ -264,18 +242,15 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       processBookingAction(bookingId, action, null);
     }
   }, [wardenLoggedIn]);
-
   const handleWardenNameSubmit = useCallback(async () => {
     if (!wardenName.trim()) {
       setError('Please enter your name');
       return;
     }
-    
     setWardenNameModal({ open: false, bookingId: null, action: null });
     await processBookingAction(wardenNameModal.bookingId, wardenNameModal.action, null, wardenName);
     setWardenName('');
   }, [wardenName, wardenNameModal]);
-
   const processBookingAction = useCallback(async (bookingId, action, reason, wardenName = null) => {
     try {
       setLoading(true);
@@ -300,7 +275,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       const result = await handleBookingAction(bookingId, newStatus, emailToUse, reason);
       // Refresh all data after any action
       await fetchAllBookings(emailToUse);
-      
       // Force refresh the page data
       setAllBookings([]);
       setTimeout(() => {
@@ -325,11 +299,9 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(false);
     }
   }, [wardenLoggedIn, wardenEmail, selectedStatus, fetchAllBookings, fetchBans, handleBookingAction]);
-
   const handleInTimeChange = useCallback((bookingId, value) => {
     setEditInTime((prev) => ({ ...prev, [bookingId]: value }));
   }, []);
-
   const handleSaveInTime = useCallback(async (bookingId) => {
     setSavingInTimeId(bookingId);
     try {
@@ -349,30 +321,25 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setSavingInTimeId(null);
     }
   }, [editInTime, wardenLoggedIn, wardenEmail, fetchAllBookings]);
-
   // Bookings filtered by status, hostel/warden/admin, but NOT by date
   const hostelFilteredBookings = useMemo(() => {
     // First filter by status
     let statusFiltered = allBookings.filter(booking => 
       (booking.status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
-
     // For wardens, apply hostel permissions
     if (wardenLoggedIn && wardenEmail) {
       const allowedHostelsList = Array.isArray(wardenHostels) ? wardenHostels.map(h => h.trim().toLowerCase()) : [];
-      
       // If warden has no hostels assigned or empty hostels list, show nothing
       if (allowedHostelsList.length === 0) {
         return [];
       }
-      
       statusFiltered = statusFiltered.filter(booking => {
         // Check if booking belongs to warden's assigned hostel
         const bookingHostel = (booking.hostel_name || '').trim().toLowerCase();
         return allowedHostelsList.includes(bookingHostel);
       });
     }
-
     // For non-warden admins with hostel restrictions
     if (!wardenLoggedIn && adminRole === 'warden' && Array.isArray(adminHostels) && adminHostels.length > 0) {
       const normalizedHostels = adminHostels.map(h => h.trim().toLowerCase());
@@ -381,10 +348,8 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         return normalizedHostels.includes('all') || normalizedHostels.includes(bookingHostel);
       });
     }
-    
     return statusFiltered;
   }, [allBookings, selectedStatus, wardenLoggedIn, wardenHostels, wardenEmail, adminRole, adminHostels]);
-
   // Ensure tabCounts is only dependent on hostelFilteredBookings
   const tabCounts = useMemo(() => {
     const counts = {
@@ -401,7 +366,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     });
     return counts;
   }, [hostelFilteredBookings]);
-
   // Function to check if student is late
   const isStudentLate = useCallback((booking) => {
     if ((booking.status || '').toLowerCase() !== 'still_out') return false;
@@ -409,38 +373,30 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     const expectedReturnLocal = new Date(`${booking.in_date}T${booking.in_time}`);
     return new Date() > expectedReturnLocal;
   }, []);
-
   // Function to calculate how late the student is
   const getLateDuration = useCallback((booking) => {
     if (!isStudentLate(booking)) return null;
-    
     const now = new Date();
     const outTime = new Date(`${booking.out_date}T${booking.out_time}`);
     const expectedReturn = new Date(`${booking.in_date}T${booking.in_time}`);
-    
     // Check for impossible time combination
     if (booking.out_date === booking.in_date && outTime > expectedReturn) {
       return null; // Don't show late duration for impossible combinations
     }
-    
     const diffMs = now - expectedReturn;
-    
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
     if (hours > 0) {
       return `${hours}h ${minutes}m late`;
     } else {
       return `${minutes}m late`;
     }
   }, [isStudentLate]);
-
   // Bookings filtered by hostel/warden/admin AND search (no date filter for Still Out)
   const filteredBookings = useMemo(() => {
     let base = hostelFilteredBookings;
     // Note: When searching room numbers on Still Out tab, show ALL still_out records (not just late ones)
     // The "LATE" badge will still appear on cards where applicable
-
     let filtered = base.filter(booking => {
       // Do not apply date range to Still Out
       if (selectedStatus === 'still_out') return true;
@@ -450,7 +406,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       if (endDate && outDate > endDate) return false;
       return true;
     });
-
     // Apply search filter if search is active
     if (searchActive && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -458,21 +413,16 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         booking.room_number && booking.room_number.toLowerCase().includes(query)
       );
     }
-
     // Sort: late students first, then normal bookings
     filtered.sort((a, b) => {
       const aIsLate = isStudentLate(a);
       const bIsLate = isStudentLate(b);
-      
       if (aIsLate && !bIsLate) return -1; // a comes first
       if (!aIsLate && bIsLate) return 1;  // b comes first
       return 0; // both same status, maintain original order
     });
-
     return filtered;
   }, [hostelFilteredBookings, startDate, endDate, searchQuery, searchActive, isStudentLate]);
-  
-
   const sendStillOutAlert = useCallback(async (booking) => {
     try {
       setLoading(true);
@@ -505,14 +455,12 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setLoading(false);
     }
   }, []);
-
   const handleStatusChangeFactory = useCallback((status) => () => handleStatusChange(status), [handleStatusChange]);
   const handleStartDateChange = useCallback((e) => { setStartDate(e.target.value); setPage(1); }, []);
   const handleEndDateChange = useCallback((e) => { setEndDate(e.target.value); setPage(1); }, []);
   const handleToastClose = useCallback(() => setToast({ message: '', type: 'info' }), []);
   const handleInTimeChangeFactory = useCallback((id) => (e) => handleInTimeChange(id, e.target.value), [handleInTimeChange]);
   const handleProcessBookingStillOutConfirmFactory = useCallback((id) => () => processBookingAction(id, 'confirm'), [processBookingAction]);
-
   // Search handlers
   const handleSearchChange = useCallback((e) => {
     const value = e.target.value;
@@ -523,27 +471,120 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       setSearchActive(false);
     }
   }, []);
-
   const handleSearchKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && searchQuery.trim().length >= 3) {
       searchBookings(searchQuery.trim());
     }
   }, [searchQuery, searchBookings]);
-
   const handleSearchClick = useCallback(() => {
     if (searchQuery.trim().length >= 3) {
       searchBookings(searchQuery.trim());
     }
   }, [searchQuery, searchBookings]);
-
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
     setSearchActive(false);
     setAllBookings([]);
   }, []);
-
-
-
+  // Download report as Excel-compatible CSV with date filtering
+  const handleDownloadReport = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Validate date range
+      if (!startDate || !endDate) {
+        setToast({ message: 'Please select both Start Date and End Date for the report', type: 'warning' });
+        setLoading(false);
+        return;
+      }
+      // Fetch all bookings within date range (not filtered by status or pagination)
+      let allowedHostels;
+      if (wardenLoggedIn) {
+        allowedHostels = wardenHostels
+          .filter(h => h && h.trim())
+          .map(h => h.trim());
+        if (allowedHostels.length === 0) {
+          setToast({ message: 'No hostels assigned to your account', type: 'warning' });
+          setLoading(false);
+          return;
+        }
+      }
+      // Fetch all bookings for the date range
+      const { rows: reportBookings } = await fetchBookingsFiltered({
+        status: null, // Get all statuses
+        startDate: startDate,
+        endDate: endDate,
+        hostelFilter: wardenLoggedIn ? allowedHostels : null,
+        page: 1,
+        pageSize: 10000, // Get all records
+        roomNumberSearch: null,
+        adminEmail: wardenLoggedIn ? null : user?.email
+      });
+      if (!reportBookings || reportBookings.length === 0) {
+        setToast({ message: 'No bookings found for the selected date range', type: 'warning' });
+        setLoading(false);
+        return;
+      }
+      // CSV Headers for Excel
+      const headers = [
+        'Booking ID',
+        'Student Name',
+        'Email',
+        'Room Number',
+        'Hostel',
+        'Out Time',
+        'Expected In Time',
+        'Actual In Time',
+        'Status',
+        'Reason',
+        'Handled By',
+        'Handled At',
+        'Created At',
+        'Updated At'
+      ];
+      // Convert bookings to CSV rows
+      const rows = reportBookings.map(booking => [
+        booking.id || '',
+        booking.student_name || '',
+        booking.student_email || '',
+        booking.room_number || '',
+        booking.hostel || '',
+        booking.out_time ? new Date(booking.out_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+        booking.in_time ? new Date(booking.in_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+        booking.actual_in_time ? new Date(booking.actual_in_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+        booking.status || '',
+        booking.reason ? `"${booking.reason.replace(/"/g, '""')}"` : 'No reason provided',
+        booking.handled_by || '',
+        booking.handled_at ? new Date(booking.handled_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+        booking.created_at ? new Date(booking.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+        booking.updated_at ? new Date(booking.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : ''
+      ]);
+      // Create CSV content with UTF-8 BOM for Excel compatibility
+      const csvContent = '\uFEFF' + [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      // Generate filename with date range and hostel info
+      const hostelInfo = wardenLoggedIn ? `_${allowedHostels.join('-')}` : '_All';
+      const filename = `Outing_Report${hostelInfo}_${startDate}_to_${endDate}.csv`;
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setToast({ message: `Report generated: ${reportBookings.length} bookings downloaded`, type: 'success' });
+      setLoading(false);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setToast({ message: 'Failed to generate report: ' + (error.message || 'Unknown error'), type: 'error' });
+      setLoading(false);
+    }
+  }, [startDate, endDate, wardenLoggedIn, wardenHostels, user?.email]);
   // Add handler factories at the top of the component
   const handleProcessBookingConfirm = useCallback((id) => () => handleWardenAction(id, 'confirm'), [handleWardenAction]);
   const handleProcessBookingReject = useCallback((id) => () => {
@@ -560,9 +601,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   };
   const handleSaveInTimeFactory = useCallback((id) => () => handleSaveInTime(id), [handleSaveInTime]);
   const handleSendStillOutAlertFactory = useCallback((booking) => () => sendStillOutAlert(booking), [sendStillOutAlert]);
-
   if (loading) return <div className="loading">Loading...<br/>{error && <span style={{color:'red'}}>{error}</span>}</div>;
-  
   // Add error boundary to prevent white screen
   if (error && !allBookings.length) {
     return (
@@ -577,7 +616,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       </div>
     );
   }
-
   // Always render something to prevent white screen
   return (
     <div className="pending-bookings-page">
@@ -585,7 +623,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       <h2>Outing Requests</h2>
       {success && <div className="success-message">{success}</div>}
       {error && <div className="error-message">{error}</div>}
-      
       <div className="status-tabs">
         <button
           className={selectedStatus === 'waiting' ? 'active' : ''}
@@ -612,7 +649,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           Rejected ({tabCounts.rejected})
         </button>
       </div>
-      
       <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div>
           <label>Start Date: </label>
@@ -650,40 +686,46 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
             </button>
           )}
         </div>
+        <button 
+          className="download-button report-button"
+          onClick={handleDownloadReport}
+          disabled={!startDate || !endDate || loading}
+          title={!startDate || !endDate ? "Select date range to generate report" : "Generate and download report for selected date range"}
+        >
+          � Generate Report
+        </button>
         {/* Late-only checkbox removed: always showing late students in Still Out */}
       </div>
+      {(!startDate || !endDate) && (
+        <div className="report-info-message">
+          ℹ️ Select Start Date and End Date to generate a comprehensive report of all bookings in that period
+        </div>
+      )}
       {searchActive && (
         <div className="search-active-indicator">
           🔍 Searching for room number: <strong>{searchQuery}</strong> ({filteredBookings.length} results found)
         </div>
       )}
-      
       {!searchActive && selectedStatus === 'waiting' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#fff3cd', borderRadius: 4, textAlign: 'center' }}>
           <p><strong>Waiting Area:</strong> Showing today's pending requests only. Use search to find older requests by room number.</p>
         </div>
       )}
-      
       {!searchActive && selectedStatus === 'confirmed' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#d1ecf1', borderRadius: 4, textAlign: 'center' }}>
           <p><strong>Confirmed Bookings:</strong> Enter a room number to search for confirmed bookings.</p>
         </div>
       )}
-      
       {!searchActive && selectedStatus === 'rejected' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f8d7da', borderRadius: 4, textAlign: 'center' }}>
           <p><strong>Rejected Bookings:</strong> Enter a room number to search for rejected bookings.</p>
         </div>
       )}
-      
       {!searchActive && selectedStatus === 'still_out' && (
         <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f8d7da', borderRadius: 4, textAlign: 'center' }}>
           <p><strong>Still Out - Late Students:</strong> Showing students whose expected return time has passed (last 7 days). Use room number search or date filters to find older records.</p>
         </div>
       )}
-      
-
-      
       {filteredBookings.length > 0 ? (
         <div className="bookings-list">
           {filteredBookings.map(booking => (
@@ -703,9 +745,7 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
                     LATE
                   </span>
                 )}
-
               </div>
-
               <div className="booking-info">
                 <div className="info-group">
                   <h3>User Details</h3>
@@ -830,7 +870,6 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
           )}
         </div>
       )}
-
       {/* Pagination controls (hidden for Still Out) */}
       {selectedStatus !== 'still_out' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', marginTop: 16 }}>
@@ -884,5 +923,4 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
     </div>
   );
 };
-
 export default PendingBookings; 

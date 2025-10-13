@@ -1,5 +1,3 @@
-/* ===== Modern Professional Login Page ===== */
-
 .login-page {
   width: 100%;
   min-height: 100vh;
@@ -11,8 +9,6 @@
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
-
-/* Animated Background Shapes */
 .bg-shapes {
   position: absolute;
   width: 100%;
@@ -20,14 +16,12 @@
   overflow: hidden;
   z-index: 0;
 }
-
 .shape {
   position: absolute;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   animation: float 20s ease-in-out infinite;
 }
-
 .shape-1 {
   width: 300px;
   height: 300px;
@@ -35,7 +29,6 @@
   left: -150px;
   animation-delay: 0s;
 }
-
 .shape-2 {
   width: 200px;
   height: 200px;
@@ -43,7 +36,6 @@
   right: 10%;
   animation-delay: 5s;
 }
-
 .shape-3 {
   width: 150px;
   height: 150px;
@@ -51,14 +43,11 @@
   right: -75px;
   animation-delay: 10s;
 }
-
 @keyframes float {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33% { transform: translate(30px, -30px) scale(1.1); }
   66% { transform: translate(-20px, 20px) scale(0.9); }
 }
-
-/* Main Wrapper */
 .login-wrapper {
   position: relative;
   z-index: 1;
@@ -71,8 +60,6 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
-
-/* Left Side - Branding */
 .login-brand-section {
   flex: 1;
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -84,7 +71,6 @@
   position: relative;
   overflow: hidden;
 }
-
 .login-brand-section::before {
   content: '';
   position: absolute;
@@ -95,29 +81,24 @@
   left: -50%;
   animation: rotate 30s linear infinite;
 }
-
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
 .brand-content {
   position: relative;
   z-index: 1;
 }
-
 .logo-container {
   margin-bottom: 30px;
   animation: fadeInDown 0.8s ease;
 }
-
 .srm-logo {
   width: 120px;
   height: 120px;
   object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
 }
-
 .brand-title {
   font-size: 32px;
   font-weight: 700;
@@ -125,7 +106,6 @@
   line-height: 1.2;
   animation: fadeInDown 0.8s ease 0.2s both;
 }
-
 .brand-subtitle {
   font-size: 18px;
   opacity: 0.9;
@@ -133,24 +113,20 @@
   font-weight: 300;
   animation: fadeInDown 0.8s ease 0.4s both;
 }
-
 .features-list {
   margin-bottom: 40px;
   animation: fadeInUp 0.8s ease 0.6s both;
 }
-
 .feature-item {
   display: flex;
   align-items: center;
   margin-bottom: 18px;
   animation: slideInLeft 0.6s ease both;
 }
-
 .feature-item:nth-child(1) { animation-delay: 0.7s; }
 .feature-item:nth-child(2) { animation-delay: 0.8s; }
 .feature-item:nth-child(3) { animation-delay: 0.9s; }
 .feature-item:nth-child(4) { animation-delay: 1s; }
-
 .feature-icon {
   width: 32px;
   height: 32px;
@@ -163,12 +139,10 @@
   font-weight: bold;
   font-size: 18px;
 }
-
 .feature-text {
   font-size: 16px;
   opacity: 0.95;
 }
-
 .info-banner {
   display: flex;
   align-items: center;
@@ -179,21 +153,17 @@
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.8s ease 1.1s both;
 }
-
 .info-icon {
   width: 24px;
   height: 24px;
   margin-right: 12px;
   flex-shrink: 0;
 }
-
 .info-banner span {
   font-size: 14px;
   opacity: 0.95;
   line-height: 1.4;
 }
-
-/* Right Side - Login Form */
 .login-form-section {
   flex: 1;
   padding: 60px 50px;
@@ -202,7 +172,6 @@
   justify-content: center;
   background: #fafbfc;
 }
-
 .login-card {
   background: white;
   border-radius: 16px;
@@ -210,33 +179,26 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   animation: fadeInRight 0.8s ease;
 }
-
 .card-header {
   text-align: center;
   margin-bottom: 32px;
 }
-
 .login-title {
   font-size: 28px;
   font-weight: 700;
   color: #1a202c;
   margin-bottom: 8px;
 }
-
 .login-subtitle {
   font-size: 15px;
   color: #718096;
 }
-
 .auth-container {
   margin-bottom: 24px;
 }
-
-/* Custom Auth Button Styling */
 :global(.custom-auth-container) {
   width: 100%;
 }
-
 :global(.custom-auth-button) {
   width: 100%;
   height: 52px !important;
@@ -254,25 +216,20 @@
   color: #2d3748 !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
-
 :global(.custom-auth-button:hover) {
   background-color: #f7fafc !important;
   border-color: #1a73e8 !important;
   box-shadow: 0 4px 16px rgba(26, 115, 232, 0.15) !important;
   transform: translateY(-2px) !important;
 }
-
 :global(.custom-auth-button:active) {
   transform: translateY(0) !important;
 }
-
-/* Login Footer with Security Badge */
 .login-footer {
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid #e2e8f0;
 }
-
 .security-badge {
   display: flex;
   align-items: center;
@@ -281,7 +238,6 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
-
 .lock-icon {
   width: 36px;
   height: 36px;
@@ -289,48 +245,38 @@
   margin-right: 14px;
   flex-shrink: 0;
 }
-
 .security-text {
   display: flex;
   flex-direction: column;
 }
-
 .security-title {
   font-size: 14px;
   font-weight: 600;
   color: #2d3748;
   margin-bottom: 2px;
 }
-
 .security-desc {
   font-size: 12px;
   color: #718096;
 }
-
-/* Help Section */
 .help-section {
   margin-top: 24px;
   text-align: center;
 }
-
 .help-text {
   font-size: 14px;
   color: #718096;
 }
-
 .help-link {
   color: #1a73e8;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
 }
-
 .help-link:hover {
   color: #1557b0;
   text-decoration: underline;
 }
-
-/* Animations */
 @keyframes fadeInDown {
   from {
     opacity: 0;
@@ -341,7 +287,6 @@
     transform: translateY(0);
   }
 }
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -352,7 +297,6 @@
     transform: translateY(0);
   }
 }
-
 @keyframes fadeInRight {
   from {
     opacity: 0;
@@ -363,7 +307,6 @@
     transform: translateX(0);
   }
 }
-
 @keyframes slideInLeft {
   from {
     opacity: 0;
@@ -374,157 +317,122 @@
     transform: translateX(0);
   }
 }
-
-/* Responsive Design */
 @media (max-width: 968px) {
   .login-wrapper {
     flex-direction: column;
     max-width: 500px;
     min-height: auto;
   }
-
   .login-brand-section {
     padding: 40px 30px;
   }
-
   .brand-title {
     font-size: 26px;
   }
-
   .features-list {
     margin-bottom: 30px;
   }
-
   .login-form-section {
     padding: 40px 30px;
   }
-
   .login-card {
     padding: 30px;
   }
 }
-
 @media (max-width: 640px) {
   .login-wrapper {
     width: 95%;
     margin: 10px;
     min-height: auto;
   }
-
   .login-brand-section {
     padding: 24px 20px 20px 20px;
   }
-
   .logo-container {
     margin-bottom: 16px;
   }
-
   .srm-logo {
     width: 70px;
     height: 70px;
   }
-
   .brand-title {
     font-size: 20px;
     margin-bottom: 8px;
   }
-
   .brand-subtitle {
     font-size: 14px;
     margin-bottom: 20px;
   }
-
   .features-list {
     margin-bottom: 20px;
   }
-
   .feature-item {
     margin-bottom: 10px;
   }
-
   .feature-icon {
     width: 26px;
     height: 26px;
     margin-right: 10px;
     font-size: 14px;
   }
-
   .feature-text {
     font-size: 13px;
   }
-
   .info-banner {
     padding: 10px 12px;
   }
-
   .info-icon {
     width: 18px;
     height: 18px;
     margin-right: 8px;
   }
-
   .info-banner span {
     font-size: 12px;
   }
-
   .login-form-section {
     padding: 20px;
   }
-
   .login-card {
     padding: 20px;
   }
-
   .card-header {
     margin-bottom: 20px;
   }
-
   .login-title {
     font-size: 22px;
     margin-bottom: 6px;
   }
-
   .login-subtitle {
     font-size: 14px;
   }
-
   .auth-container {
     margin-bottom: 18px;
   }
-
   .login-footer {
     margin-top: 18px;
     padding-top: 18px;
   }
-
   .security-badge {
     padding: 12px;
   }
-
   .lock-icon {
     width: 30px;
     height: 30px;
     margin-right: 10px;
   }
-
   .security-title {
     font-size: 13px;
   }
-
   .security-desc {
     font-size: 11px;
   }
-
   .help-section {
     margin-top: 16px;
   }
-
   .help-text {
     font-size: 12px;
   }
 }
-
-/* Legacy styles for backward compatibility - can be removed if not used elsewhere */
 .error-message {
   margin-top: 20px;
   padding: 12px;
@@ -534,7 +442,6 @@
   text-align: center;
   font-size: 14px;
 }
-
 .success-message {
   margin-top: 20px;
   padding: 12px;
@@ -596,7 +503,6 @@
 .arch-gate-cancel:hover {
   background: #e0e0e0;
 } 
-
 @media (max-width: 600px) {
   .login-container {
     padding: 8px;
@@ -621,121 +527,87 @@
     font-size: 0.95em;
   }
 }
-
-/* ===== DARK MODE STYLES ===== */
-
-/* Dark Mode Theme */
 body.dark-mode .login-page {
   background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
 }
-
 body.dark-mode .bg-shapes .shape {
   background: rgba(102, 126, 234, 0.06);
 }
-
-/* Dark Mode - Brand Section */
 body.dark-mode .login-brand-section {
   background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
 }
-
 body.dark-mode .brand-title {
   color: #ffffff;
 }
-
 body.dark-mode .brand-subtitle {
   color: rgba(255, 255, 255, 0.85);
 }
-
 body.dark-mode .feature-icon {
   background: rgba(255, 255, 255, 0.15);
 }
-
 body.dark-mode .feature-text {
   color: rgba(255, 255, 255, 0.9);
 }
-
 body.dark-mode .info-banner {
   background: rgba(255, 255, 255, 0.1);
   border-left-color: rgba(255, 255, 255, 0.4);
 }
-
 body.dark-mode .info-banner span {
   color: rgba(255, 255, 255, 0.9);
 }
-
-/* Dark Mode - Login Form Section */
 body.dark-mode .login-form-section {
   background: #1a1a2e;
 }
-
 body.dark-mode .login-card {
   background: #252541;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
-
 body.dark-mode .login-title {
   color: #ffffff;
 }
-
 body.dark-mode .login-subtitle {
   color: #a0aec0;
 }
-
-/* Dark Mode - Auth Button */
 body.dark-mode :global(.custom-auth-button) {
   background: #2d2d44 !important;
   border-color: #3d3d5c !important;
   color: #ffffff !important;
 }
-
 body.dark-mode :global(.custom-auth-button:hover) {
   background: #353551 !important;
   border-color: #667eea !important;
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3) !important;
 }
-
-/* Dark Mode - Security Badge */
 body.dark-mode .login-footer {
   border-top-color: #3d3d5c;
 }
-
 body.dark-mode .security-badge {
   background: #2d2d44;
   border-color: #3d3d5c;
 }
-
 body.dark-mode .security-title {
   color: #ffffff;
 }
-
 body.dark-mode .security-desc {
   color: #a0aec0;
 }
-
 body.dark-mode .lock-icon {
   color: #48bb78;
 }
-
-/* Dark Mode - Help Section */
 body.dark-mode .help-text {
   color: #a0aec0;
 }
-
 body.dark-mode .help-link {
   color: #667eea;
 }
-
 body.dark-mode .help-link:hover {
   color: #7c8cf5;
 }
-
-/* Dark Mode - Error/Success Messages */
 body.dark-mode .error-message {
   background-color: #2d1f1f;
   color: #f87171;
   border: 1px solid #3d2828;
 }
-
 body.dark-mode .success-message {
   background-color: #1f2d1f;
   color: #4ade80;

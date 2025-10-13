@@ -2,14 +2,12 @@ import React, { useEffect, useReducer, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { fetchAdminInfoByEmail } from '../services/api';
 import * as XLSX from 'xlsx';
-
 // Minimal API calls colocated to avoid large diffs in services
 async function listWardens() {
     const { data, error } = await supabase.from('wardens').select('id,email,hostels').order('email');
 	if (error) throw new Error(error.message || 'Failed to list wardens');
 	return data || [];
 }
-
 async function addWarden(email, hostels) {
     // Upsert to avoid duplicate key violation
     const { error } = await supabase.from('wardens').upsert(
@@ -18,17 +16,14 @@ async function addWarden(email, hostels) {
     );
 	if (error) throw new Error(error.message || 'Failed to add warden');
 }
-
 async function updateWarden(email, hostels) {
 	const { error } = await supabase.from('wardens').update({ hostels }).eq('email', email.toLowerCase());
 	if (error) throw new Error(error.message || 'Failed to update warden');
 }
-
 async function deleteWarden(email) {
 	const { error } = await supabase.from('wardens').delete().eq('email', email.toLowerCase());
 	if (error) throw new Error(error.message || 'Failed to delete warden');
 }
-
 const initialState = {
     rows: [],
     loading: false,
@@ -40,7 +35,6 @@ const initialState = {
     search: '',
     upload: { inProgress: false, total: 0, processed: 0, eta: '', message: '' },
 };
-
 function reducer(state, action) {
 	switch (action.type) {
 		case 'SET':
@@ -53,11 +47,9 @@ function reducer(state, action) {
 			return state;
 	}
 }
-
 const WardenManagement = () => {
 	const [state, dispatch] = useReducer(reducer, initialState);
     const { rows, loading, error, success, form, isSuperAdmin, hostelOptions } = state;
-
 	const load = useCallback(async () => {
 		dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
 		try {
@@ -79,9 +71,7 @@ const WardenManagement = () => {
 			dispatch({ type: 'SET', payload: { loading: false } });
 		}
 	}, []);
-
 	useEffect(() => { load(); }, [load]);
-
     const handleAdd = async () => {
 		try {
 			dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
@@ -100,7 +90,6 @@ const WardenManagement = () => {
 			dispatch({ type: 'SET', payload: { loading: false } });
 		}
 	};
-
     const handleUpdate = async (email) => {
 		try {
 			dispatch({ type: 'SET', payload: { loading: true, error: '', success: '' } });
@@ -116,7 +105,6 @@ const WardenManagement = () => {
 			dispatch({ type: 'SET', payload: { loading: false } });
 		}
 	};
-
 	const handleDelete = async (email) => {
 		if (!window.confirm(`Delete warden ${email}?`)) return;
 		try {
@@ -130,7 +118,6 @@ const WardenManagement = () => {
 			dispatch({ type: 'SET', payload: { loading: false } });
 		}
 	};
-
     const handleDeleteAll = async () => {
         if (!window.confirm('Delete ALL wardens? This cannot be undone.')) return;
         const text = window.prompt('Type DELETE ALL to confirm');
@@ -150,7 +137,6 @@ const WardenManagement = () => {
             dispatch({ type: 'SET', payload: { loading: false } });
         }
     };
-
     const handleDownloadTemplate = () => {
         const templateData = [
             { 'Warden Email': 'warden1@srmist.edu.in', 'Hostel': 'mullai' },
@@ -165,7 +151,6 @@ const WardenManagement = () => {
         XLSX.utils.book_append_sheet(wb, hostelsSheet, 'Hostels');
         XLSX.writeFile(wb, 'warden_template.xlsx');
     };
-
     const handleBulkUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -215,7 +200,6 @@ const WardenManagement = () => {
             e.target.value = '';
         }
     };
-
 	return (
 		<div style={{ padding: 24 }}>
 			<h2>Super Admin: Warden Management</h2>
@@ -241,7 +225,6 @@ const WardenManagement = () => {
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={handleBulkUpload} />
                 <button onClick={handleDeleteAll} type="button" className="btn-delete">Delete All</button>
             </div>
-
             {state.upload.inProgress && (
                 <div style={{ marginBottom: 12, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
                     <div style={{ marginBottom: 6 }}>Uploading wardens... {state.upload.processed}/{state.upload.total} • ETA: {state.upload.eta}</div>
@@ -250,7 +233,6 @@ const WardenManagement = () => {
                     </div>
                 </div>
             )}
-
             <div style={{ marginBottom: 12 }}>
                 <input
                     placeholder="Search by email..."
@@ -259,7 +241,6 @@ const WardenManagement = () => {
                     style={{ padding: 8, minWidth: 320 }}
                 />
             </div>
-
 			<table style={{ width: '100%', borderCollapse: 'collapse' }}>
 				<thead>
 					<tr>
@@ -291,5 +272,4 @@ const WardenManagement = () => {
 		</div>
 	);
 };
-
 export default WardenManagement;

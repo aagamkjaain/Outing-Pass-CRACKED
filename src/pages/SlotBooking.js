@@ -11,7 +11,6 @@ import {
 } from '../services/api';
 import './SlotBooking.css';
 import { supabase } from '../supabaseClient';
-
 const initialState = {
   bookingForm: {
     name: '',
@@ -38,7 +37,6 @@ const initialState = {
   blockBooking: false,
   waitingBooking: null
 };
-
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_FIELD':
@@ -50,7 +48,6 @@ function reducer(state, action) {
     case 'RESET_BOOKING_FORM':
       return { ...state, bookingForm: { ...initialState.bookingForm, email: state.bookingForm.email } };
     case 'SET_USER_INFO':
-      
       return { 
         ...state, 
         user: action.payload.user, 
@@ -72,18 +69,15 @@ function reducer(state, action) {
       return state;
   }
 }
-
 const SlotBooking = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
     bookingForm, loading, bookedSlots, error, success, apiError, user, isAdmin,
     studentInfoExists, banInfo, blockBooking, waitingBooking
   } = state;
-
   const fetchUserBookings = useCallback(async (email) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      // Try a small TTL cache to avoid refetching immediately on mount
       const cacheKey = `user_bookings_${email}`;
       const cachedRaw = sessionStorage.getItem(cacheKey);
       if (cachedRaw) {
@@ -100,7 +94,6 @@ const SlotBooking = () => {
           }
         } catch {}
       }
-
       const bookingsData = await fetchBookedSlots(email, { limit: 50, minimal: true });
       dispatch({ 
         type: 'SET_BOOKINGS', 
@@ -119,13 +112,11 @@ const SlotBooking = () => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, []);
-
   useEffect(() => {
     const checkServerHealth = async () => {
       const isHealthy = await checkApiHealth();
       dispatch({ type: 'SET_FIELD', field: 'apiError', value: !isHealthy });
     };
-    
     const initializeUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -141,8 +132,6 @@ const SlotBooking = () => {
             parentEmail = info.parent_email || '';
             parentPhone = info.parent_phone || '';
             dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: true });
-            
-            
             dispatch({ 
               type: 'SET_USER_INFO', 
               payload: { 
@@ -173,56 +162,44 @@ const SlotBooking = () => {
       } catch (error) {
       }
     };
-    
     checkServerHealth();
     initializeUser();
-    
     const today = new Date().toISOString().split("T")[0];
     const dateInput = document.getElementById("date");
     if (dateInput) {
       dateInput.setAttribute("min", today);
     }
   }, [fetchUserBookings]);
-
   useEffect(() => {
     const block = (bookedSlots || []).some(b => b.status === 'waiting' || b.status === 'still_out');
     dispatch({ type: 'SET_FIELD', field: 'blockBooking', value: block });
   }, [bookedSlots]);
-
   const handleBookingChange = useCallback((e) => {
     const { name, value } = e.target;
     if (name === 'email') return;
     dispatch({ type: 'SET_ERROR', payload: '' });
     dispatch({ type: 'SET_SUCCESS', payload: '' });
     dispatch({ type: 'SET_BOOKING_FIELD', field: name, value });
-    
-    // Real-time validation for date and time fields
     if (name === 'outDate' || name === 'outTime' || name === 'inDate' || name === 'inTime') {
       const currentForm = { ...bookingForm, [name]: value };
-      
-      // Only validate if both out and in dates/times are filled
       if (currentForm.outDate && currentForm.outTime && currentForm.inDate && currentForm.inTime) {
         try {
           const outDateTime = new Date(`${currentForm.outDate}T${currentForm.outTime}`);
           const inDateTime = new Date(`${currentForm.inDate}T${currentForm.inTime}`);
-          
           if (inDateTime <= outDateTime) {
             dispatch({ type: 'SET_ERROR', payload: 'In date and time must be after out date and time.' });
           }
         } catch (error) {
-          // Ignore validation errors during typing
         }
       }
     }
   }, [bookingForm]);
-
   const handleRetryConnection = async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     const isHealthy = await checkApiHealth();
     dispatch({ type: 'SET_FIELD', field: 'apiError', value: !isHealthy });
     dispatch({ type: 'SET_LOADING', payload: false });
   };
-
   const handleBookingSubmit = useCallback(async (e) => {
     e.preventDefault();
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -238,7 +215,6 @@ const SlotBooking = () => {
       if (!studentInfoExists) {
         throw new Error('Student information not found. Please contact administration to add your details.');
       }
-      
       if (!bookingForm.name || !bookingForm.email || !bookingForm.roomNumber || !bookingForm.hostelName || !bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime || !bookingForm.parentEmail) {
         throw new Error('Please fill all required fields.');
       }
@@ -246,24 +222,19 @@ const SlotBooking = () => {
       if (!emailRegex.test(bookingForm.parentEmail)) {
         throw new Error('Please enter a valid parent email address.');
       }
-      
       // Date and time validation
       const outDateTime = new Date(`${bookingForm.outDate}T${bookingForm.outTime}`);
       const inDateTime = new Date(`${bookingForm.inDate}T${bookingForm.inTime}`);
       const now = new Date();
-      
       // Check if out date is not in the past
       if (outDateTime < now) {
         throw new Error('Out date and time cannot be in the past.');
       }
-      
       // Check if in date is not before out date
       if (inDateTime < outDateTime) {
         throw new Error('In date and time must be after out date and time.');
       }
-      
       // No duration limit - students can request outing for any duration
-      
       const bookingData = {
         name: bookingForm.name,
         email: bookingForm.email,
@@ -292,7 +263,6 @@ const SlotBooking = () => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [bookingForm, fetchUserBookings, bookedSlots]);
-
   const handleDeleteBooking = useCallback(async (bookingId) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: '' });
@@ -307,7 +277,6 @@ const SlotBooking = () => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [bookingForm.email, fetchUserBookings]);
-
   const handleDeleteWaiting = useCallback(async () => {
     if (!waitingBooking) return;
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -323,32 +292,25 @@ const SlotBooking = () => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [waitingBooking, bookingForm.email, fetchUserBookings]);
-
   const latestOtpBooking = useMemo(() =>
     (bookedSlots || [])
       .filter(b => (b.status === 'still_out' || b.status === 'confirmed') && b.otp)
       .sort((a, b) => new Date(b.created_at || b.out_date || b.in_date) - new Date(a.created_at || a.out_date || a.in_date))[0]
   , [bookedSlots]);
-
   const currentBooking = useMemo(() =>
     (bookedSlots || [])
       .filter(b => b.status === 'waiting' || b.status === 'still_out')
       .sort((a, b) => new Date(b.created_at || b.out_date || b.in_date) - new Date(a.created_at || a.out_date || a.in_date))[0]
   , [bookedSlots]);
-
   const oldConfirmedBookings = useMemo(() =>
     (bookedSlots || [])
       .filter(b => b.status === 'confirmed')
   , [bookedSlots]);
-
   const oldPastBookings = useMemo(() =>
     (bookedSlots || [])
       .filter(b => b.status === 'confirmed' || b.status === 'rejected')
   , [bookedSlots]);
-
   const handleDeleteBookingFactory = useCallback((id) => () => handleDeleteBooking(id), [handleDeleteBooking]);
-
-  // Helper function to check if current form has valid times
   const hasValidTimes = useMemo(() => {
     if (!bookingForm.outDate || !bookingForm.outTime || !bookingForm.inDate || !bookingForm.inTime) {
       return true; // Don't show error if fields are empty
@@ -361,7 +323,6 @@ const SlotBooking = () => {
       return true; // Don't show error if dates are invalid
     }
   }, [bookingForm.outDate, bookingForm.outTime, bookingForm.inDate, bookingForm.inTime]);
-
   const handleGenerateOtp = useCallback(async (bookingId) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: '' });
@@ -369,7 +330,6 @@ const SlotBooking = () => {
     try {
       const result = await generateOtpForBooking(bookingId);
       dispatch({ type: 'SET_SUCCESS', payload: `OTP generated successfully: ${result.otp}` });
-      // Refresh bookings to show the new OTP
       await fetchUserBookings(bookingForm.email);
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to generate OTP' });
@@ -377,11 +337,9 @@ const SlotBooking = () => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [bookingForm.email, fetchUserBookings]);
-
   return (
     <div className="slot-booking-container">
       <h2>Request Outing</h2>
-      
       {banInfo && (
         <div style={{ color: 'red', fontWeight: 600, marginBottom: 24, fontSize: 18 }}>
           You are banned from making outing requests until {banInfo.till_date}.
@@ -392,7 +350,6 @@ const SlotBooking = () => {
           )}
         </div>
       )}
-      
       {blockBooking && (
         <div style={{ color: 'red', fontWeight: 600, marginBottom: 24, fontSize: 18 }}>
           You already have a pending or active outing request. Please complete or delete it before making a new one.
@@ -405,7 +362,6 @@ const SlotBooking = () => {
           )}
         </div>
       )}
-      
       <form onSubmit={handleBookingSubmit} className="booking-form" style={{ pointerEvents: blockBooking ? 'none' : 'auto', opacity: blockBooking ? 0.5 : 1 }}>
         <label htmlFor="name">Full Name:</label>
         <input 
@@ -419,7 +375,6 @@ const SlotBooking = () => {
           required
           placeholder="Enter your full name"
         />
-
         <label htmlFor="email">Email (SRM):</label>
         <input 
           type="email" 
@@ -430,8 +385,6 @@ const SlotBooking = () => {
           disabled
           className="readonly-input"
         />
-
-
         <label htmlFor="roomNumber">Room Number:</label>
           <input
             type="text"
@@ -443,7 +396,6 @@ const SlotBooking = () => {
             placeholder="Enter your room number"
             disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
           />
-
         <label htmlFor="hostelName">Hostel Name:</label>
           <input
             type="text"
@@ -456,7 +408,6 @@ const SlotBooking = () => {
             required
             placeholder="Hostel name from student info"
           />
-
         <div className="form-group">
           <label htmlFor="outDate">Out Date:</label>
           <input
@@ -529,7 +480,6 @@ const SlotBooking = () => {
             disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
           />
         </div>
-
         <label htmlFor="parentEmail">Parent Email:</label>
         <input
           type="email"
@@ -541,7 +491,6 @@ const SlotBooking = () => {
           placeholder="Enter parent email address"
           disabled={(!isAdmin && !studentInfoExists) || !!bookingForm.parentEmail}
         />
-
         <label htmlFor="parentPhone">Parent Phone:</label>
         <input
           type="text"
@@ -552,7 +501,6 @@ const SlotBooking = () => {
           disabled
           className="readonly-input"
         />
-
         <div className="button-container">
           <button 
             type="submit"
@@ -575,7 +523,6 @@ const SlotBooking = () => {
           </button>
         </div>
       </form>
-
       {apiError && (
         <div className="error-container">
           <div className="error-message">
@@ -591,7 +538,6 @@ const SlotBooking = () => {
           </div>
         </div>
       )}
-      
       {error && (
         <div className="error-message" style={{
           position: 'sticky',
@@ -608,13 +554,11 @@ const SlotBooking = () => {
           {error}
         </div>
       )}
-      
       {success && (
         <div className="success-message">
           {success}
         </div>
       )}
-      
       {/* Render current request (left) and OTP (right) side by side at the top, then past confirmed outings below */}
       <div style={{ margin: '32px 0' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, marginBottom: 32, alignItems: 'flex-start' }}>
@@ -666,7 +610,6 @@ const SlotBooking = () => {
                 )}
           </div>
             ) : (
-              // Placeholder to align OTP container
               <div style={{ height: 60, marginBottom: 0, visibility: 'hidden' }}></div>
                         )}
                       </div>
@@ -719,9 +662,7 @@ const SlotBooking = () => {
           </div>
         )}
       </div>
-      
     </div>
   );
 };
-
 export default SlotBooking;

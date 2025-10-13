@@ -3,7 +3,6 @@ import { addOrUpdateStudentInfo, fetchAllStudentInfo, searchStudentInfoWithHoste
 import { supabase } from '../supabaseClient';
 import { getWardenContext } from '../utils/wardenHostels';
 import * as XLSX from 'xlsx';
-
 const initialState = {
   studentInfo: [],
   editing: null,
@@ -26,7 +25,6 @@ const initialState = {
 const CACHE_KEY = 'admin_student_info_cache_v1';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const CACHE_MAX_ENTRIES = 50;
-
 function readCache() {
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -34,11 +32,9 @@ function readCache() {
     return JSON.parse(raw);
   } catch { return { entries: {} }; }
 }
-
 function writeCache(cache) {
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
-
 function setCacheEntry(query, rows) {
   const cache = readCache();
   const now = Date.now();
@@ -57,7 +53,6 @@ function setCacheEntry(query, rows) {
   cache.entries[query] = { ts: now, rows };
   writeCache(cache);
 }
-
 function getCacheEntry(query) {
   const cache = readCache();
   const entry = cache.entries?.[query];
@@ -65,8 +60,6 @@ function getCacheEntry(query) {
   if (Date.now() - entry.ts > CACHE_TTL_MS) return null;
   return entry.rows || null;
 }
-
-
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_FIELD':
@@ -97,17 +90,14 @@ function reducer(state, action) {
       return state;
   }
 }
-
 const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
     studentInfo, editing, form, loading, error, success, search, searchQuery, searchActive, adminEmail,
     adminRole, uploadMessage, uploadError, banModal, banStatuses, unbanLoading
   } = state;
-  
   // Resolve warden context (props take priority over sessionStorage)
   const { wardenLoggedIn, wardenHostels } = getWardenContext(propWardenHostels);
-
   const fetchBans = useCallback(async () => {
     const allBans = await fetchAllBans();
     const statuses = {};
@@ -118,7 +108,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     }
     dispatch({ type: 'SET_FIELD', field: 'banStatuses', value: statuses });
   }, []);
-
   const loadStudentInfo = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_FIELD', field: 'error', value: '' });
@@ -132,13 +121,11 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [fetchBans]);
-
   const searchStudentInfo = useCallback(async (searchQuery) => {
     if (searchQuery.length < 6) {
       dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
       return;
     }
-    
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_FIELD', field: 'error', value: '' });
     try {
@@ -146,22 +133,18 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       const allowedHostels = ((wardenLoggedIn || isWarden) && wardenHostels && wardenHostels.length > 0) 
         ? wardenHostels 
         : undefined;
-
       // Auto-append domain for fast, precise search when first 6 chars are entered
       let term = (searchQuery || '').trim();
       if (term.length >= 6 && !term.includes('@')) {
         term = `${term}@srmist.edu.in`;
       }
-
       // Cache-first: show cached result immediately if fresh
       const cached = getCacheEntry(term);
       if (cached) {
         dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: cached });
       }
-
       // Reflect the effective query in UI
       dispatch({ type: 'SET_FIELD', field: 'searchQuery', value: term });
-
       // Use server-side search with hostel filtering
       const result = await searchStudentInfoWithHostels(term, allowedHostels, { page: 1, pageSize: 25, minimal: true, includeCount: false });
       const rows = Array.isArray(result) ? result : (result?.rows || []);
@@ -176,7 +159,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [fetchBans, isWarden, wardenHostels]);
-
   useEffect(() => {
     // Only initialize admin info, don't load student data
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -187,7 +169,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       }
     });
   }, []);
-
   const handleEdit = useCallback((info) => {
     dispatch({
       type: 'START_EDIT',
@@ -202,19 +183,15 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       }
     });
   }, []);
-
   const handleAddNew = useCallback(() => {
     dispatch({ type: 'START_ADD_NEW' });
   }, []);
-
   const handleCancel = useCallback(() => {
     dispatch({ type: 'CANCEL_EDIT' });
   }, []);
-
   const handleChange = useCallback((e) => {
     dispatch({ type: 'SET_FORM_FIELD', field: e.target.name, value: e.target.value });
   }, []);
-
   const handleSave = useCallback(async (e) => {
     e.preventDefault();
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -228,7 +205,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to save student info' });
     }
   }, [form, adminEmail, loadStudentInfo]);
-
   const handleDelete = useCallback(async (info) => {
     if (!window.confirm(`Are you sure you want to delete info for ${info.student_email}?`)) return;
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -243,7 +219,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to delete student info' });
     }
   }, [loadStudentInfo]);
-
   const handleExcelUpload = async (event) => {
     dispatch({ type: 'SET_FIELD', field: 'uploadMessage', value: '' });
     dispatch({ type: 'SET_FIELD', field: 'uploadError', value: '' });
@@ -277,7 +252,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     if (successCount > 0) dispatch({ type: 'SET_FIELD', field: 'uploadMessage', value: `${successCount} row(s) added/updated successfully.` });
     if (errorCount > 0) dispatch({ type: 'SET_FIELD', field: 'uploadError', value: `${errorCount} row(s) failed to add/update.` });
   };
-
   const handleBanSubmit = async () => {
     if (!banModal.from || !banModal.till) {
       dispatch({ type: 'SET_ERROR', payload: 'Please select both From and Till dates' });
@@ -308,7 +282,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
-
   const handleUnban = useCallback(async (student_email) => {
     if (!banStatuses[student_email]) return;
     dispatch({ type: 'SET_FIELD', field: 'unbanLoading', value: { ...unbanLoading, [student_email]: true } });
@@ -322,12 +295,10 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_FIELD', field: 'unbanLoading', value: { ...unbanLoading, [student_email]: false } });
     }
   }, [banStatuses, fetchBans, unbanLoading]);
-
   const handleEditFactory = useCallback((info) => () => handleEdit(info), [handleEdit]);
   const handleDeleteFactory = useCallback((info) => () => handleDelete(info), [handleDelete]);
   const handleBanModalFactory = useCallback((info) => () => dispatch({ type: 'OPEN_BAN_MODAL', payload: info }), []);
   const handleUnbanFactory = useCallback((email) => () => handleUnban(email), [handleUnban]);
-
   // Download template handler
   const handleDownloadTemplate = useCallback(async () => {
     try {
@@ -338,7 +309,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to download template' });
     }
   }, []);
-
   // Search handlers
   const handleSearchChange = useCallback((e) => {
     const value = e.target.value;
@@ -357,33 +327,27 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       }
     }, 300);
   }, []);
-
   const handleSearchKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && searchQuery.trim().length >= 6) {
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
       searchStudentInfo(searchQuery.trim());
     }
   }, [searchQuery, searchStudentInfo]);
-
   const handleSearchClick = useCallback(() => {
     if (searchQuery.trim().length >= 6) {
       dispatch({ type: 'SET_FIELD', field: 'searchActive', value: true });
       searchStudentInfo(searchQuery.trim());
     }
   }, [searchQuery, searchStudentInfo]);
-
   const handleClearSearch = useCallback(() => {
     dispatch({ type: 'SET_FIELD', field: 'searchQuery', value: '' });
     dispatch({ type: 'SET_FIELD', field: 'searchActive', value: false });
     dispatch({ type: 'SET_FIELD', field: 'studentInfo', value: [] });
   }, []);
-
   // wardenLoggedIn is resolved via getWardenContext earlier
-
   const filteredInfo = useMemo(() => {
     // No client-side filtering needed - server handles everything
     let filtered = studentInfo;
-
     // Apply search filter if search is active - only search through student email
     if (searchActive && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -391,10 +355,8 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
         info.student_email && info.student_email.toLowerCase().includes(query)
       );
     }
-
     return filtered;
   }, [studentInfo, searchQuery, searchActive]);
-
   return (
     <div className="admin-student-info-page" style={{ 
       maxWidth: '100%', 
@@ -403,7 +365,6 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
       overflowX: 'hidden' // Prevent horizontal overflow
     }}>
       <h2>{wardenLoggedIn ? 'Warden: Student Info (View Only)' : 'Admin: Student Info Management'}</h2>
-      
       <div style={{ marginBottom: 16 }}>
         <input
           type="text"
@@ -429,19 +390,16 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
           </button>
         )}
       </div>
-      
       {searchActive && (
         <div style={{ marginBottom: 16, padding: 8, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
           <span>Searching for email: "{searchQuery}" ({filteredInfo.length} results)</span>
         </div>
       )}
-      
       {!searchActive && (
         <div className="info-notice">
           <p>Enter at least 6 characters in the search box to find student information.</p>
         </div>
       )}
-      
       {success && <div style={{ color: 'green', marginBottom: 8 }}>{success}</div>}
       {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
       {uploadMessage && <div style={{ color: 'green', marginBottom: 8 }}>{uploadMessage}</div>}
@@ -641,5 +599,4 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
     </div>
   );
 };
-
 export default AdminStudentInfo; 
