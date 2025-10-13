@@ -510,14 +510,14 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
       }
       // Fetch all bookings for the date range
       const { rows: reportBookings } = await fetchBookingsFiltered({
-        status: null, // Get all statuses
+        status: null,
         startDate: startDate,
         endDate: endDate,
-        hostelFilter: wardenLoggedIn ? allowedHostels : null,
+        allowedHostels: wardenLoggedIn ? allowedHostels : null,
         page: 1,
-        pageSize: 10000, // Get all records
-        roomNumberSearch: null,
-        adminEmail: wardenLoggedIn ? null : user?.email
+        pageSize: 10000,
+        searchRoom: null,
+        minimal: false
       });
       if (!reportBookings || reportBookings.length === 0) {
         setToast({ message: 'No bookings found for the selected date range', type: 'warning' });
@@ -542,22 +542,32 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
         'Updated At'
       ];
       // Convert bookings to CSV rows
-      const rows = reportBookings.map(booking => [
-        booking.id || '',
-        booking.student_name || '',
-        booking.student_email || '',
-        booking.room_number || '',
-        booking.hostel || '',
-        booking.out_time ? new Date(booking.out_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
-        booking.in_time ? new Date(booking.in_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
-        booking.actual_in_time ? new Date(booking.actual_in_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
-        booking.status || '',
-        booking.reason ? `"${booking.reason.replace(/"/g, '""')}"` : 'No reason provided',
-        booking.handled_by || '',
-        booking.handled_at ? new Date(booking.handled_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
-        booking.created_at ? new Date(booking.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
-        booking.updated_at ? new Date(booking.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : ''
-      ]);
+      const rows = reportBookings.map(booking => {
+        // Combine date and time for display
+        const outDateTime = booking.out_date && booking.out_time 
+          ? `${booking.out_date} ${booking.out_time}` 
+          : '';
+        const inDateTime = booking.in_date && booking.in_time 
+          ? `${booking.in_date} ${booking.in_time}` 
+          : '';
+        
+        return [
+          booking.id || '',
+          booking.name || '',
+          booking.email || '',
+          booking.room_number || '',
+          booking.hostel_name || '',
+          outDateTime,
+          inDateTime,
+          booking.actual_in_time ? new Date(booking.actual_in_time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+          booking.status || '',
+          booking.reason ? `"${booking.reason.replace(/"/g, '""')}"` : 'No reason provided',
+          booking.handled_by || '',
+          booking.handled_at ? new Date(booking.handled_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+          booking.created_at ? new Date(booking.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+          booking.updated_at ? new Date(booking.updated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : ''
+        ];
+      });
       // Create CSV content with UTF-8 BOM for Excel compatibility
       const csvContent = '\uFEFF' + [
         headers.join(','),
