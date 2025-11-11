@@ -441,6 +441,60 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
         <span style={{ fontSize: 12, color: '#888' }}>
           Upload Excel/CSV with columns: Student Email, Hostel Name, Parent Email, Parent Phone
         </span>
+        
+        {/* Hostel Names Reference */}
+        <div style={{ 
+          marginTop: 16, 
+          padding: 16, 
+          backgroundColor: '#fff3cd', 
+          border: '1px solid #ffc107',
+          borderRadius: 6,
+          fontSize: 13
+        }}>
+          <strong style={{ color: '#856404', display: 'block', marginBottom: 8 }}>
+            ⚠️ IMPORTANT: Use exact hostel names from this list:
+          </strong>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+            gap: '8px',
+            color: '#856404',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            padding: '8px',
+            backgroundColor: '#fff',
+            borderRadius: '4px'
+          }}>
+            <span>✓ Adhiyaman</span>
+            <span>✓ Agasthiyar</span>
+            <span>✓ Began</span>
+            <span>✓ Esq A</span>
+            <span>✓ Esq B</span>
+            <span>✓ Esq-A</span>
+            <span>✓ Esq-B</span>
+            <span>✓ Esqb</span>
+            <span>✓ Green Pearl - B (Off Campus)</span>
+            <span>✓ Ja Block (Off Campus)</span>
+            <span>✓ Kaari</span>
+            <span>✓ Kalpana Chawla</span>
+            <span>✓ Malligai</span>
+            <span>✓ Manoranjitham</span>
+            <span>✓ Mblock</span>
+            <span>✓ Meenakshi</span>
+            <span>✓ Mullai</span>
+            <span>✓ N Block</span>
+            <span>✓ Nelson Mandela</span>
+            <span>✓ Oori</span>
+            <span>✓ Paari</span>
+            <span>✓ Sannasi A</span>
+            <span>✓ Sannasi C</span>
+            <span>✓ Senbagam</span>
+            <span>✓ Thamarai</span>
+          </div>
+          <small style={{ display: 'block', marginTop: 8, color: '#856404', fontStyle: 'italic' }}>
+            Copy-paste these names exactly (case-sensitive) when filling the Excel template.
+          </small>
+        </div>
       </div>
       )}
       <div style={{ 
