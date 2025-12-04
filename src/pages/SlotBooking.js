@@ -663,6 +663,36 @@ const SlotBooking = () => {
         )}
       </div>
     </div>
+      {/* Footer: Created by and SRM links */}
+      <footer
+        style={{
+          margin: '32px auto 0 auto',
+          maxWidth: 420,
+          background: '#fafbfc',
+          borderTop: '1px solid #e0e0e0',
+          borderRadius: 8,
+          padding: '12px 16px',
+          fontSize: 13,
+          color: '#888',
+          textAlign: 'center',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+          width: '100%',
+        }}
+      >
+        <div style={{ marginBottom: 6 }}>
+          <span style={{ fontWeight: 500 }}>Created by:</span> Kartik Mittal (<a href="mailto:km5260@srmist.edu.in" style={{ color: '#1976d2', textDecoration: 'none' }}>km5260@srmist.edu.in</a>)<br />
+          <span style={{ fontWeight: 500 }}>Co-developer:</span> Reetam Kole (<a href="mailto:rk0598@srmist.edu.in" style={{ color: '#1976d2', textDecoration: 'none' }}>rk0598@srmist.edu.in</a>)
+        </div>
+        <div style={{ marginTop: 4 }}>
+          <span style={{ fontWeight: 500 }}>Other SRM links:</span>
+          <ul style={{ margin: '6px 0 0 0', padding: 0, listStyle: 'none' }}>
+            <li style={{ margin: 0 }}><a href="https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp" target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>Student Portal</a></li>
+            <li style={{ margin: 0 }}><a href="https://academia.srmist.edu.in/" target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>Academia</a></li>
+            <li style={{ margin: 0 }}><a href="https://www.srmist.edu.in/srm-hostels/" target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', textDecoration: 'underline' }}>SRM Hostels</a></li>
+          </ul>
+        </div>
+      </footer>
+    </div>
   );
 };
 export default SlotBooking;
