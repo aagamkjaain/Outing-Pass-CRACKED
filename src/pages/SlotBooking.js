@@ -662,7 +662,6 @@ const SlotBooking = () => {
           </div>
         )}
       </div>
-    </div>
       {/* Footer: Created by and SRM links */}
       <footer
         style={{
