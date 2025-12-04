@@ -90,6 +90,35 @@ function reducer(state, action) {
       return state;
   }
 }
+// Hardcoded list of allowed hostel names
+const ALLOWED_HOSTEL_NAMES = [
+  'Adhiyaman',
+  'Agasthiyar',
+  'Began',
+  'Esq A',
+  'Esq B',
+  'Esq-A',
+  'Esq-B',
+  'Esqb',
+  'Green Pearl - B (Off Campus)',
+  'Ja Block (Off Campus)',
+  'Kaari',
+  'Kalpana Chawla',
+  'Malligai',
+  'Manoranjitham',
+  'Mblock',
+  'Meenakshi',
+  'Mullai',
+  'N Block',
+  'Nelson Mandela',
+  'Oori',
+  'Paari',
+  'Sannasi A',
+  'Sannasi C',
+  'Senbagam',
+  'Thamarai'
+];
+
 const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
@@ -532,7 +561,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
               <td style={{ border: '1px solid #ccc', padding: 8 }}>
                   <select name="hostel_name" value={form.hostel_name} onChange={handleChange}>
                     <option value="">Select hostel...</option>
-                    {Array.from(new Set(studentInfo.map(s => (s.hostel_name || '').trim()).filter(Boolean))).sort().map(h => (
+                    {ALLOWED_HOSTEL_NAMES.map(h => (
                       <option key={h} value={h}>{h}</option>
                     ))}
                   </select>
@@ -559,7 +588,7 @@ const AdminStudentInfo = ({ isWarden, wardenHostels: propWardenHostels }) => {
                 <td style={{ border: '1px solid #ccc', padding: 8 }}>
                   <select name="hostel_name" value={form.hostel_name} onChange={handleChange}>
                     <option value="">Select hostel...</option>
-                    {Array.from(new Set(studentInfo.map(s => (s.hostel_name || '').trim()).filter(Boolean))).sort().map(h => (
+                    {ALLOWED_HOSTEL_NAMES.map(h => (
                       <option key={h} value={h}>{h}</option>
                     ))}
                   </select>
