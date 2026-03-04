@@ -426,21 +426,15 @@ const PendingBookings = ({ adminRole, adminHostels, isWarden, wardenHostels: pro
   const sendStillOutAlert = useCallback(async (booking) => {
     try {
       setLoading(true);
-      // Send custom email to parent
+      // Send alert email using template
       const functionUrl = 'https://fwnknmqlhlyxdeyfcrad.supabase.co/functions/v1/send-email';
-      const html = `
-        <p>Dear Parent,</p>
-        <p>Your ward <b>${booking.name}</b> (${booking.email}) from <b>${booking.hostel_name}</b> has not returned by the expected time.</p>
-        <p>Please contact the hostel administration for more information.</p>
-        <p><i>This is an automated alert.</i></p>
-      `;
       const emailRes = await fetch(functionUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: booking.parent_email,
-          subject: 'Alert: Your ward is still out',
-          html
+          template: 'still_out',
+          booking: booking
         })
       });
       const emailData = await emailRes.json();
