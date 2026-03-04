@@ -126,7 +126,7 @@ function getReturnedEmail(booking: Booking, closingDate: string | null = null) {
   
   const additionalNote = isSameDay 
     ? `<p>We are pleased to inform you that your ward has followed the proper procedure by closing the outing request on the same day of return to the college. This adherence to safety protocols is appreciated.</p>`
-    : `<p><b>Please note:</b> Your ward has closed this outing request on <b>${formatDate(returnDate)}</b>, but the outing was scheduled with an out date of <b>${formatDate(booking.out_date || '')}</b>.</p>
+    : `<p><b>Please note:</b> Your ward has closed this outing request on <b>${formatDate(returnDate)}</b>, but the outing was scheduled with an out date of <b>${formatDate(booking.in_date || '')}</b>.</p>
        <p>For safety and security reasons, we strongly request that you guide your ward to close outing requests on the same day they return to the college. This helps us maintain accurate records of student whereabouts and ensures campus security protocols are followed effectively.</p>
        <p>We appreciate your cooperation in helping your ward adhere to this procedure in the future.</p>`;
   
