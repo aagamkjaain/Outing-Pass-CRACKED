@@ -103,7 +103,6 @@ export function getNowOutEmail(booking, wardenEmail) {
         <li><b>Out Date:</b> ${formatDate(booking.out_date)} at ${formatTime(booking.out_time)}</li>
         <li><b>Expected Return:</b> ${formatDate(booking.in_date)} at ${formatTime(booking.in_time)}</li>
         <li><b>Reason for Outing:</b> ${booking.reason}</li>
-        <li><b>Approved By:</b> Hostel Warden${wardenEmail ? ` (<a href="mailto:${wardenEmail}">${wardenEmail}</a>)` : ''}</li>
       </ul>
       <p>
         <b>Important Reminders:</b>
