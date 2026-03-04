@@ -4,7 +4,7 @@ const _envGet: ((k: string) => string | undefined) | undefined = denoRuntime?.en
 const BREVO_API_KEY = _envGet ? _envGet('BREVO_API_KEY') : undefined;
 const BREVO_SENDER_EMAIL = _envGet ? _envGet('BREVO_SENDER_EMAIL') : undefined;
 
-// Email template functions (inline, matching src/services/mailTemplates.js)
+// Types
 type Booking = {
   name?: string;
   email?: string;
@@ -16,45 +16,50 @@ type Booking = {
   reason?: string;
 };
 
-function getStatusUpdateEmail(booking: Booking, statusMsg = 'updated') {
+// Shared utility functions
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-IN', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+};
+
+const getEmailFooter = (): string => `
+  <p>
+    If you have any questions, please contact your ward's respective hostel administration. <br>
+    Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
+    <b><i>This is an automated message. Please do not reply.</i></b>
+  </p>
+`;
+
+// Email template functions
+function getStatusUpdateEmail(booking: Booking, statusMsg = 'rejected') {
   return {
-    subject: `Outing Request ${statusMsg}`,
+    subject: `Outing Request Rejected`,
     html: `
       <p>Dear Parent,</p>
       <p>
-        This is to inform you that your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has had their outing request <b>${statusMsg}</b> by the hostel administration.
+        This is to inform you that your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has had their outing request <b>rejected</b> by the hostel administration.
       </p>
+      <p><b>Request Details:</b></p>
       <ul>
-        <li><b>Out Date:</b> ${booking.out_date}</li>
-        <li><b>Out Time:</b> ${booking.out_time}</li>
-        <li><b>In Date:</b> ${booking.in_date}</li>
-        <li><b>In Time:</b> ${booking.in_time}</li>
-        <li><b>Reason:</b> ${booking.reason}</li>
+        <li><b>Requested Out Date:</b> ${booking.out_date}</li>
+        <li><b>Requested Out Time:</b> ${booking.out_time}</li>
+        <li><b>Requested In Date:</b> ${booking.in_date}</li>
+        <li><b>Requested In Time:</b> ${booking.in_time}</li>
+        <li><b>Reason Provided:</b> ${booking.reason}</li>
       </ul>
       <p>
-        If you have any questions, please contact your ward's respective hostel administration. <br>
-        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
-        <b><i>This is an automated message. Please do not reply.</i></b>
+        If you have any questions regarding this decision, please contact your ward's hostel administration for more information.
       </p>
+      ${getEmailFooter()}
     `
   };
 }
 
 function getStillOutAlertEmail(booking: Booking) {
-  // Format dates for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
-  
-  const formatTime = (timeStr: string) => {
-    return timeStr;
-  };
-  
   return {
     subject: 'Important Alert: Your ward has not returned from outing',
     html: `
@@ -64,8 +69,8 @@ function getStillOutAlertEmail(booking: Booking) {
       </p>
       <p><b>Outing Details:</b></p>
       <ul>
-        <li><b>Student Left On:</b> ${formatDate(booking.out_date || '')} at ${formatTime(booking.out_time || '')}</li>
-        <li><b>Expected Return:</b> ${formatDate(booking.in_date || '')} at ${formatTime(booking.in_time || '')}</li>
+        <li><b>Student Left On:</b> ${formatDate(booking.out_date || '')} at ${booking.out_time || ''}</li>
+        <li><b>Expected Return:</b> ${formatDate(booking.in_date || '')} at ${booking.in_time || ''}</li>
         <li><b>Reason for Outing:</b> ${booking.reason}</li>
         <li><b>Current Status:</b> Still Out (Not Returned)</li>
       </ul>
@@ -78,30 +83,12 @@ function getStillOutAlertEmail(booking: Booking) {
       <p>
         <b>Note:</b> Students must close their outing requests promptly upon returning to campus to ensure proper tracking and compliance with hostel safety protocols.
       </p>
-      <p>
-        If you have any questions, please contact your ward's respective hostel administration. <br>
-        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
-        <b><i>This is an automated message. Please do not reply.</i></b>
-      </p>
+      ${getEmailFooter()}
     `
   };
 }
 
 function getNowOutEmail(booking: Booking, wardenEmail?: string) {
-  // Format dates for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
-  
-  const formatTime = (timeStr: string) => {
-    return timeStr;
-  };
-  
   return {
     subject: 'Outing Approved: Your ward has left the campus',
     html: `
@@ -111,8 +98,8 @@ function getNowOutEmail(booking: Booking, wardenEmail?: string) {
       </p>
       <p><b>Outing Details:</b></p>
       <ul>
-        <li><b>Out Date:</b> ${formatDate(booking.out_date || '')} at ${formatTime(booking.out_time || '')}</li>
-        <li><b>Expected Return:</b> ${formatDate(booking.in_date || '')} at ${formatTime(booking.in_time || '')}</li>
+        <li><b>Out Date:</b> ${formatDate(booking.out_date || '')} at ${booking.out_time || ''}</li>
+        <li><b>Expected Return:</b> ${formatDate(booking.in_date || '')} at ${booking.in_time || ''}</li>
         <li><b>Reason for Outing:</b> ${booking.reason}</li>
         <li><b>Approved By:</b> Hostel Warden${wardenEmail ? ` (<a href="mailto:${wardenEmail}">${wardenEmail}</a>)` : ''}</li>
       </ul>
@@ -127,38 +114,19 @@ function getNowOutEmail(booking: Booking, wardenEmail?: string) {
       <p>
         This notification is sent to keep you informed about your ward's movements for safety and security purposes. We appreciate your cooperation in ensuring your ward follows all hostel protocols.
       </p>
-      <p>
-        If you have any questions, please contact your ward's respective hostel administration. <br>
-        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
-        <b><i>This is an automated message. Please do not reply.</i></b>
-      </p>
+      ${getEmailFooter()}
     `
   };
 }
 
 function getReturnedEmail(booking: Booking, closingDate: string | null = null) {
-  // Parse dates for comparison
   const outDate = new Date(booking.out_date || '').toDateString();
   const returnDate = closingDate ? new Date(closingDate).toDateString() : new Date().toDateString();
-  
-  // Check if returned on the same day
   const isSameDay = outDate === returnDate;
   
-  // Format dates for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
-  
-  const returnMessage = isSameDay 
-    ? `<p>Your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has <b>returned</b> to the hostel after their outing.</p>
-       <p>We are pleased to inform you that your ward has followed the proper procedure by closing the outing request on the same day of return to the college. This adherence to safety protocols is appreciated.</p>`
-    : `<p>Your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has <b>closed</b> their outing request on <b>${formatDate(returnDate)}</b>.</p>
-       <p><b>Please note:</b> The outing was scheduled with an out date of <b>${formatDate(booking.out_date || '')}</b>, but the request is being closed on <b>${formatDate(returnDate)}</b>.</p>
+  const additionalNote = isSameDay 
+    ? `<p>We are pleased to inform you that your ward has followed the proper procedure by closing the outing request on the same day of return to the college. This adherence to safety protocols is appreciated.</p>`
+    : `<p><b>Please note:</b> Your ward has closed this outing request on <b>${formatDate(returnDate)}</b>, but the outing was scheduled with an out date of <b>${formatDate(booking.out_date || '')}</b>.</p>
        <p>For safety and security reasons, we strongly request that you guide your ward to close outing requests on the same day they return to the college. This helps us maintain accurate records of student whereabouts and ensures campus security protocols are followed effectively.</p>
        <p>We appreciate your cooperation in helping your ward adhere to this procedure in the future.</p>`;
   
@@ -166,7 +134,8 @@ function getReturnedEmail(booking: Booking, closingDate: string | null = null) {
     subject: 'Outing Update: Student has returned',
     html: `
       <p>Dear Parent,</p>
-      ${returnMessage}
+      <p>Your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has <b>returned</b> to the hostel after their outing.</p>
+      <p><b>Outing Details:</b></p>
       <ul>
         <li><b>Out Date:</b> ${booking.out_date}</li>
         <li><b>Out Time:</b> ${booking.out_time}</li>
@@ -174,11 +143,8 @@ function getReturnedEmail(booking: Booking, closingDate: string | null = null) {
         <li><b>In Time:</b> ${booking.in_time}</li>
         <li><b>Reason:</b> ${booking.reason}</li>
       </ul>
-      <p>
-        If you have any questions, please contact your ward's respective hostel administration. <br>
-        Contact details are available at: <a href="https://www.srmist.edu.in/srm-hostels/">https://www.srmist.edu.in/srm-hostels/</a> <br>
-        <b><i>This is an automated message. Please do not reply.</i></b>
-      </p>
+      ${additionalNote}
+      ${getEmailFooter()}
     `
   };
 }

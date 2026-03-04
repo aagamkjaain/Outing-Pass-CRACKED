@@ -21,13 +21,17 @@ const getEmailFooter = () => `
 
 export function getStatusUpdateEmail(booking, statusMsg) {
   return {
-    subject: `Outing Request ${statusMsg}`,
+    subject: `Outing Request Rejected`,
     html: `
       <p>Dear Parent,</p>
       <p>
-        This is to inform you that your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has had their outing request <b>${statusMsg}</b> by the hostel administration.
+        This is to inform you that your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has had their outing request <b>rejected</b> by the hostel administration.
       </p>
+      <p><b>Request Details:</b></p>
       ${getBookingDetailsHTML(booking)}
+      <p>
+        If you have any questions regarding this decision, please contact your ward's hostel administration for more information.
+      </p>
       ${getEmailFooter()}
     `
   };
@@ -138,11 +142,9 @@ export function getReturnedEmail(booking, closingDate = null) {
     });
   };
   
-  const returnMessage = isSameDay 
-    ? `<p>Your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has <b>returned</b> to the hostel after their outing.</p>
-       <p>We are pleased to inform you that your ward has followed the proper procedure by closing the outing request on the same day of return to the college. This adherence to safety protocols is appreciated.</p>`
-    : `<p>Your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has <b>closed</b> their outing request on <b>${formatDate(returnDate)}</b>.</p>
-       <p><b>Please note:</b> The outing was scheduled with an out date of <b>${formatDate(booking.out_date)}</b>, but the request is being closed on <b>${formatDate(returnDate)}</b>.</p>
+  const additionalNote = isSameDay 
+    ? `<p>We are pleased to inform you that your ward has followed the proper procedure by closing the outing request on the same day of return to the college. This adherence to safety protocols is appreciated.</p>`
+    : `<p><b>Please note:</b> Your ward has closed this outing request on <b>${formatDate(returnDate)}</b>, but the outing was scheduled with an out date of <b>${formatDate(booking.out_date)}</b>.</p>
        <p>For safety and security reasons, we strongly request that you guide your ward to close outing requests on the same day they return to the college. This helps us maintain accurate records of student whereabouts and ensures campus security protocols are followed effectively.</p>
        <p>We appreciate your cooperation in helping your ward adhere to this procedure in the future.</p>`;
   
@@ -150,8 +152,9 @@ export function getReturnedEmail(booking, closingDate = null) {
     subject: 'Outing Update: Student has returned',
     html: `
       <p>Dear Parent,</p>
-      ${returnMessage}
+      <p>Your child <b>${booking.name}</b> (<a href="mailto:${booking.email}">${booking.email}</a>) from <b>${booking.hostel_name}</b> has <b>returned</b> to the hostel after their outing.</p>
       ${getBookingDetailsHTML(booking)}
+      ${additionalNote}
       ${getEmailFooter()}
     `
   };
