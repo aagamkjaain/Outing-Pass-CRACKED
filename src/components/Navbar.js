@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
-import { supabase } from '../supabaseClient';
 import { getWardenContext } from '../utils/wardenHostels';
 import { safeParseSessionItem } from '../utils/sessionStorage';
 import srmLogo from '../assets/Srmseal.png';
@@ -45,15 +44,13 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.clear();
-    navigate('/login');
+    // Demo mode - just refresh the page
+    window.location.href = '/';
   };
 
   const handleBookSlotClick = () => {
-    if (!user) {
-      navigate('/login');
-    }
+    // Always allow slot booking in demo mode
+    window.location.href = '/slot-booking';
   };
 
   // const handleLogin = async () => {
@@ -72,9 +69,8 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
   // };
 
   const handleWardenLogout = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.clear();
-    window.location.href = '/login';
+    // Demo mode - just refresh the page
+    window.location.href = '/';
   };
 
   const toggleMenu = () => {
@@ -94,11 +90,9 @@ const Navbar = ({ user, isAdmin, isWarden, wardenHostels, adminLoading, isArchGa
       </button>
 
       <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-        {!isArchGateLocal && !wardenLoggedIn && (user ? (
+        {!isArchGateLocal && !wardenLoggedIn && (
           <Link to="/slot-booking" onClick={() => setIsMenuOpen(false)}>Request Outing</Link>
-        ) : (
-          <Link to="/login" onClick={() => { handleBookSlotClick(); setIsMenuOpen(false); }}>Request Outing</Link>
-        ))}
+        )}
         {(isAdmin && !isArchGateLocal && !wardenLoggedIn) && (
           <Link to="/pending-bookings" onClick={() => setIsMenuOpen(false)}>Pending Bookings</Link>
         )}

@@ -7,10 +7,10 @@ import {
   fetchStudentInfoByEmail,
   fetchAdminInfoByEmail,
   checkAndAutoUnban,
-  generateOtpForBooking
+  generateOtpForBooking,
+  handleBookingAction
 } from '../services/api';
 import './SlotBooking.css';
-import { supabase } from '../supabaseClient';
 const initialState = {
   bookingForm: {
     name: '',
@@ -35,7 +35,8 @@ const initialState = {
   studentInfoExists: true,
   banInfo: null,
   blockBooking: false,
-  waitingBooking: null
+  waitingBooking: null,
+  editMode: false
 };
 function reducer(state, action) {
   switch (action.type) {
@@ -73,7 +74,7 @@ const SlotBooking = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const {
     bookingForm, loading, bookedSlots, error, success, apiError, user, isAdmin,
-    studentInfoExists, banInfo, blockBooking, waitingBooking
+    studentInfoExists, banInfo, blockBooking, waitingBooking, editMode
   } = state;
   const fetchUserBookings = useCallback(async (email) => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -119,47 +120,48 @@ const SlotBooking = () => {
     };
     const initializeUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          let name = user.user_metadata?.full_name || user.email;
-          let email = user.email;
-          let parentEmail = '';
-          let parentPhone = '';
-          const adminInfo = await fetchAdminInfoByEmail(email);
-          dispatch({ type: 'SET_FIELD', field: 'isAdmin', value: !!adminInfo });
-          const info = await fetchStudentInfoByEmail(email);
-          if (info) {
-            parentEmail = info.parent_email || '';
-            parentPhone = info.parent_phone || '';
-            dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: true });
-            dispatch({ 
-              type: 'SET_USER_INFO', 
-              payload: { 
-                user, 
-                studentInfo: info, // Pass the student info object
-                formDetails: { email, name, parentEmail, parentPhone } 
-              }
-            });
-          } else {
-            // Student not found in student_info - not allowed to use the app
-            dispatch({ type: 'SET_FIELD', field: 'studentInfoExists', value: false });
-            dispatch({ type: 'SET_ERROR', payload: 'Student information not found. Please contact administration to add your details.' });
-            dispatch({ 
-              type: 'SET_USER_INFO', 
-              payload: { 
-                user, 
-                studentInfo: null, // No student info
-                formDetails: { email, name, parentEmail: '', parentPhone: '' } 
-              }
-            });
+        let user = null;
+        let studentInfo = null;
+
+        // Create demo user for development
+        user = {
+          id: 'demo-user',
+          email: 'demo@srmist.edu.in',
+          user_metadata: {
+            full_name: 'Demo Student'
           }
-          const ban = await checkAndAutoUnban(email);
-          dispatch({ type: 'SET_FIELD', field: 'banInfo', value: ban });
-          if (user.email) {
-            await fetchUserBookings(user.email);
+        };
+        studentInfo = {
+          email: 'demo@srmist.edu.in',
+          name: 'Demo Student',
+          hostel_name: 'Hostel A',
+          room_number: '101',
+          parent_email: 'parent@example.com',
+          parent_phone: '9876543210'
+        };
+
+        let name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student';
+        let email = user.email;
+        let parentEmail = studentInfo?.parent_email || '';
+        let parentPhone = studentInfo?.parent_phone || '';
+
+        dispatch({ 
+          type: 'SET_USER_INFO', 
+          payload: { 
+            user, 
+            studentInfo,
+            formDetails: { email, name, parentEmail, parentPhone } 
           }
+        });
+
+        const ban = await checkAndAutoUnban(email).catch(() => null);
+        dispatch({ type: 'SET_FIELD', field: 'banInfo', value: ban });
+        
+        if (user.email) {
+          await fetchUserBookings(user.email);
         }
       } catch (error) {
+        console.error('Error initializing user:', error);
       }
     };
     checkServerHealth();
@@ -337,6 +339,21 @@ const SlotBooking = () => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, [bookingForm.email, fetchUserBookings]);
+
+  const handleConfirmBooking = useCallback(async (bookingId) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: '' });
+    dispatch({ type: 'SET_SUCCESS', payload: '' });
+    try {
+      await handleBookingAction(bookingId, 'confirmed', bookingForm.email);
+      dispatch({ type: 'SET_SUCCESS', payload: 'Booking confirmed successfully!' });
+      await fetchUserBookings(bookingForm.email);
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to confirm booking' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [bookingForm.email, fetchUserBookings]);
   return (
     <div className="slot-booking-container">
       <h2>Request Outing</h2>
@@ -363,51 +380,138 @@ const SlotBooking = () => {
         </div>
       )}
       <form onSubmit={handleBookingSubmit} className="booking-form" style={{ pointerEvents: blockBooking ? 'none' : 'auto', opacity: blockBooking ? 0.5 : 1 }}>
+        
+        {/* User Info Section with Edit Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>Your Information</h3>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_FIELD', field: 'editMode', value: !editMode })}
+            style={{
+              background: editMode ? 'rgba(220, 53, 69, 0.7)' : 'rgba(108, 117, 125, 0.7)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '6px 16px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              backdropFilter: 'blur(4px)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {editMode ? '✕ Done' : ''}
+          </button>
+        </div>
+
         <label htmlFor="name">Full Name:</label>
         <input 
           type="text" 
           id="name" 
           name="name" 
           value={bookingForm.name}
-          readOnly
-          disabled
-          className="readonly-input"
+          onChange={editMode ? handleBookingChange : undefined}
+          readOnly={!editMode}
+          disabled={!editMode}
+          className={editMode ? '' : 'readonly-input'}
           required
           placeholder="Enter your full name"
+          style={{
+            background: editMode ? 'white' : 'rgba(200, 200, 200, 0.3)',
+            cursor: editMode ? 'text' : 'default',
+            borderColor: editMode ? '#007bff' : '#ccc'
+          }}
         />
+
         <label htmlFor="email">Email (SRM):</label>
         <input 
           type="email" 
           id="email" 
           name="email" 
           value={bookingForm.email}
-          readOnly
-          disabled
-          className="readonly-input"
+          onChange={editMode ? handleBookingChange : undefined}
+          readOnly={!editMode}
+          disabled={!editMode}
+          className={editMode ? '' : 'readonly-input'}
+          style={{
+            background: editMode ? 'white' : 'rgba(200, 200, 200, 0.3)',
+            cursor: editMode ? 'text' : 'default',
+            borderColor: editMode ? '#007bff' : '#ccc'
+          }}
         />
+
         <label htmlFor="roomNumber">Room Number:</label>
           <input
             type="text"
             id="roomNumber"
             name="roomNumber"
             value={bookingForm.roomNumber}
-            onChange={handleBookingChange}
+            onChange={editMode ? handleBookingChange : undefined}
+            readOnly={!editMode}
+            disabled={!editMode || (!isAdmin && !studentInfoExists) || loading || apiError}
             required
             placeholder="Enter your room number"
-            disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
+            style={{
+              background: editMode ? 'white' : 'rgba(200, 200, 200, 0.3)',
+              cursor: editMode ? 'text' : 'default',
+              borderColor: editMode ? '#007bff' : '#ccc'
+            }}
           />
+
         <label htmlFor="hostelName">Hostel Name:</label>
           <input
             type="text"
             id="hostelName"
             name="hostelName"
             value={bookingForm.hostelName}
-            readOnly
-            disabled
-            className="readonly-input"
+            onChange={editMode ? handleBookingChange : undefined}
+            readOnly={!editMode}
+            disabled={!editMode}
+            className={editMode ? '' : 'readonly-input'}
             required
             placeholder="Hostel name from student info"
+            style={{
+              background: editMode ? 'white' : 'rgba(200, 200, 200, 0.3)',
+              cursor: editMode ? 'text' : 'default',
+              borderColor: editMode ? '#007bff' : '#ccc'
+            }}
           />
+
+        <label htmlFor="parentEmail">Parent Email:</label>
+        <input
+          type="email"
+          id="parentEmail"
+          name="parentEmail"
+          value={bookingForm.parentEmail}
+          onChange={editMode ? handleBookingChange : undefined}
+          readOnly={!editMode}
+          disabled={!editMode || (!isAdmin && !studentInfoExists)}
+          required
+          placeholder="Enter parent email address"
+          style={{
+            background: editMode ? 'white' : 'rgba(200, 200, 200, 0.3)',
+            cursor: editMode ? 'text' : 'default',
+            borderColor: editMode ? '#007bff' : '#ccc'
+          }}
+        />
+
+        <label htmlFor="parentPhone">Parent Phone:</label>
+        <input
+          type="text"
+          id="parentPhone"
+          name="parentPhone"
+          value={bookingForm.parentPhone || ''}
+          onChange={editMode ? handleBookingChange : undefined}
+          readOnly={!editMode}
+          disabled={!editMode}
+          placeholder="Enter parent phone number"
+          style={{
+            background: editMode ? 'white' : 'rgba(200, 200, 200, 0.3)',
+            cursor: editMode ? 'text' : 'default',
+            borderColor: editMode ? '#007bff' : '#ccc'
+          }}
+        />
+
+        <h3 style={{ marginTop: '24px' }}>Outing Details</h3>
         <div className="form-group">
           <label htmlFor="outDate">Out Date:</label>
           <input
@@ -480,27 +584,6 @@ const SlotBooking = () => {
             disabled={(!isAdmin && !studentInfoExists) || loading || apiError}
           />
         </div>
-        <label htmlFor="parentEmail">Parent Email:</label>
-        <input
-          type="email"
-          id="parentEmail"
-          name="parentEmail"
-          value={bookingForm.parentEmail}
-          onChange={handleBookingChange}
-          required
-          placeholder="Enter parent email address"
-          disabled={(!isAdmin && !studentInfoExists) || !!bookingForm.parentEmail}
-        />
-        <label htmlFor="parentPhone">Parent Phone:</label>
-        <input
-          type="text"
-          id="parentPhone"
-          name="parentPhone"
-          value={bookingForm.parentPhone || ''}
-          readOnly
-          disabled
-          className="readonly-input"
-        />
         <div className="button-container">
           <button 
             type="submit"
@@ -601,6 +684,27 @@ const SlotBooking = () => {
                     }}
                   >
                     {loading ? 'Generating...' : 'Generate OTP'}
+                  </button>
+                )}
+                {currentBooking.status === 'still_out' && (
+                  <button 
+                    onClick={() => handleConfirmBooking(currentBooking.id)} 
+                    disabled={loading} 
+                    style={{ 
+                      marginTop: 8, 
+                      background: 'rgba(76, 175, 80, 0.7)', 
+                      color: 'white', 
+                      border: '1px solid rgba(76, 175, 80, 0.9)',
+                      borderRadius: 6, 
+                      padding: '6px 14px', 
+                      fontWeight: 500, 
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(4px)',
+                      fontSize: '14px',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {loading ? 'Confirming...' : '✓ Mark Confirmed'}
                   </button>
                 )}
                 {currentBooking && currentBooking.status === 'rejected' && currentBooking.rejection_reason && (

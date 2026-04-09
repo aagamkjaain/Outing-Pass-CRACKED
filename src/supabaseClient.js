@@ -1,18 +1,31 @@
-import { createClient } from '@supabase/supabase-js'
+// Mock Supabase Client - No backend connection
+// All data is stored locally in sessionStorage/localStorage
 
-// Use only environment variables for Supabase configuration
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true
+    getSession: async () => ({ data: { session: null } }),
+    getUser: async () => ({ data: { user: null } }),
+    signOut: async () => ({ error: null }),
+    signInWithPassword: async () => ({ data: null, error: new Error('Auth disabled') }),
+    signInWithOAuth: async () => ({ data: null, error: new Error('Auth disabled') }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+  },
+  from: () => ({
+    select: () => ({ data: [], error: null }),
+    insert: () => ({ data: [], error: null }),
+    update: () => ({ data: [], error: null }),
+    delete: () => ({ data: [], error: null }),
+    eq: () => ({ select: () => ({ data: [], error: null }) })
+  }),
+  storage: {
+    from: () => ({
+      upload: async () => ({ data: null, error: null }),
+      download: async () => ({ data: null, error: null })
+    })
   }
-})
+};
 
-// Export API functions for direct Supabase access
-export const auth = supabase.auth
-export const storage = supabase.storage
-export const from = supabase.from 
+// Export stub functions
+export const auth = supabase.auth;
+export const storage = supabase.storage;
+export const from = supabase.from;

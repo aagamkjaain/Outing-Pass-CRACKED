@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { supabase } from './supabaseClient';
-import { fetchAdminInfoByEmail } from './services/api';
 import Navbar from './components/Navbar';
 import DarkModeToggle from './components/DarkModeToggle';
 import { getWardenContext } from './utils/wardenHostels';
@@ -29,107 +27,9 @@ function App() {
   const [toast, setToast] = useState({ message: '', type: 'info' });
 
   useEffect(() => {
-    // Fast client-only fallback: read previously persisted role flags from
-    // sessionStorage immediately so the UI can reflect roles when network
-    // calls to Supabase fail or are blocked (deployed env missing keys).
-    try {
-      const storedWarden = sessionStorage.getItem('wardenLoggedIn') === 'true';
-      if (storedWarden) {
-        setIsWarden(true);
-        try {
-          const sh = JSON.parse(sessionStorage.getItem('wardenHostels') || '[]');
-          setWardenHostels(Array.isArray(sh) ? sh : []);
-        } catch (e) {
-          setWardenHostels([]);
-        }
-      }
-      const storedAdminRole = sessionStorage.getItem('adminRole');
-      if (storedAdminRole) {
-        setIsAdmin(true);
-        setAdminRole(storedAdminRole);
-        try {
-          const ah = JSON.parse(sessionStorage.getItem('adminHostels') || '[]');
-          setAdminHostels(Array.isArray(ah) ? ah : []);
-        } catch (e) {
-          setAdminHostels([]);
-        }
-      }
-      const storedArch = sessionStorage.getItem('archGateLoggedIn') === 'true';
-      if (storedArch) setIsArchGate(true);
-
-    } catch (e) {
-      // swallow - best-effort fallback
-    }
-
-  setSessionLoading(true);
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      try {
-        if (session?.user) {
-          if (!session.user.email.endsWith('@srmist.edu.in')) {
-            setToast({ message: 'Please use your SRM email to log in.', type: 'error' });
-            await supabase.auth.signOut();
-            setUser(null);
-            setIsAdmin(false);
-            setAdminRole(null);
-            setAdminHostels([]);
-            sessionStorage.clear();
-            setSessionLoading(false);
-            return;
-          }
-        setUser(session.user);
-        setAdminLoading(true);
-        checkAdminStatus(session.user.email).finally(() => {
-          setAdminLoading(false);
-          setRoleLoading(false);
-        });
-        } else {
-          setUser(null);
-          setIsAdmin(false);
-          setAdminRole(null);
-          setAdminHostels([]);
-        }
-      } catch (err) {
-      } finally {
-        setSessionLoading(false);
-      }
-    }).catch((err) => {
-      setSessionLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      try {
-        setSessionLoading(true);
-        if (session?.user) {
-          if (!session.user.email.endsWith('@srmist.edu.in')) {
-            setToast({ message: 'Please use your SRM email to log in.', type: 'error' });
-            await supabase.auth.signOut();
-            setUser(null);
-            setIsAdmin(false);
-            setAdminRole(null);
-            setAdminHostels([]);
-            sessionStorage.clear();
-            setSessionLoading(false);
-            return;
-          }
-        setUser(session.user);
-        setAdminLoading(true);
-        checkAdminStatus(session.user.email).finally(() => {
-          setAdminLoading(false);
-          setRoleLoading(false);
-        });
-      } else {
-        setUser(null);
-        setIsAdmin(false);
-          setAdminRole(null);
-          setAdminHostels([]);
-        }
-      } catch (err) {
-      } finally {
-        setSessionLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    // Skip authentication - directly load student view
+    setRoleLoading(false);
+    setSessionLoading(false);
   }, []);
 
   const checkAdminStatus = async (email) => {
@@ -186,52 +86,7 @@ function App() {
     }
   };
 
-  // Defensive fallback: if a session exists but sessionStorage lacks role flags,
-  // re-run role detection and persist values. This helps deployed clients that
-  // may have missed the initial checks (keeps behavior idempotent).
-  useEffect(() => {
-    if (!user || !user.email) return;
-
-    (async () => {
-      try {
-        // If sessionStorage already has role info, skip to avoid extra calls
-        const hasAdmin = !!sessionStorage.getItem('adminRole');
-        const hasWarden = !!sessionStorage.getItem('wardenHostels');
-        const hasArch = !!sessionStorage.getItem('archGateLoggedIn');
-
-        // If everything present, nothing to do
-        if (hasAdmin && hasWarden && hasArch) return;
-
-        const { fetchWardenInfoByEmail, checkArchGateStatus } = await import('./services/api');
-        // fetch admin via existing imported helper
-        const adminInfo = await fetchAdminInfoByEmail(user.email).catch(() => null);
-        if (adminInfo) {
-          try { sessionStorage.setItem('adminRole', adminInfo.role || ''); } catch (e) {}
-          try { sessionStorage.setItem('adminHostels', JSON.stringify(adminInfo.hostels || [])); } catch (e) {}
-          setIsAdmin(true);
-          setAdminRole(adminInfo.role);
-          setAdminHostels(adminInfo.hostels || []);
-        }
-
-        const wardenInfo = await fetchWardenInfoByEmail(user.email).catch(() => null);
-        if (wardenInfo) {
-          try { sessionStorage.setItem('wardenLoggedIn', 'true'); } catch (e) {}
-          try { sessionStorage.setItem('wardenHostels', JSON.stringify(wardenInfo.hostels || [])); } catch (e) {}
-          try { sessionStorage.setItem('wardenEmail', wardenInfo.email || ''); } catch (e) {}
-          setIsWarden(true);
-          setWardenHostels(wardenInfo.hostels || []);
-        }
-
-        const archGateInfo = await checkArchGateStatus(user.email).catch(() => null);
-        if (archGateInfo) {
-          try { sessionStorage.setItem('archGateLoggedIn', 'true'); } catch (e) {}
-          setIsArchGate(true);
-        }
-      } catch (e) {
-        // swallow - this is only a best-effort fallback
-      }
-    })();
-  }, [user]);
+  // Defensive fallback removed - authentication bypassed
 
   const { wardenLoggedIn } = getWardenContext(wardenHostels);
 
@@ -250,68 +105,31 @@ function App() {
           <Routes>
             <Route 
               path="/pending-bookings" 
-              element={
-                wardenLoggedIn
-                  ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} />
-                  : user
-                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
-                    : <Login />
-              }
+              element={<PendingBookings adminRole={adminRole} adminHostels={adminHostels} isWarden={isWarden} wardenHostels={wardenHostels} />}
             />
             <Route 
               path="/slot-booking" 
-              element={
-                user 
-                  ? (isArchGate ? <ArchGateOTP /> : <SlotBooking />)
-                  : <Login />
-              } 
+              element={<SlotBooking />}
             />
-            <Route path="/login" element={<Login />} />
             <Route 
               path="/admin-student-info" 
-              element={
-                wardenLoggedIn
-                  ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} />
-                  : user
-                    ? (adminLoading ? <div>Checking admin status...</div> : ((isAdmin || isWarden) ? <AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} /> : <Login />))
-                    : <Login />
-              }
+              element={<AdminStudentInfo isWarden={isWarden} wardenHostels={wardenHostels} />}
             />
             <Route 
               path="/warden-management" 
-              element={
-                user
-                  ? (adminLoading 
-                      ? <div>Checking admin status...</div> 
-                      : (isAdmin && adminRole === 'superadmin' 
-                          ? <WardenManagement /> 
-                          : <Login />))
-                  : <Login />
-              }
+              element={<WardenManagement />}
             />
             <Route 
               path="/" 
-              element={
-                user 
-                  ? (isArchGate ? <ArchGateOTP /> : <SlotBooking />)
-                  : <Login />
-              } 
+              element={<SlotBooking />}
             />
             <Route 
               path="/arch-otp" 
-              element={
-                user && isArchGate 
-                  ? <ArchGateOTP /> 
-                  : <Login />
-              } 
+              element={<ArchGateOTP />}
             />
             <Route 
               path="/arch-outing-details" 
-              element={
-                user && isArchGate 
-                  ? <ArchGateOutingDetails /> 
-                  : <Login />
-              } 
+              element={<ArchGateOutingDetails />}
             />
           </Routes>
         </main>
