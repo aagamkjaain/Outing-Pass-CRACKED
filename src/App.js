@@ -32,62 +32,6 @@ function App() {
     setSessionLoading(false);
   }, []);
 
-  const checkAdminStatus = async (email) => {
-    try {
-      const adminInfo = await fetchAdminInfoByEmail(email).catch(() => null);
-      if (adminInfo) {
-        setIsAdmin(true);
-        setAdminRole(adminInfo.role);
-        setAdminHostels(adminInfo.hostels || []);
-        try { sessionStorage.setItem('adminRole', adminInfo.role || ''); } catch (e) {}
-        try { sessionStorage.setItem('adminHostels', JSON.stringify(adminInfo.hostels || [])); } catch (e) {}
-      } else {
-        setIsAdmin(false);
-        setAdminRole(null);
-        setAdminHostels([]);
-        try { sessionStorage.removeItem('adminRole'); } catch (e) {}
-        try { sessionStorage.removeItem('adminHostels'); } catch (e) {}
-      }
-      
-      const { fetchWardenInfoByEmail } = await import('./services/api');
-      const wardenInfo = await fetchWardenInfoByEmail(email).catch(() => null);
-      if (wardenInfo) {
-        setIsWarden(true);
-        setWardenHostels(wardenInfo.hostels || []);
-        try { sessionStorage.setItem('wardenHostels', JSON.stringify(wardenInfo.hostels || [])); } catch (e) {}
-        try { sessionStorage.setItem('wardenEmail', wardenInfo.email || ''); } catch (e) {}
-        try { sessionStorage.setItem('wardenRole', 'warden'); } catch (e) {}
-        try { sessionStorage.setItem('wardenLoggedIn', 'true'); } catch (e) {}
-      } else {
-        setIsWarden(false);
-        setWardenHostels([]);
-        try { sessionStorage.removeItem('wardenHostels'); } catch (e) {}
-        try { sessionStorage.removeItem('wardenEmail'); } catch (e) {}
-        try { sessionStorage.removeItem('wardenRole'); } catch (e) {}
-        try { sessionStorage.removeItem('wardenLoggedIn'); } catch (e) {}
-      }
-      
-      const { checkArchGateStatus } = await import('./services/api');
-      const archGateInfo = await checkArchGateStatus(email).catch(() => null);
-      if (archGateInfo) {
-        setIsArchGate(true);
-        try { sessionStorage.setItem('archGateLoggedIn', 'true'); } catch (e) {}
-      } else {
-        setIsArchGate(false);
-        try { sessionStorage.removeItem('archGateLoggedIn'); } catch (e) {}
-      }
-    } catch (err) {
-      setIsAdmin(false);
-      setAdminRole(null);
-      setAdminHostels([]);
-      setIsWarden(false);
-      setWardenHostels([]);
-      setIsArchGate(false);
-    }
-  };
-
-  // Defensive fallback removed - authentication bypassed
-
   const { wardenLoggedIn } = getWardenContext(wardenHostels);
 
   if (sessionLoading || (user && roleLoading)) {

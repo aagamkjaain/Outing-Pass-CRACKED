@@ -1,6 +1,8 @@
-# 🎓 Outing Pass Management System - Demo Version
+# 🎓 Outing Pass Management System - Cracked Demo Version
 
-A lightweight, offline-capable outing pass management system for students. This is a **mock demo version** that runs entirely in the browser using localStorage—no backend required.
+> ⚠️ **CRACKED VERSION** - This is a simplified, offline-capable fork of the original Outing Pass Management System. It removes all Supabase backend dependencies and runs entirely in the browser using localStorage with mock data.
+
+A lightweight, offline-capable outing pass management system for students. This is a **cracked demo version** that runs entirely in the browser using localStorage—no backend required.
 
 ## ✨ Features
 
@@ -168,13 +170,26 @@ The app comes pre-configured with a demo student:
 4. Click "Done" to save changes
 5. Changes persist in localStorage across sessions
 
-## 🔒 Security Notes
+## 🔒 What's Different (Cracked Version)
 
-⚠️ **This is a demo version** - not suitable for production use
-- No actual authentication
-- Data stored unencrypted in browser localStorage
-- Accessible to browser developer tools
-- Use only for testing and demonstration purposes
+**Original System** (Production):
+- Full Supabase PostgreSQL backend
+- Google OAuth authentication for students
+- Email notifications via Brevo
+- Role-based access (Super Admin, Warden, Arch Gate)
+- Row-Level Security (RLS) policies
+- Real-time database synchronization
+
+**This Cracked Version**:
+- ✂️ Removed all Supabase dependencies
+- ✂️ No authentication (direct access)
+- ✂️ No email notifications
+- ✂️ No role-based access control
+- ✂️ All data stored in localStorage
+- ✂️ Mock API implementation
+- ✅ Fast, offline-capable, zero setup required
+
+⚠️ **For Testing/Demo Only** - Not suitable for production use
 
 ## 📞 Support
 
